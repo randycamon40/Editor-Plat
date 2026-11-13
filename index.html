@@ -117,7 +117,7 @@
     font-weight:600;
   }
   .plate{
-    border-radius:4px; padding:2px 0;
+    border-radius:12px; padding:2px 0;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     font-family: 'FE-Schrift', 'Bahnschrift', 'DIN Alternate', 'Arial Black', sans-serif;
     font-weight: 900; line-height:1;
@@ -143,20 +143,27 @@
     opacity: var(--noise-opacity);
     mix-blend-mode: multiply;
     pointer-events: none;
+    z-index: 1; /* Memastikan noise berada di bawah teks */
   }
   .plate-text{
+    position: relative; /* Wajib agar teks di atas efek noise */
+    display: inline-block;
+    transform-origin: center center;
     font-family: 'FE-Schrift', 'Arial Black', Impact, sans-serif;
     font-size: 38px; 
     letter-spacing: 1px; 
     word-spacing: 12px; 
-    margin-bottom: 0; font-weight: normal; z-index: 1;
-    -webkit-text-stroke: 0.5px currentColor; /* Menebalkan teks sedikit agar tajam */
+    margin-bottom: 0; font-weight: 900; z-index: 2;
+    -webkit-text-stroke: 0px; 
     text-shadow: none;
   }
   .plate-year{
+    position: relative; /* Wajib agar teks di atas efek noise */
+    display: inline-block;
+    transform-origin: center center;
     font-family: 'FE-Schrift', Arial, Helvetica, sans-serif;
-    font-size: 15px; font-weight: normal; letter-spacing: 2px; opacity: 1; white-space:nowrap; margin-top:-3px; z-index: 1;
-    -webkit-text-stroke: 0.5px currentColor;
+    font-size: 15px; font-weight: 900; letter-spacing: 2px; opacity: 1; white-space:nowrap; margin-top:-3px; z-index: 2;
+    -webkit-text-stroke: 0px;
     text-shadow: none;
   }
 
@@ -269,9 +276,13 @@
             <label for="nopolSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Nopol <span id="nopolSizeVal" style="color:var(--accent);">38px</span></label>
             <input type="range" id="nopolSizeSlider" min="8" max="70" value="38" style="padding:0;">
           </div>
-          <div class="field" style="margin-bottom:0;">
+          <div class="field">
             <label for="tahunSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Tahun <span id="tahunSizeVal" style="color:var(--accent);">16px</span></label>
             <input type="range" id="tahunSizeSlider" min="4" max="30" value="16" style="padding:0;">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="tinggiSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Tinggi Teks <span id="tinggiVal" style="color:var(--accent);">100%</span></label>
+            <input type="range" id="tinggiSlider" min="50" max="150" value="100" style="padding:0;">
           </div>
         </div>
       </section>
@@ -455,8 +466,12 @@
         blurSlider.value = 0;
         nopolSizeSlider.value = 38;
         tahunSizeSlider.value = 16;
+        tinggiSlider.value = 100;
         plateText.style.fontSize = "38px";
         plateYear.style.fontSize = "16px";
+        plateText.style.transform = "scaleY(1)";
+        plateYear.style.transform = "scaleY(1)";
+        tinggiVal.textContent = "100%";
         updatePlateTransform();
         platePreview.style.setProperty('--noise-opacity', 0.15);
         platePreview.style.setProperty('--plate-blur', "0px");
@@ -646,6 +661,12 @@
     plateYear.style.fontSize = "16px";
     if (nopolSizeSlider) nopolSizeSlider.value = 38;
     if (tahunSizeSlider) tahunSizeSlider.value = 16;
+    if (tinggiSlider) {
+      tinggiSlider.value = 100;
+      plateText.style.transform = "scaleY(1)";
+      plateYear.style.transform = "scaleY(1)";
+      tinggiVal.textContent = "100%";
+    }
     updatePreview();
     nomorEl.focus();
   }
@@ -745,6 +766,7 @@
   
   const nopolSizeSlider = $("nopolSizeSlider");
   const tahunSizeSlider = $("tahunSizeSlider");
+  const tinggiSlider = $("tinggiSlider");
   
   const scaleVal = $("scaleVal");
   const rotateVal = $("rotateVal");
@@ -752,6 +774,7 @@
   const blurVal = $("blurVal");
   const nopolSizeVal = $("nopolSizeVal");
   const tahunSizeVal = $("tahunSizeVal");
+  const tinggiVal = $("tinggiVal");
 
   function updatePlateTransform() {
     const scale = scaleSlider.value / 100;
@@ -782,6 +805,13 @@
   tahunSizeSlider.addEventListener("input", () => {
      plateYear.style.fontSize = tahunSizeSlider.value + "px";
      tahunSizeVal.textContent = tahunSizeSlider.value + "px";
+  });
+
+  tinggiSlider.addEventListener("input", () => {
+     const scale = tinggiSlider.value / 100;
+     plateText.style.transform = `scaleY(${scale})`;
+     plateYear.style.transform = `scaleY(${scale})`;
+     tinggiVal.textContent = tinggiSlider.value + "%";
   });
 
   /* ---------- Init ---------- */
