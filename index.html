@@ -1043,7 +1043,16 @@
 
   function loadHistory() {
     const d = lsGet(STORAGE_KEY, []);
-    return Array.isArray(d) ? d : [];
+    if (!Array.isArray(d)) return [];
+    // Hapus thumbnail lama untuk menghemat memori (migrasi otomatis)
+    const cleaned = d.map(it => {
+      if (it.image) {
+        const { image, ...rest } = it;
+        return rest;
+      }
+      return it;
+    });
+    return cleaned;
   }
   function saveHistory() {
     if (lsSet(STORAGE_KEY, items)) return true;
@@ -1705,12 +1714,8 @@
       return;
     }
     listEl.innerHTML = items.map(it => {
-      const thumb = it.image
-        ? `<img class="thumb" src="${esc(it.image)}" alt="">`
-        : `<div class="thumb thumb-ph">${ico("image")}</div>`;
       return `
         <div class="item">
-          ${thumb}
           ${chipHtml(it, true)}
           <div style="flex: 1;"></div>
           <div class="item-actions">
@@ -2163,7 +2168,6 @@
           const state = templateData[v];
           const canvas = document.createElement("canvas");
           await renderPlateToCanvas(state.img, state, plate, canvas, cache);
-          if (!thumb) thumb = makeThumb(canvas);
           const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", exportQuality));
           folderNopol.file(safe + "_" + v + ".jpg", blob);
           canvas.width = canvas.height = 0;
@@ -2171,7 +2175,7 @@
           setProg();
           await sleep(0);
         }
-        thumbs.push(thumb);
+
       }
 
       label.textContent = "Membuat ZIP...";
@@ -2189,7 +2193,7 @@
       bulkItems.forEach((p, i) => {
         items = items.filter(it => !(it.nomor === p.nomor && it.bulan === p.bulan && it.tahun === p.tahun));
         items.unshift({
-          id: Date.now().toString(36) + "-" + i, image: thumbs[i] || null,
+          id: Date.now().toString(36) + "-" + i,
           nomor: p.nomor, bulan: p.bulan, tahun: p.tahun,
           warna: p.warna, warnaTeks: p.warnaTeks, warnaName: p.warnaName
         });
