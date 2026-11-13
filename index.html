@@ -244,113 +244,120 @@
 
     <!-- KOLOM KIRI -->
     <div>
-      <section class="card">
-        <h2 class="card-title">1 · Import Gambar</h2>
-        <div class="field" style="margin-bottom:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label for="viewSelect">Pilih Sudut Pandang Mobil</label>
-            <label style="font-size:11px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;">
-              <input type="checkbox" id="hidePlateChk" style="width:auto; margin:0;"> Sembunyikan Plat
-            </label>
-          </div>
-          <select id="viewSelect" style="font-weight:bold; color:var(--accent);">
-            <option value="depan">🚗 Tampak Depan</option>
-            <option value="kiri">⬅️ Tampak Samping Kiri</option>
-            <option value="kanan">➡️ Tampak Samping Kanan</option>
-            <option value="belakang">🚙 Tampak Belakang</option>
-          </select>
-        </div>
-        <label class="drop" id="drop">
-          <input type="file" accept="image/*" id="fileInput" hidden>
-          <div id="dropPlaceholder">
-            <div class="icon">📷</div>
-            <strong>Import Gambar Mobil</strong>
-            <span>Klik atau seret gambar ke sini</span>
-          </div>
-          <div id="imageWrap" class="image-wrap" hidden>
-            <img id="preview" class="preview" alt="Preview">
-            <div class="plate plate-overlay" id="platePreview">
-              <span class="plate-text" id="plateText">B 1234 XYZ</span>
-              <span class="plate-year" id="plateYear">11•24</span>
-            </div>
-          </div>
-          <div class="drag-hint" id="dragHint" hidden>👆 Geser plat untuk menyesuaikan posisi</div>
-        </label>
+      <!-- TOMBOL TOGGLE EDITOR MANUAL -->
+      <button type="button" id="toggleEditorBtn" class="btn-ghost" style="display:none; width:100%; margin-bottom:16px; border-color:var(--accent); color:var(--accent); font-weight:bold;">
+        👁️ Tampilkan Editor Manual
+      </button>
 
-        <div id="plateControls" style="margin-top:16px; display:none; background:var(--card2); padding:14px; border-radius:12px; border:1px solid var(--border);">
-          <div class="field">
-            <label for="scaleSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Plat <span id="scaleVal" style="color:var(--accent);">100%</span></label>
-            <input type="range" id="scaleSlider" min="10" max="200" value="100" style="padding:0;">
+      <div id="manualTools">
+        <section class="card">
+          <h2 class="card-title">1 · Import Gambar</h2>
+          <div class="field" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label for="viewSelect">Pilih Sudut Pandang Mobil</label>
+              <label style="font-size:11px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" id="hidePlateChk" style="width:auto; margin:0;"> Sembunyikan Plat
+              </label>
+            </div>
+            <select id="viewSelect" style="font-weight:bold; color:var(--accent);">
+              <option value="depan">🚗 Tampak Depan</option>
+              <option value="kiri">⬅️ Tampak Samping Kiri</option>
+              <option value="kanan">➡️ Tampak Samping Kanan</option>
+              <option value="belakang">🚙 Tampak Belakang</option>
+            </select>
           </div>
-          <div class="field">
-            <label for="rotateSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Kemiringan <span id="rotateVal" style="color:var(--accent);">0°</span></label>
-            <input type="range" id="rotateSlider" min="-45" max="45" value="0" style="padding:0;">
-          </div>
-          <div class="field">
-            <label for="noiseSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Efek Noise (Biar real) <span id="noiseVal" style="color:var(--accent);">15%</span></label>
-            <input type="range" id="noiseSlider" min="0" max="100" value="15" style="padding:0;">
-          </div>
-          <div class="field">
-            <label for="blurSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Blur (Penyatu) <span id="blurVal" style="color:var(--accent);">0px</span></label>
-            <input type="range" id="blurSlider" min="0" max="4" step="0.2" value="0" style="padding:0;">
-          </div>
-          <div class="field">
-            <label for="nopolSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Nopol <span id="nopolSizeVal" style="color:var(--accent);">38px</span></label>
-            <input type="range" id="nopolSizeSlider" min="8" max="70" value="38" style="padding:0;">
-          </div>
-          <div class="field">
-            <label for="tahunSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Tahun <span id="tahunSizeVal" style="color:var(--accent);">16px</span></label>
-            <input type="range" id="tahunSizeSlider" min="4" max="30" value="16" style="padding:0;">
-          </div>
-          <div class="field">
-            <label for="tinggiSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Tinggi Teks <span id="tinggiVal" style="color:var(--accent);">100%</span></label>
-            <input type="range" id="tinggiSlider" min="50" max="150" value="100" style="padding:0;">
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label for="thicknessSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ketebalan Teks <span id="thicknessVal" style="color:var(--accent);">1.5px</span></label>
-            <input type="range" id="thicknessSlider" min="0" max="4" step="0.5" value="1.5" style="padding:0;">
-          </div>
-        </div>
+          <label class="drop" id="drop">
+            <input type="file" accept="image/*" id="fileInput" hidden>
+            <div id="dropPlaceholder">
+              <div class="icon">📷</div>
+              <strong>Import Gambar Mobil</strong>
+              <span>Klik atau seret gambar ke sini</span>
+            </div>
+            <div id="imageWrap" class="image-wrap" hidden>
+              <img id="preview" class="preview" alt="Preview">
+              <div class="plate plate-overlay" id="platePreview">
+                <span class="plate-text" id="plateText">B 1234 XYZ</span>
+                <span class="plate-year" id="plateYear">11•24</span>
+              </div>
+            </div>
+            <div class="drag-hint" id="dragHint" hidden>👆 Geser plat untuk menyesuaikan posisi</div>
+          </label>
 
-        <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
-          <button type="button" id="toggleAiBtn" class="btn-ghost" style="width:100%; font-size:13px; font-weight:bold; color:var(--text); border-color:#3b6fe0;">
-            ⚙️ Pengaturan AI (Otomatis)
-          </button>
-          
-          <div id="aiPanel" style="display:none; background:#15181f; padding:14px; border-radius:10px; margin-top:10px; border:1px solid #2a2f3a;">
+          <div id="plateControls" style="margin-top:16px; display:none; background:var(--card2); padding:14px; border-radius:12px; border:1px solid var(--border);">
             <div class="field">
-              <label>AI Provider</label>
-              <select id="aiProvider">
-                <option value="gemini">Google Gemini</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic (Claude)</option>
-              </select>
+              <label for="scaleSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Plat <span id="scaleVal" style="color:var(--accent);">100%</span></label>
+              <input type="range" id="scaleSlider" min="10" max="200" value="100" style="padding:0;">
             </div>
             <div class="field">
-              <label>AI Model</label>
-              <select id="aiModel">
-                <option value="gemini-3.8-flash">Gemini 3.8 Flash (Rekomendasi)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gpt-4o-mini">GPT-4o Mini</option>
-                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-              </select>
+              <label for="rotateSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Kemiringan <span id="rotateVal" style="color:var(--accent);">0°</span></label>
+              <input type="range" id="rotateSlider" min="-45" max="45" value="0" style="padding:0;">
             </div>
             <div class="field">
-              <label>API Key</label>
-              <input type="password" id="aiApiKey" placeholder="Masukkan API Key...">
+              <label for="noiseSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Efek Noise (Biar real) <span id="noiseVal" style="color:var(--accent);">15%</span></label>
+              <input type="range" id="noiseSlider" min="0" max="100" value="15" style="padding:0;">
             </div>
-            
-            <div style="display:flex; gap:8px; margin-bottom:10px;">
-              <button type="button" id="btnTestAi" class="btn-ghost" style="flex:1; font-size:11px; padding:8px;">Tes Koneksi</button>
-              <div id="aiStatus" style="flex:1; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; border-radius:8px; background:#2a2f3a; color:var(--muted);">Belum Dites</div>
+            <div class="field">
+              <label for="blurSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Blur (Penyatu) <span id="blurVal" style="color:var(--accent);">0px</span></label>
+              <input type="range" id="blurSlider" min="0" max="4" step="0.2" value="0" style="padding:0;">
             </div>
-            
-            <button type="button" id="btnRunAi" class="btn-primary" style="padding:10px; font-size:13px;">
-              ✨ Deteksi Otomatis Sudut Ini
+            <div class="field">
+              <label for="nopolSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Nopol <span id="nopolSizeVal" style="color:var(--accent);">38px</span></label>
+              <input type="range" id="nopolSizeSlider" min="8" max="70" value="38" style="padding:0;">
+            </div>
+            <div class="field">
+              <label for="tahunSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Tahun <span id="tahunSizeVal" style="color:var(--accent);">16px</span></label>
+              <input type="range" id="tahunSizeSlider" min="4" max="30" value="16" style="padding:0;">
+            </div>
+            <div class="field">
+              <label for="tinggiSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Tinggi Teks <span id="tinggiVal" style="color:var(--accent);">100%</span></label>
+              <input type="range" id="tinggiSlider" min="50" max="150" value="100" style="padding:0;">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label for="thicknessSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ketebalan Teks <span id="thicknessVal" style="color:var(--accent);">1.5px</span></label>
+              <input type="range" id="thicknessSlider" min="0" max="4" step="0.5" value="1.5" style="padding:0;">
+            </div>
+          </div>
+
+          <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+            <button type="button" id="toggleAiBtn" class="btn-ghost" style="width:100%; font-size:13px; font-weight:bold; color:var(--text); border-color:#3b6fe0;">
+              ⚙️ Pengaturan AI (Otomatis)
             </button>
+            
+            <div id="aiPanel" style="display:none; background:#15181f; padding:14px; border-radius:10px; margin-top:10px; border:1px solid #2a2f3a;">
+              <div class="field">
+                <label>AI Provider</label>
+                <select id="aiProvider">
+                  <option value="gemini">Google Gemini</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic (Claude)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>AI Model</label>
+                <select id="aiModel">
+                  <option value="gemini-3.8-flash">Gemini 3.8 Flash (Rekomendasi)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>API Key</label>
+                <input type="password" id="aiApiKey" placeholder="Masukkan API Key...">
+              </div>
+              
+              <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <button type="button" id="btnTestAi" class="btn-ghost" style="flex:1; font-size:11px; padding:8px;">Tes Koneksi</button>
+                <div id="aiStatus" style="flex:1; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; border-radius:8px; background:#2a2f3a; color:var(--muted);">Belum Dites</div>
+              </div>
+              
+              <button type="button" id="btnRunAi" class="btn-primary" style="padding:10px; font-size:13px;">
+                ✨ Deteksi Otomatis Sudut Ini
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section class="card" id="templateCard">
         <h2 class="card-title" style="display:flex; justify-content:space-between;">
@@ -395,7 +402,7 @@
         </div>
 
         <div id="setupActions">
-          <button class="btn-primary" id="lockTemplateBtn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔒 Kunci Template & Lanjut Bulk</button>
+          <button class="btn-primary" id="lockTemplateBtn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔒 Kunci Template & Masuk Bulk</button>
         </div>
         <div id="bulkActions" style="display:none; gap:10px;">
           <button class="btn-ghost" id="btnPreviewBulk" style="flex:1; border-color:var(--accent); color:var(--accent); font-weight:bold;">👁️ Preview</button>
@@ -417,7 +424,7 @@
           <div style="font-size:11px; color:var(--muted); margin-top:5px;">Template Mobil Aktif</div>
         </div>
 
-        <button id="unlockTemplateBtn" class="btn-ghost" style="width:100%; margin-bottom:10px; display:none;">🔓 Buka Kunci / Ganti Mobil</button>
+        <button id="unlockTemplateBtn" class="btn-ghost" style="width:100%; margin-bottom:10px; display:none; color:var(--danger); border-color:var(--danger);">🔓 Hapus Template & Ganti Mobil</button>
 
         <div class="list" id="bulkList"></div>
       </section>
@@ -477,6 +484,8 @@
   const btnTestAi       = $("btnTestAi");
   const btnRunAi        = $("btnRunAi");
   const aiStatus        = $("aiStatus");
+  const manualTools     = $("manualTools");
+  const toggleEditorBtn = $("toggleEditorBtn");
 
   let currentView = "depan";
   let viewData = {
@@ -548,16 +557,17 @@
     templateStatus.textContent = "Template Terkunci 🔒";
     templateStatus.style.color = "#22c55e";
     templateStatus.style.background = "rgba(34,197,94,0.1)";
+    
     $("setupActions").style.display = "none";
     $("bulkActions").style.display = "flex";
     bulkListCard.style.display = "block";
     $("savedListCard").style.display = "none";
-    $("viewSelect").parentElement.style.display = "none";
-    $("drop").style.display = "none";
-    $("plateControls").style.display = "none";
-    $("aiPanel").style.display = "none";
-    $("toggleAiBtn").style.display = "none";
     $("unlockTemplateBtn").style.display = "block";
+    
+    // Sembunyikan Editor Manual
+    manualTools.style.display = "none";
+    toggleEditorBtn.style.display = "block";
+    toggleEditorBtn.textContent = "👁️ Tampilkan Editor Manual";
     
     const thumbImg = $("templateThumb");
     if (templateData.depan?.img) thumbImg.src = templateData.depan.img;
@@ -586,12 +596,29 @@
     
     templateData = JSON.parse(JSON.stringify(viewData));
     localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templateData));
+
+    // AUTO ADD TO BULK JIKA ADA TEKS DI FORM
+    if (nomorEl.value.trim()) {
+      const nomor = nomorEl.value.trim();
+      const bulan = bulanEl.value.trim();
+      const tahun = tahunEl.value.trim();
+      const warna = warnaEl.value;
+      const warnaTeks = warnaTeksEl.value;
+      const warnaName = warnaPreset.selectedIndex >= 0 ? warnaPreset.options[warnaPreset.selectedIndex].textContent : "Kustom";
+
+      bulkItems.push({ nomor, bulan, tahun, warna, warnaTeks, warnaName });
+      saveBulkData();
+      
+      nomorEl.value = "";
+      nomorEl.focus();
+    }
+    
     applyTemplateMode();
-    showToast("Template dikunci! Mode Bulk Aktif.", false);
+    showToast("Template dikunci & Nopol masuk ke Bulk!", false);
   });
 
   $("unlockTemplateBtn").addEventListener("click", () => {
-    if (!confirm("Buka kunci template? Data bulk akan dihapus.")) return;
+    if (!confirm("Hapus template dan kembali ke mode manual? Data bulk akan dihapus.")) return;
     templateData = null;
     bulkItems = [];
     localStorage.removeItem(TEMPLATE_STORAGE_KEY);
@@ -605,15 +632,24 @@
     $("bulkActions").style.display = "none";
     bulkListCard.style.display = "none";
     $("savedListCard").style.display = "block";
-    $("viewSelect").parentElement.style.display = "block";
-    $("drop").style.display = "block";
-    $("aiPanel").style.display = "none";
-    $("toggleAiBtn").style.display = "block";
-    if (!imageWrap.hidden) $("plateControls").style.display = "block";
     $("unlockTemplateBtn").style.display = "none";
     
+    manualTools.style.display = "block";
+    toggleEditorBtn.style.display = "none";
+    if (!imageWrap.hidden) $("plateControls").style.display = "block";
+    
     renderBulk();
-    showToast("Kembali ke Mode Setup");
+    showToast("Kembali ke Mode Setup Manual");
+  });
+
+  toggleEditorBtn.addEventListener("click", () => {
+    if (manualTools.style.display === "none") {
+      manualTools.style.display = "block";
+      toggleEditorBtn.textContent = "🙈 Sembunyikan Editor Manual";
+    } else {
+      manualTools.style.display = "none";
+      toggleEditorBtn.textContent = "👁️ Tampilkan Editor Manual";
+    }
   });
 
   function renderBulk() {
@@ -644,14 +680,6 @@
     saveBulkData();
     renderBulk();
     showToast("Item bulk dihapus");
-  });
-
-  $("clearBulkBtn")?.addEventListener("click", () => {
-    if(confirm("Hapus semua antrean bulk?")) {
-      bulkItems = [];
-      saveBulkData();
-      renderBulk();
-    }
   });
 
   /* ---------- Storage ---------- */
@@ -814,7 +842,6 @@
 
         platePreview.style.left = "50%";
         platePreview.style.top = "80%";
-        plateYear.textContent = "11•24";
         
         scaleSlider.value = 100;
         rotateSlider.value = 0;
@@ -839,6 +866,7 @@
         tahunSizeVal.textContent = "16px";
         
         plateControls.style.display = "block";
+        updatePreview();
         showToast("Silakan atur plat secara manual ✓", false);
       };
       img.onerror = () => showToast("Gambar tidak bisa dibaca", true);
@@ -1225,7 +1253,7 @@
            const plateWidthPx = (width / 100) * imgWidth;
            
            let newScale = Math.round((plateWidthPx / 230) * 100);
-           newScale = Math.max(10, Math.min(200, newScale));
+           newScale = Math.max(30, Math.min(200, newScale));
            
            scaleSlider.value = newScale;
            scaleVal.textContent = newScale + "%";
@@ -1257,19 +1285,25 @@
         
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
+        if (state.hidden) {
+          resolve();
+          return;
+        }
+        
         const pX = (parseFloat(state.left || 50) / 100) * canvas.width;
         const pY = (parseFloat(state.top || 80) / 100) * canvas.height;
         const pScale = (state.scale || 100) / 100;
         const pRot = ((state.rotate || 0) * Math.PI) / 180;
         
+        // Ukuran plat proporsional (35% dari lebar gambar asli saat scale 100%)
+        const pW = (canvas.width * 0.35) * pScale;
+        const pH = pW * (75 / 230);
+        
         ctx.save();
         ctx.translate(pX, pY);
         ctx.rotate(pRot);
-        ctx.scale(pScale, pScale);
         
-        const pW = 230;
-        const pH = 75;
-        
+        // Background
         ctx.fillStyle = plate.warna;
         ctx.beginPath();
         if(ctx.roundRect) {
@@ -1279,11 +1313,13 @@
         }
         ctx.fill();
         
-        ctx.lineWidth = 4;
+        // Outer Border
+        ctx.lineWidth = Math.max(1, 4 * (pW / 230));
         ctx.strokeStyle = isDark(plate.warna) ? "#333333" : "#111111";
         ctx.stroke();
         
-        ctx.lineWidth = 2;
+        // Inner Border
+        ctx.lineWidth = Math.max(1, 2 * (pW / 230));
         ctx.strokeStyle = isDark(plate.warna) ? "rgba(255,255,255,0.2)" : "#ffffff";
         ctx.beginPath();
         if(ctx.roundRect) {
@@ -1293,31 +1329,39 @@
         }
         ctx.stroke();
         
+        // Text
         ctx.fillStyle = plate.warnaTeks || (isDark(plate.warna) ? "#ffffff" : "#000000");
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         
         const nopolScaleY = (state.tinggi || 100) / 100;
+        const yearScaleY = (state.tinggi || 100) / 100;
+        
+        // Skala font proporsional dengan lebar plat
+        const fontNopolSize = (pW * (state.nopolSize || 38)) / 230;
+        const fontYearSize = (pW * (state.tahunSize || 16)) / 230;
+        
+        // Nopol Text
         ctx.save();
-        ctx.translate(0, -pH/2 + 28);
+        ctx.translate(0, -pH/2 + pH * 0.35);
         ctx.scale(1, nopolScaleY);
-        ctx.font = `900 ${state.nopolSize || 38}px 'FE-Schrift', Arial, sans-serif`;
+        ctx.font = `900 ${fontNopolSize}px 'FE-Schrift', Arial, sans-serif`;
         if (state.thickness > 0) {
-          ctx.lineWidth = state.thickness;
+          ctx.lineWidth = Math.max(1, state.thickness * (pW / 230));
           ctx.strokeStyle = ctx.fillStyle;
           ctx.strokeText(plate.nomor, 0, 0);
         }
         ctx.fillText(plate.nomor, 0, 0);
         ctx.restore();
         
-        const yearScaleY = (state.tinggi || 100) / 100;
+        // Year Text
         ctx.save();
-        ctx.translate(0, pH/2 - 15);
+        ctx.translate(0, pH/2 - pH * 0.25);
         ctx.scale(1, yearScaleY);
-        ctx.font = `900 ${state.tahunSize || 16}px 'FE-Schrift', Arial, sans-serif`;
+        ctx.font = `900 ${fontYearSize}px 'FE-Schrift', Arial, sans-serif`;
         const yearStr = plate.bulan + "•" + plate.tahun;
         if (state.thickness > 0) {
-          ctx.lineWidth = state.thickness * 0.6;
+          ctx.lineWidth = Math.max(0.5, state.thickness * 0.6 * (pW / 230));
           ctx.strokeStyle = ctx.fillStyle;
           ctx.strokeText(yearStr, 0, 0);
         }
@@ -1350,7 +1394,7 @@
     
     for (let v of views) {
       const state = templateData[v];
-      if (!state || !state.img || state.hidden) continue;
+      if (!state || !state.img) continue;
       
       const div = document.createElement("div");
       div.innerHTML = `<div style="font-size:12px; color:var(--muted); margin-bottom:4px; text-transform:capitalize;">${v}</div>`;
@@ -1385,7 +1429,7 @@
         const views = ["depan", "kiri", "kanan", "belakang"];
         for (let v of views) {
           const state = templateData[v];
-          if (!state || !state.img || state.hidden) continue;
+          if (!state || !state.img) continue;
           
           const canvas = document.createElement("canvas");
           await renderPlateToCanvas(state.img, state, plate, canvas);
