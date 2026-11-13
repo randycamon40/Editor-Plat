@@ -1078,7 +1078,12 @@
     if (on === false) return size;
     mctx.font = size + "px " + family;
     let gw = 0, sp = 0;
-    for (const c of Array.from(str)) { gw += mctx.measureText(c).width; sp += ls + (c === " " ? ws : 0); }
+    const chars = Array.from(str);
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      gw += mctx.measureText(c).width;
+      if (i < chars.length - 1) sp += ls + (c === " " ? ws : 0);
+    }
     const maxW = PLATE_W - 8 - FIT_PAD * 2;
     if (gw <= 0 || gw + sp <= maxW) return size;
     return Math.max(4, Math.round(size * (maxW - sp) / gw * 10) / 10);
@@ -2177,7 +2182,7 @@
     ctx.lineJoin = "round";
     ctx.lineWidth = strokeW;
     const chars = Array.from(str);
-    const adv = chars.map(c => ctx.measureText(c).width + ls + (c === " " ? ws : 0));
+    const adv = chars.map((c, i) => ctx.measureText(c).width + (i < chars.length - 1 ? ls : 0) + (c === " " ? ws : 0));
     let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
     chars.forEach((c, i) => {
       if (strokeW > 0) ctx.strokeText(c, x, 0);
