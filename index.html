@@ -238,6 +238,15 @@
     <div>
       <section class="card">
         <h2 class="card-title">1 · Import Gambar</h2>
+        <div class="field" style="margin-bottom:12px;">
+          <label for="viewSelect">Pilih Sudut Pandang Mobil</label>
+          <select id="viewSelect" style="font-weight:bold; color:var(--accent);">
+            <option value="depan">🚗 Tampak Depan</option>
+            <option value="kiri">⬅️ Tampak Samping Kiri</option>
+            <option value="kanan">➡️ Tampak Samping Kanan</option>
+            <option value="belakang">🚙 Tampak Belakang</option>
+          </select>
+        </div>
         <label class="drop" id="drop">
           <input type="file" accept="image/*" id="fileInput" hidden>
           <div id="dropPlaceholder">
@@ -361,6 +370,15 @@
   const STORAGE_KEY = "platNomorData";
 
   const fileInput       = $("fileInput");
+  const viewSelect      = $("viewSelect");
+
+  let currentView = "depan";
+  let viewData = {
+    depan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+    kiri: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+    kanan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+    belakang: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 }
+  };
   const drop            = $("drop");
   const previewImg      = $("preview");
   const dropPlaceholder = $("dropPlaceholder");
@@ -427,6 +445,83 @@
     toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
   }
 
+  /* ---------- State Management (Simpan/Load per Sudut) ---------- */
+  function saveCurrentViewState() {
+    if (imageWrap.hidden) return; // Jangan simpan kalau belum ada gambar
+    
+    viewData[currentView] = {
+      img: viewData[currentView].img,
+      left: platePreview.style.left || "50%",
+      top: platePreview.style.top || "80%",
+      scale: parseInt(scaleSlider.value),
+      rotate: parseInt(rotateSlider.value),
+      noise: parseInt(noiseSlider.value),
+      blur: parseFloat(blurSlider.value),
+      nopolSize: parseInt(nopolSizeSlider.value),
+      tahunSize: parseInt(tahunSizeSlider.value),
+      tinggi: parseInt(tinggiSlider.value),
+      thickness: parseFloat(thicknessSlider.value)
+    };
+  }
+
+  function loadViewState(view) {
+    const state = viewData[view];
+    currentImage = state.img;
+
+    if (state.img) {
+      previewImg.src = state.img;
+      imageWrap.hidden = false;
+      dragHint.hidden = false;
+      dropPlaceholder.hidden = true;
+      plateControls.style.display = "block";
+
+      platePreview.style.left = state.left;
+      platePreview.style.top = state.top;
+      
+      scaleSlider.value = state.scale;
+      rotateSlider.value = state.rotate;
+      noiseSlider.value = state.noise;
+      blurSlider.value = state.blur;
+      nopolSizeSlider.value = state.nopolSize;
+      tahunSizeSlider.value = state.tahunSize;
+      tinggiSlider.value = state.tinggi;
+      thicknessSlider.value = state.thickness;
+      
+      scaleVal.textContent = state.scale + "%";
+      rotateVal.textContent = state.rotate + "°";
+      noiseVal.textContent = state.noise + "%";
+      blurVal.textContent = state.blur + "px";
+      nopolSizeVal.textContent = state.nopolSize + "px";
+      tahunSizeVal.textContent = state.tahunSize + "px";
+      tinggiVal.textContent = state.tinggi + "%";
+      thicknessVal.textContent = state.thickness + "px";
+
+      updatePlateTransform();
+      platePreview.style.setProperty('--noise-opacity', state.noise / 100);
+      platePreview.style.setProperty('--plate-blur', state.blur + "px");
+      
+      plateText.style.fontSize = state.nopolSize + "px";
+      plateYear.style.fontSize = state.tahunSize + "px";
+      plateText.style.transform = `scaleY(${state.tinggi / 100})`;
+      plateYear.style.transform = `scaleY(${state.tinggi / 100})`;
+      
+      updatePreview();
+    } else {
+      // Kosongkan jika belum ada gambar
+      previewImg.removeAttribute("src");
+      imageWrap.hidden = true;
+      dragHint.hidden = true;
+      dropPlaceholder.hidden = false;
+      plateControls.style.display = "none";
+    }
+  }
+
+  viewSelect.addEventListener("change", () => {
+    saveCurrentViewState();
+    currentView = viewSelect.value;
+    loadViewState(currentView);
+  });
+
   /* ---------- Gambar ---------- */
   function processFile(file) {
     if (!file) return;
@@ -452,6 +547,7 @@
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
 
         currentImage = canvas.toDataURL("image/jpeg", 0.82);
+        viewData[currentView].img = currentImage;
 
         previewImg.src = currentImage;
         imageWrap.hidden = false;
@@ -633,9 +729,15 @@
     const warnaTeks = warnaTeksEl.value;
     const warnaName = warnaPreset.selectedIndex >= 0 ? warnaPreset.options[warnaPreset.selectedIndex].textContent : "Kustom";
 
+    saveCurrentViewState(); // Pastikan perubahan terakhir tersimpan
+    
+    // Ambil gambar depan sebagai thumbnail list, jika kosong cari yang lain
+    let thumbImage = viewData.depan.img || viewData.kiri.img || viewData.kanan.img || viewData.belakang.img;
+
     items.unshift({
       id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-      image: currentImage,
+      image: thumbImage,
+      views: JSON.parse(JSON.stringify(viewData)), // Simpan semua gambar & pengaturannya
       nomor: nomor,
       bulan: bulan,
       tahun: tahun,
@@ -655,6 +757,16 @@
   }
 
   function resetForm() {
+    // Reset semua state gambar
+    viewData = {
+      depan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+      kiri: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+      kanan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 },
+      belakang: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5 }
+    };
+    currentView = "depan";
+    viewSelect.value = "depan";
+
     nomorEl.value = "";
     bulanEl.value = "";
     tahunEl.value = "";
