@@ -265,6 +265,8 @@
     font-family:var(--plate-font);font-size:38px;letter-spacing:1px;word-spacing:12px;
     white-space:nowrap;margin-bottom:0;font-weight:normal;z-index:2;
   }
+  .plate-text.just{display:flex;justify-content:space-between;width:206px;word-spacing:0}
+  .plate-text .np{display:inline-block;margin-right:-1px}
   .plate-year{
     position:relative;display:inline-block;transform-origin:center center;
     font-family:'FE-Schrift',Arial,Helvetica,sans-serif;font-size:16px;font-weight:normal;letter-spacing:2px;
@@ -776,8 +778,8 @@
       <h2>Tempel banyak nopol</h2>
       <button id="closePasteBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
-    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:12px">Satu nopol per baris. Bulan dan tahun boleh ditulis setelah koma, contoh <b>B 1234 XYZ, 11, 26</b>. Jika kosong, dipakai bulan, tahun, dan warna dari form.</p>
-    <textarea id="pasteArea" class="txt" placeholder="B 1234 XYZ&#10;D 5678 ABC, 03, 27&#10;AB 9 CD" spellcheck="false" autocapitalize="characters"></textarea>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:12px">Satu nopol per baris. Bulan, tahun, dan warna plat boleh ditulis setelah koma, contoh <b>B 1 YZ, 10, 31, hitam</b>. Warna: putih, hitam, kuning, merah, hijau, biru, atau kode hex. Jika dikosongkan, dipakai bulan, tahun, dan warna dari form. Plat gelap otomatis memakai teks putih.</p>
+    <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG&#10;B 1 YZ, 10, 31, hitam&#10;D 5678 ABC, 03, 27, kuning" spellcheck="false" autocapitalize="characters"></textarea>
     <div class="count-line" id="pasteCount">0 nopol terdeteksi</div>
     <button class="btn btn-primary btn-block" id="pasteAddBtn"><svg class="i"><use href="#i-plus"/></svg>Tambahkan ke antrean</button>
   </div>
@@ -839,9 +841,10 @@
   const STYLE_KEYS = ["scale", "rotate", "noise", "blur"];                       // per sudut
   const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "thickness", "autofit"]; // berlaku semua sudut
   const ALL_SLIDER_KEYS = ["scale", "rotate", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "thickness"];
-  const FIT_PAD = 10;                                                             // jarak aman kiri/kanan di dalam plat
+  const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
+  const MIN_GAP = 10;                                                             // jarak minimum antar kelompok nopol
 
   const AI_MODELS = {
     gemini:    [["gemini-3.8-flash", "Gemini 3.8 Flash (Rekomendasi)"], ["gemini-2.5-flash", "Gemini 2.5 Flash"]],
@@ -969,9 +972,46 @@
     if (gw <= 0 || gw + sp <= maxW) return size;
     return Math.max(4, Math.round(size * (maxW - sp) / gw * 10) / 10);
   }
+  // Pecah nopol jadi kelompok: awalan (kiri), angka (tengah), akhiran (kanan)
+  function nomorParts(nomor) {
+    const t = String(nomor).trim().split(/\s+/).filter(Boolean);
+    if (t.length <= 2) return t;
+    return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
+  }
+  function partW(str, size) {
+    mctx.font = size + "px " + FONT_N;
+    const ch = Array.from(str);
+    return ch.reduce((a, c) => a + mctx.measureText(c).width, 0) + NOPOL_LS * Math.max(0, ch.length - 1);
+  }
+  function fitNomor(nomor, size, on) {
+    if (on === false) return size;
+    const parts = nomorParts(nomor);
+    if (parts.length < 2) return calcFit(nomor, size, NOPOL_LS, NOPOL_WS, FONT_N, true);
+    mctx.font = size + "px " + FONT_N;
+    let gw = 0, sp = 0;
+    parts.forEach(pt => {
+      const ch = Array.from(pt);
+      ch.forEach(c => gw += mctx.measureText(c).width);
+      sp += NOPOL_LS * Math.max(0, ch.length - 1);
+    });
+    const maxW = PLATE_W - 8 - FIT_PAD * 2;
+    const gaps = MIN_GAP * (parts.length - 1);
+    if (gw <= 0 || gw + sp + gaps <= maxW) return size;
+    return Math.max(4, Math.round(size * (maxW - sp - gaps) / gw * 10) / 10);
+  }
+  function setNomorDOM(el, nomor, justify) {
+    const parts = nomorParts(nomor);
+    if (justify !== false && parts.length >= 2) {
+      el.classList.add("just");
+      el.innerHTML = parts.map(x => `<span class="np">${esc(x)}</span>`).join("");
+    } else {
+      el.classList.remove("just");
+      el.textContent = nomor;
+    }
+  }
   function fitSizes(st, p) {
     return {
-      n: calcFit(p.nomor, st.nopolSize, NOPOL_LS, NOPOL_WS, FONT_N, st.autofit),
+      n: fitNomor(p.nomor, st.nopolSize, st.autofit),
       y: calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, FONT_Y, st.autofit)
     };
   }
@@ -1040,7 +1080,7 @@
     plEl.style.setProperty("--plate-inner", d ? "rgba(255,255,255,0.2)" : "#ffffff");
     plEl.style.setProperty("--noise-opacity", st.noise / 100);
     plEl.style.setProperty("--plate-blur", st.blur + "px");
-    tEl.textContent = p.nomor;
+    setNomorDOM(tEl, p.nomor, st.autofit);
     yEl.textContent = p.bulan + "•" + p.tahun;
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
@@ -1283,8 +1323,9 @@
     const idx = PRESETS.findIndex(p => p.v === cur);
     warnaPreset.selectedIndex = idx;
   }
-  function setPlateColor(hex, name) {
+  function setPlateColor(hex, name, autoText) {
     warnaEl.value = hex;
+    if (autoText) warnaTeksEl.value = isDark(hex) ? "#ffffff" : "#000000";
     plateColorName = name || nameFor(hex);
     renderSwatches();
     applyPlate();
@@ -1293,12 +1334,12 @@
     const b = e.target.closest(".sw");
     if (!b) return;
     const p = PRESETS.find(x => x.v === b.dataset.color);
-    setPlateColor(b.dataset.color, p ? p.n : "Kustom");
+    setPlateColor(b.dataset.color, p ? p.n : "Kustom", true);
   });
-  warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value)));
+  warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaPreset.addEventListener("change", () => {
     if (warnaPreset.selectedIndex < 0) return;
-    setPlateColor(warnaPreset.value, warnaPreset.options[warnaPreset.selectedIndex].textContent);
+    setPlateColor(warnaPreset.value, warnaPreset.options[warnaPreset.selectedIndex].textContent, true);
   });
   warnaTeksEl.addEventListener("input", applyPlate);
   document.querySelectorAll("[data-tcolor]").forEach(b => b.addEventListener("click", () => {
@@ -1520,17 +1561,32 @@
   }));
 
   /* ---------- Tempel banyak nopol ---------- */
+  function parseColorToken(t) {
+    const k = String(t || "").trim().toLowerCase();
+    const p = PRESETS.find(x => x.n.toLowerCase() === k);
+    if (p) return { hex: p.v, name: p.n };
+    const m = k.match(/^#?([0-9a-f]{6})$/);
+    if (m) return { hex: "#" + m[1], name: nameFor("#" + m[1]) };
+    return null;
+  }
   function parsePaste(text) {
     const base = currentFormItem();
     return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(line => {
-      const parts = line.split(/[,;\t|]+/).map(s => s.trim());
-      const nomor = (parts[0] || "").toUpperCase().slice(0, 15);
-      const okNum = s => /^\d{1,2}$/.test(s || "");
-      return Object.assign({}, base, {
-        nomor,
-        bulan: okNum(parts[1]) ? parts[1] : base.bulan,
-        tahun: okNum(parts[2]) ? parts[2] : base.tahun
+      const parts = line.split(/[,;\t|]+/).map(s => s.trim()).filter((s, i) => i === 0 || s);
+      const it = Object.assign({}, base, { nomor: (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15) });
+      const nums = [];
+      parts.slice(1).forEach(t => {
+        if (/^\d{1,2}$/.test(t)) { nums.push(t); return; }
+        const c = parseColorToken(t);
+        if (c) {
+          it.warna = c.hex;
+          it.warnaName = c.name;
+          it.warnaTeks = isDark(c.hex) ? "#ffffff" : "#000000";   // plat gelap: teks otomatis putih
+        }
       });
+      if (nums[0] !== undefined) it.bulan = nums[0];
+      if (nums[1] !== undefined) it.tahun = nums[1];
+      return it;
     }).filter(it => it.nomor);
   }
   $("pasteBtn").addEventListener("click", () => {
@@ -1803,7 +1859,7 @@
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color) {
+  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0) {
     ctx.save();
     ctx.translate(0, cy);
     ctx.scale(1, sy);
@@ -1816,7 +1872,7 @@
     ctx.lineWidth = strokeW;
     const chars = Array.from(str);
     const adv = chars.map(c => ctx.measureText(c).width + ls + (c === " " ? ws : 0));
-    let x = -adv.reduce((a, b) => a + b, 0) / 2;
+    let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
     chars.forEach((c, i) => {
       if (strokeW > 0) ctx.strokeText(c, x, 0);
       ctx.fillText(c, x, 0);
@@ -1879,8 +1935,20 @@
     const top = -hh + 6 + (63 - H) / 2;
     const sy = (st.tinggi || 100) / 100;
     const th = st.thickness || 0;
-    drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS,
-      FONT_N, txtC);
+    const parts = nomorParts(plate.nomor);
+    if (st.autofit !== false && parts.length >= 2) {
+      // awalan di ujung kiri, akhiran di ujung kanan, angka tepat di tengah-tengah keduanya
+      const half = (PLATE_W - 8 - FIT_PAD * 2) / 2;
+      const w = parts.map(x => partW(x, n));
+      const xs = [-half];
+      const last = parts.length - 1;
+      xs[last] = half - w[last];
+      if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
+      parts.forEach((pt, i) =>
+        drawSpaced(ctx, pt, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i]));
+    } else {
+      drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
+    }
     drawSpaced(ctx, plate.bulan + "•" + plate.tahun, top + n + 2 + y / 2, y, sy, th * 0.3, YEAR_LS, 0,
       FONT_Y, txtC);
 
