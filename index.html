@@ -1058,7 +1058,9 @@
   // Pecah nopol jadi kelompok: awalan (kiri), angka (tengah), akhiran (kanan)
   function nomorParts(nomor) {
     const t = String(nomor).trim().split(/\s+/).filter(Boolean);
-    if (t.length <= 2) return t;
+    if (t.length === 0) return [];
+    if (t.length === 1) return t;
+    if (t.length === 2) return [t[0], t[1], ""];
     return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
   }
   function partW(str, size) {
@@ -1666,7 +1668,7 @@
       const val = parseInt(e.target.value, 10);
       if (!isNaN(val) && val >= 0) {
         bulkStartNumber = val;
-        localStorage.setItem("platBulkStartNum", bulkStartNumber);
+        lsSet("platBulkStartNum", bulkStartNumber);
         const spans = bulkListEl.querySelectorAll(".row-num-span");
         spans.forEach((span, idx) => {
           span.textContent = bulkStartNumber + idx + 1;
@@ -2199,14 +2201,14 @@
     const gapY = 2;
     ctx.font = y + "px " + FONT_Y;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
-    const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * yB.length;
-    const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * yT.length;
-    const dW = ctx.measureText("•").width + YEAR_LS;
+    const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yB.length - 1);
+    const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yT.length - 1);
+    const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
     drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
     yx += bW + gapY;
-    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx);
     yx += dW + gapY;
     drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
 
