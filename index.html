@@ -1219,16 +1219,42 @@
         const base64Data = currentImage.split(',')[1];
         const promptText = "Baca plat nomor pada gambar ini. Kembalikan HANYA format JSON murni tanpa markdown: {\"ymin\": 10, \"xmin\": 20, \"ymax\": 30, \"xmax\": 40}. 'ymin/xmin/ymax/xmax' adalah koordinat kotak plat dalam skala 0-1000. Jika tidak ada plat, isi -1.";
 
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel.value}:generateContent?key=${key}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: "image/jpeg", data: base64Data } }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          })
-        });
+        async function callGemini(modelName, retries = 2) {
+          for (let i = 0; i < retries; i++) {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: "image/jpeg", data: base64Data } }] }],
+                generationConfig: { responseMimeType: "application/json" }
+              })
+            });
+            const data = await res.json();
+            if (!data.error) return data; // Berhasil
+            
+            // Jika error 503 (High Demand), tunggu sebentar lalu coba lagi
+            if (data.error.code === 503 && i < retries - 1) {
+              await new Promise(r => setTimeout(r, 2000 * (i + 1))); 
+              continue;
+            }
+            throw new Error(data.error.message);
+          }
+        }
 
-        const data = await res.json();
+        let data;
+        try {
+          // Coba pakai model yang dipilih
+          data = await callGemini(aiModel.value);
+        } catch (err) {
+          // Jika gagal, fallback ke model cadangan (2.5-flash)
+          if (err.message.includes("high demand") || err.message.includes("503")) {
+             showToast("Server sibuk, beralih ke model cadangan...", false);
+             data = await callGemini("gemini-2.5-flash");
+          } else {
+             throw err;
+          }
+        }
+
         if (data.error) throw new Error(data.error.message);
 
         let resultText = data.candidates[0].content.parts[0].text;
@@ -1295,37 +1321,42 @@
         const pScale = (state.scale || 100) / 100;
         const pRot = ((state.rotate || 0) * Math.PI) / 180;
         
-        // Ukuran plat proporsional (35% dari lebar gambar asli saat scale 100%)
-        const pW = (canvas.width * 0.35) * pScale;
-        const pH = pW * (75 / 230);
+        // Hitung rasio gambar canvas (resolusi penuh) dengan gambar HTML (tampilan layar)
+        const htmlW = previewImg.clientWidth || 400;
+        const ratio = canvas.width / htmlW;
+        
+        // Ukuran dasar plat di HTML adalah 230x75
+        const pW = 230 * ratio;
+        const pH = 75 * ratio;
         
         ctx.save();
         ctx.translate(pX, pY);
         ctx.rotate(pRot);
+        ctx.scale(pScale, pScale); // Skala SEMUA elemen di sini agar proporsional
         
         // Background
         ctx.fillStyle = plate.warna;
         ctx.beginPath();
         if(ctx.roundRect) {
-          ctx.roundRect(-pW/2, -pH/2, pW, pH, 12);
+          ctx.roundRect(-pW/2, -pH/2, pW, pH, 12 * ratio);
         } else {
           ctx.rect(-pW/2, -pH/2, pW, pH);
         }
         ctx.fill();
         
         // Outer Border
-        ctx.lineWidth = Math.max(1, 4 * (pW / 230));
+        ctx.lineWidth = 4 * ratio;
         ctx.strokeStyle = isDark(plate.warna) ? "#333333" : "#111111";
         ctx.stroke();
         
         // Inner Border
-        ctx.lineWidth = Math.max(1, 2 * (pW / 230));
+        ctx.lineWidth = 2 * ratio;
         ctx.strokeStyle = isDark(plate.warna) ? "rgba(255,255,255,0.2)" : "#ffffff";
         ctx.beginPath();
         if(ctx.roundRect) {
-          ctx.roundRect(-pW/2 + 2, -pH/2 + 2, pW - 4, pH - 4, 10);
+          ctx.roundRect(-pW/2 + 2*ratio, -pH/2 + 2*ratio, pW - 4*ratio, pH - 4*ratio, 10 * ratio);
         } else {
-          ctx.rect(-pW/2 + 2, -pH/2 + 2, pW - 4, pH - 4);
+          ctx.rect(-pW/2 + 2*ratio, -pH/2 + 2*ratio, pW - 4*ratio, pH - 4*ratio);
         }
         ctx.stroke();
         
@@ -1337,21 +1368,25 @@
         const nopolScaleY = (state.tinggi || 100) / 100;
         const yearScaleY = (state.tinggi || 100) / 100;
         
-        // Skala font proporsional dengan lebar plat
-        const fontNopolSize = (pW * (state.nopolSize || 38)) / 230;
-        const fontYearSize = (pW * (state.tahunSize || 16)) / 230;
+        // Skala font dasar
+        const fontNopolSize = (state.nopolSize || 38) * ratio;
+        const fontYearSize = (state.tahunSize || 16) * ratio;
         
         // Nopol Text
         ctx.save();
         ctx.translate(0, -pH/2 + pH * 0.35);
         ctx.scale(1, nopolScaleY);
         ctx.font = `900 ${fontNopolSize}px 'FE-Schrift', Arial, sans-serif`;
+        
+        // Spasi tambahan untuk meniru word-spacing CSS
+        const displayNomor = plate.nomor.replace(/ /g, '   ');
+        
         if (state.thickness > 0) {
-          ctx.lineWidth = Math.max(1, state.thickness * (pW / 230));
+          ctx.lineWidth = state.thickness * ratio;
           ctx.strokeStyle = ctx.fillStyle;
-          ctx.strokeText(plate.nomor, 0, 0);
+          ctx.strokeText(displayNomor, 0, 0);
         }
-        ctx.fillText(plate.nomor, 0, 0);
+        ctx.fillText(displayNomor, 0, 0);
         ctx.restore();
         
         // Year Text
@@ -1361,7 +1396,7 @@
         ctx.font = `900 ${fontYearSize}px 'FE-Schrift', Arial, sans-serif`;
         const yearStr = plate.bulan + "•" + plate.tahun;
         if (state.thickness > 0) {
-          ctx.lineWidth = Math.max(0.5, state.thickness * 0.6 * (pW / 230));
+          ctx.lineWidth = (state.thickness * 0.6) * ratio;
           ctx.strokeStyle = ctx.fillStyle;
           ctx.strokeText(yearStr, 0, 0);
         }
