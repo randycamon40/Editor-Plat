@@ -336,6 +336,16 @@
   .item-actions{display:flex;gap:6px;flex-shrink:0}
   .thumb{width:64px;height:48px;object-fit:cover;border-radius:10px;flex-shrink:0;background:var(--road);border:1px solid var(--line)}
   .thumb-ph{display:grid;place-items:center;color:var(--road-ink)}
+  .plate-mini-wrap {
+    width: 115px;
+    height: 38px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .plate-mini {
+    transform: scale(0.5);
+    transform-origin: top left;
+  }
   .plate-chip{
     display:inline-block;padding:3px 11px 2px;border-radius:8px;font-family:var(--plate-font);
     font-size:19px;letter-spacing:1.5px;border:2.5px solid #111;max-width:100%;
@@ -1146,6 +1156,7 @@
           else viewData[currentView][s.key] = v;
           paintSlider(s.key);
           applyPlate();
+          paintMiniPlates(bulkListEl);
         });
       });
       host.appendChild(wrap);
@@ -1180,6 +1191,7 @@
   $("autofitChk").addEventListener("change", () => {
     setTextSetting("autofit", $("autofitChk").checked);
     applyPlate();
+    paintMiniPlates(bulkListEl);
   });
 
   $("applyAllBtn").addEventListener("click", () => {
@@ -1489,11 +1501,40 @@
   });
 
   /* ================= Bulk ================= */
-  function chipHtml(it) {
+  function chipHtml(it, mini) {
+    if (mini) {
+      return `
+        <div class="plate-mini-wrap">
+          <div class="plate plate-mini" 
+               data-nomor="${esc(it.nomor)}" 
+               data-bulan="${esc(it.bulan || '')}" 
+               data-tahun="${esc(it.tahun || '')}" 
+               data-warna="${esc(it.warna)}" 
+               data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}">
+            <span class="plate-text"></span>
+            <span class="plate-year"></span>
+          </div>
+        </div>`;
+    }
     const dark = isDark(it.warna);
     // Paksa warna teks dan border selalu menyesuaikan background plat
     const textColor = dark ? "#ffffff" : "#111111";
     return `<span class="plate-chip" style="background:${esc(it.warna)};color:${textColor};border-color:${textColor}">${esc(it.nomor)}</span>`;
+  }
+
+  function paintMiniPlates(container) {
+    if (!container) return;
+    const st = viewData[currentView];
+    container.querySelectorAll('.plate-mini').forEach((el) => {
+      const p = {
+        nomor: el.dataset.nomor,
+        bulan: el.dataset.bulan,
+        tahun: el.dataset.tahun,
+        warna: el.dataset.warna,
+        warnaTeks: el.dataset.warnateks
+      };
+      stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
+    });
   }
 
   function renderBulk() {
@@ -1508,9 +1549,9 @@
     }
     bulkListEl.innerHTML = bulkItems.map((it, i) => `
       <div class="item${i === editIndex ? " editing" : ""}">
+        ${chipHtml(it, true)}
         <div class="item-body">
-          ${chipHtml(it)}
-          <div class="meta"><span class="tag">${esc(it.bulan || "-")}•${esc(it.tahun || "-")}</span><span class="tag">Plat ${esc(it.warnaName || "Kustom")}</span></div>
+          <div class="meta" style="margin-top:0"><span class="tag">${esc(it.bulan || "-")}•${esc(it.tahun || "-")}</span><span class="tag">Plat ${esc(it.warnaName || "Kustom")}</span></div>
         </div>
         <div class="item-actions">
           <button class="icon-btn" data-act="preview" data-index="${i}" title="Preview" aria-label="Preview ${esc(it.nomor)}">${ico("eye")}</button>
@@ -1518,6 +1559,7 @@
           <button class="icon-btn danger del" data-act="del" data-index="${i}" title="Hapus" aria-label="Hapus ${esc(it.nomor)}">${ico("x")}</button>
         </div>
       </div>`).join("");
+    paintMiniPlates(bulkListEl);
   }
 
   bulkListEl.addEventListener("click", e => {
@@ -1672,7 +1714,7 @@
         <div class="item">
           ${thumb}
           <div class="item-body">
-            ${chipHtml(it)}
+            ${chipHtml(it, false)}
             <div class="meta"><span class="tag">${esc(it.bulan || "-")}•${esc(it.tahun || "-")}</span><span class="tag">${esc(it.warnaName || "Kustom")}</span></div>
           </div>
           <div class="item-actions">
