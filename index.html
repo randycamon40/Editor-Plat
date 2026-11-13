@@ -82,7 +82,7 @@
     background:var(--paper);
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
-    padding-bottom:calc(var(--nav-h) + 40px + env(safe-area-inset-bottom));
+    padding-bottom:calc(var(--nav-h) + 58px + env(safe-area-inset-bottom));
   }
   h1,h2,h3,p{margin:0}
   button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -99,7 +99,8 @@
     padding-top:env(safe-area-inset-top);
   }
   .appbar-in{max-width:1320px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+  .brand-txt{min-width:0}
   .brand-mark{
     width:44px;height:30px;border-radius:7px;background:var(--signal);color:#111;
     border:2.5px solid #111;box-shadow:inset 0 0 0 1.5px #fff6cf;
@@ -108,8 +109,9 @@
   .brand-txt h1{font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1.1}
   .brand-txt p{font-size:12.5px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chip{
-    display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
-    background:var(--card-2);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap;
+    display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    background:var(--card-2);border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--ink-2);
+    white-space:nowrap;flex-shrink:0;letter-spacing:0.2px;
   }
   .chip i{width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px rgba(255,198,26,.25)}
   .chip.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
@@ -436,7 +438,7 @@
 
   /* ============ Bottom nav ============ */
   .bottom-nav{
-    position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;
+    position:fixed;left:12px;right:12px;bottom:calc(28px + env(safe-area-inset-bottom));z-index:40;
     max-width:520px;margin:0 auto;height:var(--nav-h);padding:6px;border-radius:22px;
     background:var(--road);border:1px solid rgba(255,255,255,.08);
     display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
@@ -453,7 +455,7 @@
 
   /* ============ Toast ============ */
   .toast{
-    position:fixed;left:50%;bottom:calc(var(--nav-h) + 28px + env(safe-area-inset-bottom));transform:translate(-50%,24px);
+    position:fixed;left:50%;bottom:calc(var(--nav-h) + 46px + env(safe-area-inset-bottom));transform:translate(-50%,24px);
     background:var(--road);color:var(--road-ink);padding:12px 18px;border-radius:14px;
     font-size:14px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:120;
     box-shadow:0 14px 30px rgba(0,0,0,.35);max-width:90vw;text-align:center;border:1px solid rgba(255,255,255,.1);
@@ -488,6 +490,13 @@
   .loading{grid-column:1 / -1;text-align:center;color:var(--ink-2);padding:24px;font-weight:600}
   @media (max-width:600px){#previewContainer{grid-template-columns:1fr}}
   .count-line{font-size:13px;font-weight:600;color:var(--ink-2);margin:8px 0 14px}
+  .footer-credits{
+    position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom));z-index:40;
+    text-align:center;font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.02em;pointer-events:none;
+  }
+  @media (min-width:980px){
+    .footer-credits{position:static;padding:24px 16px 16px;font-size:12.5px}
+  }
 
   @media (prefers-reduced-motion:reduce){
     *{animation:none !important;transition:none !important}
@@ -528,10 +537,14 @@
 <header class="appbar">
   <div class="appbar-in">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">B</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+          <use href="#i-plate"/>
+        </svg>
+      </span>
       <div class="brand-txt">
         <h1>Plat Nomor</h1>
-        <p>Pasang plat ke foto mobil, ekspor massal</p>
+        <p>Editor plat Nomor & Bulk</p>
       </div>
     </div>
     <span class="chip" id="templateChip"><i></i><b>Belum terkunci</b></span>
@@ -829,6 +842,8 @@
   </div>
 </main>
 
+<div class="footer-credits">bulk v5 ravi.project - CreativeTech @2026</div>
+
 <!-- ============ Bottom nav (mobile) ============ -->
 <nav class="bottom-nav" id="bottomNav" aria-label="Navigasi utama">
   <button type="button" class="nav-btn on" data-tab="studio"><svg class="i"><use href="#i-image"/></svg>Gambar</button>
@@ -906,7 +921,8 @@
       { key: "skewX", label: "Ketegakan Samping (Miring X)", min: -60, max: 60, step: 1, unit: "°" },
       { key: "skewY", label: "Ketegakan Bawah (Miring Y)", min: -60, max: 60, step: 1, unit: "°" }
     ]},
-    { title: "Realisme", items: [
+    { title: "Bentuk & Realisme", items: [
+      { key: "radius", label: "Ujung Plat (Rounded)", min: 0, max: 40, step: 1, unit: "px" },
       { key: "noise", label: "Efek Noise (Biar real)", min: 0, max: 100, step: 1, unit: "%" },
       { key: "blur", label: "Blur (Penyatu)", min: 0, max: 4, step: 0.2, unit: "px" }
     ]},
@@ -920,9 +936,9 @@
       { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
     ]}
   ];
-  const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur"];     // per sudut
+  const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius"];     // per sudut
   const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit"]; // berlaku semua sudut
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
   const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -1034,7 +1050,7 @@
 
   /* ================= State ================= */
   function defaultState() {
-    return { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 15, blur: 0,
+    return { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 15, blur: 0, radius: 8,
              nopolSize: 33, tahunSize: 16, tinggi: 110, tahunTinggi: 90, thickness: 0, autofit: true, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
@@ -1169,6 +1185,7 @@
   }
   function stylePlate(plEl, tEl, yEl, st, p) {
     const d = isDark(p.warna);
+    plEl.style.borderRadius = (st.radius !== undefined ? st.radius : 8) + "px";
     plEl.style.setProperty("--plate-bg", p.warna);
     plEl.style.setProperty("--plate-color", p.warnaTeks);
     plEl.style.setProperty("--plate-border", p.warnaTeks); // Border luar mengikuti warna teks
@@ -2147,18 +2164,19 @@
     ctx.shadowColor = "rgba(0,0,0,0.6)";
     ctx.shadowBlur = 12 * k;
     ctx.shadowOffsetY = 4 * k;
-    rr(ctx, -hw, -hh, PLATE_W, PLATE_H, 8);
+    const r = st.radius !== undefined ? st.radius : 8;
+    rr(ctx, -hw, -hh, PLATE_W, PLATE_H, r);
     ctx.fillStyle = borderC;
     ctx.fill();
     ctx.restore();
 
     // Isi plat
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 4);
+    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, Math.max(0, r - 4));
     ctx.fillStyle = bg;
     ctx.fill();
 
     ctx.save();
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 4);
+    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, Math.max(0, r - 4));
     ctx.clip();
 
     // Cincin dalam 2px
