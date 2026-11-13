@@ -284,6 +284,9 @@
   .plate-hero .plate{transform:scale(var(--fit,1));transform-origin:center}
 
   /* ============ Sliders ============ */
+  .text-editor{margin:4px 0 18px;padding:16px;border-radius:18px;background:var(--card-2);border:1px solid var(--line)}
+  .text-editor .ctl-group{margin-bottom:0}
+  .fit-note{font-size:12.5px;color:var(--ink-2);margin-top:4px}
   .ctl-group{margin-bottom:18px}
   .ctl-group:last-of-type{margin-bottom:14px}
   .ctl{margin-bottom:12px}
@@ -660,6 +663,17 @@
           </div>
         </div>
 
+        <div class="text-editor">
+          <h3 class="sub-h">Teks plat</h3>
+          <label class="switch-row" style="padding-top:0;margin-bottom:12px">
+            <span>Auto fit ke lebar plat</span>
+            <input type="checkbox" id="autofitChk" checked>
+            <i class="switch"></i>
+          </label>
+          <div id="textSliders"></div>
+          <p class="fit-note">Ukuran teks di atas adalah ukuran maksimal. Nopol yang lebih panjang otomatis dikecilkan agar tidak mentok ke tepi plat. Pengaturan ini berlaku untuk semua sudut.</p>
+        </div>
+
         <div id="setupActions">
           <button class="btn btn-primary btn-block" id="lockTemplateBtn"><svg class="i"><use href="#i-lock"/></svg>Kunci template &amp; masuk bulk</button>
         </div>
@@ -813,14 +827,21 @@
       { key: "noise", label: "Efek Noise (Biar real)", min: 0, max: 100, step: 1, unit: "%" },
       { key: "blur", label: "Blur (Penyatu)", min: 0, max: 4, step: 0.2, unit: "px" }
     ]},
-    { title: "Teks plat", items: [
-      { key: "nopolSize", label: "Ukuran Teks Nopol", min: 8, max: 70, step: 1, unit: "px" },
-      { key: "tahunSize", label: "Ukuran Teks Tahun", min: 4, max: 30, step: 1, unit: "px" },
+  ];
+  const TEXT_GROUPS = [
+    { title: "", items: [
+      { key: "nopolSize", label: "Ukuran Teks Nopol (maks)", min: 8, max: 70, step: 1, unit: "px" },
+      { key: "tahunSize", label: "Ukuran Teks Tahun (maks)", min: 4, max: 30, step: 1, unit: "px" },
       { key: "tinggi", label: "Tinggi Teks", min: 50, max: 150, step: 1, unit: "%" },
       { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
     ]}
   ];
-  const STYLE_KEYS = ["scale", "rotate", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "thickness"];
+  const STYLE_KEYS = ["scale", "rotate", "noise", "blur"];                       // per sudut
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "thickness", "autofit"]; // berlaku semua sudut
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "thickness"];
+  const FIT_PAD = 10;                                                             // jarak aman kiri/kanan di dalam plat
+  const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
+  const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
 
   const AI_MODELS = {
     gemini:    [["gemini-3.8-flash", "Gemini 3.8 Flash (Rekomendasi)"], ["gemini-2.5-flash", "Gemini 2.5 Flash"]],
@@ -928,7 +949,31 @@
   /* ================= State ================= */
   function defaultState() {
     return { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0,
-             nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false };
+             nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, autofit: true, hidden: false };
+  }
+  // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
+  function freshState(old, img) {
+    const n = defaultState();
+    if (old) TEXT_KEYS.forEach(k => { if (old[k] !== undefined) n[k] = old[k]; });
+    n.img = img || null;
+    return n;
+  }
+  // ukuran font yang muat di dalam plat (auto fit)
+  const mctx = document.createElement("canvas").getContext("2d");
+  function calcFit(str, size, ls, ws, family, on) {
+    if (on === false) return size;
+    mctx.font = size + "px " + family;
+    let gw = 0, sp = 0;
+    for (const c of Array.from(str)) { gw += mctx.measureText(c).width; sp += ls + (c === " " ? ws : 0); }
+    const maxW = PLATE_W - 8 - FIT_PAD * 2;
+    if (gw <= 0 || gw + sp <= maxW) return size;
+    return Math.max(4, Math.round(size * (maxW - sp) / gw * 10) / 10);
+  }
+  function fitSizes(st, p) {
+    return {
+      n: calcFit(p.nomor, st.nopolSize, NOPOL_LS, NOPOL_WS, FONT_N, st.autofit),
+      y: calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, FONT_Y, st.autofit)
+    };
   }
   let viewData = {};
   VIEWS.forEach(v => viewData[v] = defaultState());
@@ -997,8 +1042,9 @@
     plEl.style.setProperty("--plate-blur", st.blur + "px");
     tEl.textContent = p.nomor;
     yEl.textContent = p.bulan + "•" + p.tahun;
-    tEl.style.fontSize = st.nopolSize + "px";
-    yEl.style.fontSize = st.tahunSize + "px";
+    const fit = fitSizes(st, p);
+    tEl.style.fontSize = fit.n + "px";
+    yEl.style.fontSize = fit.y + "px";
     const sy = "scaleY(" + (st.tinggi / 100) + ")";
     tEl.style.transform = sy; yEl.style.transform = sy;
     tEl.style.color = p.warnaTeks; yEl.style.color = p.warnaTeks;
@@ -1036,13 +1082,13 @@
 
   /* ================= Slider ================= */
   const sliderEls = {};
-  function buildSliders() {
-    const host = $("sliderGroups");
+  let tplSaveTimer = null;
+  function buildSliders(host, groups) {
     host.innerHTML = "";
-    SLIDER_GROUPS.forEach(g => {
+    groups.forEach(g => {
       const wrap = document.createElement("div");
       wrap.className = "ctl-group";
-      wrap.innerHTML = `<h3 class="sub-h">${g.title}</h3>`;
+      if (g.title) wrap.innerHTML = `<h3 class="sub-h">${g.title}</h3>`;
       g.items.forEach(s => {
         const row = document.createElement("div");
         row.className = "ctl";
@@ -1053,7 +1099,8 @@
         sliderEls[s.key] = { input, out, cfg: s };
         input.addEventListener("input", () => {
           const v = parseFloat(input.value);
-          viewData[currentView][s.key] = v;
+          if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, v);
+          else viewData[currentView][s.key] = v;
           paintSlider(s.key);
           applyPlate();
         });
@@ -1068,12 +1115,29 @@
     input.style.setProperty("--p", ((v - cfg.min) / (cfg.max - cfg.min) * 100) + "%");
   }
   function syncSliders(st) {
-    STYLE_KEYS.forEach(k => {
+    ALL_SLIDER_KEYS.forEach(k => {
       sliderEls[k].input.value = st[k];
       paintSlider(k);
     });
+    $("autofitChk").checked = st.autofit !== false;
   }
-  buildSliders();
+  // pengaturan teks berlaku untuk semua sudut (dan template yang sudah terkunci)
+  function setTextSetting(key, val) {
+    VIEWS.forEach(v => {
+      viewData[v][key] = val;
+      if (templateData && templateData[v]) templateData[v][key] = val;
+    });
+    if (templateData) {
+      clearTimeout(tplSaveTimer);
+      tplSaveTimer = setTimeout(saveTemplate, 400);
+    }
+  }
+  buildSliders($("sliderGroups"), SLIDER_GROUPS);
+  buildSliders($("textSliders"), TEXT_GROUPS);
+  $("autofitChk").addEventListener("change", () => {
+    setTextSetting("autofit", $("autofitChk").checked);
+    applyPlate();
+  });
 
   $("applyAllBtn").addEventListener("click", () => {
     const src = viewData[currentView];
@@ -1147,7 +1211,7 @@
         canvas.width = w; canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         const data = canvas.toDataURL("image/jpeg", 0.82);
-        viewData[currentView] = Object.assign(defaultState(), { img: data });
+        viewData[currentView] = freshState(viewData[currentView], data);
         loadViewState();
         showToast("Silakan atur plat secara manual ✓");
       };
@@ -1166,7 +1230,7 @@
   drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
   $("replaceBtn").addEventListener("click", () => fileInput.click());
   $("removeImgBtn").addEventListener("click", () => {
-    viewData[currentView] = defaultState();
+    viewData[currentView] = freshState(viewData[currentView], null);
     loadViewState();
     showToast("Gambar sudut ini dihapus");
   });
@@ -1810,14 +1874,15 @@
     }
 
     // Teks (layout identik dengan flex column di CSS)
-    const n = st.nopolSize, y = st.tahunSize, H = n + 2 + y;
+    const fit = fitSizes(st, plate);
+    const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
     const sy = (st.tinggi || 100) / 100;
     const th = st.thickness || 0;
     drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS,
-      "'FE-Schrift','Arial Black',Impact,sans-serif", txtC);
+      FONT_N, txtC);
     drawSpaced(ctx, plate.bulan + "•" + plate.tahun, top + n + 2 + y / 2, y, sy, th * 0.3, YEAR_LS, 0,
-      "'FE-Schrift',Arial,Helvetica,sans-serif", txtC);
+      FONT_Y, txtC);
 
     ctx.restore();
     ctx.restore();
