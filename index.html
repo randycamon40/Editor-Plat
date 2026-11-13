@@ -7,6 +7,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Plat Nomor App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
   @font-face {
@@ -35,7 +36,6 @@
     background:radial-gradient(1000px 500px at 15% -10%, #1b2a4a 0%, transparent 60%), var(--bg);
     color:var(--text);
     min-height:100vh;
-    /* Padding otomatis menyesuaikan poni (notch) dan status bar HP */
     padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)) 16px;
     -webkit-font-smoothing:antialiased;
   }
@@ -116,9 +116,11 @@
     text-align:center;
     font-weight:600;
   }
+  
   .ai-status-connected { background: rgba(34, 197, 94, 0.2) !important; color: #22c55e !important; }
   .ai-status-error { background: rgba(239, 68, 68, 0.2) !important; color: #ef4444 !important; }
   .ai-status-loading { background: rgba(79, 140, 255, 0.2) !important; color: #4f8cff !important; }
+  
   .plate{
     border-radius:12px; padding:2px 0;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -146,10 +148,10 @@
     opacity: var(--noise-opacity);
     mix-blend-mode: multiply;
     pointer-events: none;
-    z-index: 1; /* Memastikan noise berada di bawah teks */
+    z-index: 1;
   }
   .plate-text{
-    position: relative; /* Wajib agar teks di atas efek noise */
+    position: relative;
     display: inline-block;
     transform-origin: center center;
     font-family: 'FE-Schrift', 'Arial Black', Impact, sans-serif;
@@ -161,7 +163,7 @@
     text-shadow: none;
   }
   .plate-year{
-    position: relative; /* Wajib agar teks di atas efek noise */
+    position: relative;
     display: inline-block;
     transform-origin: center center;
     font-family: 'FE-Schrift', Arial, Helvetica, sans-serif;
@@ -225,6 +227,9 @@
   }
   .toast.show{transform:translate(-50%,0);opacity:1}
   .toast.err{background:var(--danger)}
+  
+  #previewModal canvas { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: block; }
+  @media (max-width: 600px) { #previewContainer { grid-template-columns: 1fr !important; } }
 </style>
 </head>
 <body>
@@ -347,8 +352,11 @@
         </div>
       </section>
 
-      <section class="card">
-        <h2 class="card-title">2 · Atur Plat</h2>
+      <section class="card" id="templateCard">
+        <h2 class="card-title" style="display:flex; justify-content:space-between;">
+          2 · Atur Plat & Template
+          <span id="templateStatus" style="font-size:10px; color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:4px;">Belum Terkunci</span>
+        </h2>
 
         <div class="field">
           <label for="nomor">Nomor Plat</label>
@@ -386,15 +394,35 @@
           <input type="color" id="warnaTeks" value="#000000" style="width:100%; height:44px; cursor:pointer;">
         </div>
 
-
-
-        <button class="btn-primary" id="addBtn">+ Tambah Data</button>
+        <div id="setupActions">
+          <button class="btn-primary" id="lockTemplateBtn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔒 Kunci Template & Lanjut Bulk</button>
+        </div>
+        <div id="bulkActions" style="display:none; gap:10px;">
+          <button class="btn-ghost" id="btnPreviewBulk" style="flex:1; border-color:var(--accent); color:var(--accent); font-weight:bold;">👁️ Preview</button>
+          <button class="btn-primary" id="addBtn" style="flex:1;">+ Tambah ke Bulk</button>
+        </div>
       </section>
     </div>
 
     <!-- KOLOM KANAN -->
     <div>
-      <section class="card">
+      <section class="card" id="bulkListCard" style="display:none;">
+        <div class="card-head">
+          <h2 class="card-title">Daftar Bulk & Export</h2>
+          <button class="btn-ghost" id="btnExportZip" style="color:#22c55e; border-color:#22c55e; font-weight:bold;">📦 Export ZIP</button>
+        </div>
+        
+        <div style="text-align:center; margin-bottom:15px; background:var(--card2); padding:10px; border-radius:12px; border:1px solid var(--border);">
+          <img id="templateThumb" style="max-width:100%; max-height:120px; border-radius:8px; display:none; object-fit:contain;">
+          <div style="font-size:11px; color:var(--muted); margin-top:5px;">Template Mobil Aktif</div>
+        </div>
+
+        <button id="unlockTemplateBtn" class="btn-ghost" style="width:100%; margin-bottom:10px; display:none;">🔓 Buka Kunci / Ganti Mobil</button>
+
+        <div class="list" id="bulkList"></div>
+      </section>
+
+      <section class="card" id="savedListCard">
         <div class="card-head">
           <h2 class="card-title">Data Tersimpan</h2>
           <button class="btn-ghost" id="clearBtn">Hapus Semua</button>
@@ -408,6 +436,19 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Modal Preview -->
+<div id="previewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; flex-direction:column; align-items:center; padding:20px; overflow-y:auto;">
+  <div style="width:100%; max-width:800px; background:var(--card); border-radius:14px; padding:20px; border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="margin:0; font-size:18px; color:var(--text);">Preview Hasil</h2>
+      <button id="closePreviewBtn" class="btn-ghost" style="color:var(--danger); border-color:var(--danger); font-weight:bold;">Tutup ✕</button>
+    </div>
+    <div id="previewContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <!-- Canvases will be injected here -->
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -415,10 +456,19 @@
   const $ = id => document.getElementById(id);
 
   const STORAGE_KEY = "platNomorData";
+  const BULK_STORAGE_KEY = "platBulkData";
+  const TEMPLATE_STORAGE_KEY = "platTemplateData";
+
+  let templateData = null;
+  let bulkItems = [];
 
   const fileInput       = $("fileInput");
   const viewSelect      = $("viewSelect");
   const hidePlateChk    = $("hidePlateChk");
+  const lockTemplateBtn = $("lockTemplateBtn");
+  const templateStatus  = $("templateStatus");
+  const bulkListCard    = $("bulkListCard");
+  const bulkListEl      = $("bulkList");
   const toggleAiBtn     = $("toggleAiBtn");
   const aiPanel         = $("aiPanel");
   const aiProvider      = $("aiProvider");
@@ -428,33 +478,6 @@
   const btnRunAi        = $("btnRunAi");
   const aiStatus        = $("aiStatus");
 
-  // Load API Key & Settings
-  aiApiKey.value = localStorage.getItem("aiApiKey") || "";
-  aiProvider.value = localStorage.getItem("aiProvider") || "gemini";
-  aiModel.value = localStorage.getItem("aiModel") || "gemini-3.8-flash";
-  
-  aiApiKey.addEventListener("input", () => localStorage.setItem("aiApiKey", aiApiKey.value.trim()));
-  aiProvider.addEventListener("change", () => {
-    localStorage.setItem("aiProvider", aiProvider.value);
-    // Reset model options based on provider
-    if(aiProvider.value === "gemini") {
-      aiModel.innerHTML = '<option value="gemini-3.8-flash">Gemini 3.8 Flash</option><option value="gemini-2.5-flash">Gemini 2.5 Flash</option>';
-    } else if(aiProvider.value === "openai") {
-      aiModel.innerHTML = '<option value="gpt-4o-mini">GPT-4o Mini</option><option value="gpt-4o">GPT-4o</option>';
-    } else {
-      aiModel.innerHTML = '<option value="claude-3-haiku-20240307">Claude 3 Haiku</option><option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>';
-    }
-  });
-  aiModel.addEventListener("change", () => localStorage.setItem("aiModel", aiModel.value));
-
-  toggleAiBtn.addEventListener("click", () => {
-    aiPanel.style.display = aiPanel.style.display === "none" ? "block" : "none";
-  });
-
-  hidePlateChk.addEventListener("change", () => {
-    platePreview.style.opacity = hidePlateChk.checked ? "0" : "1";
-  });
-
   let currentView = "depan";
   let viewData = {
     depan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false },
@@ -462,6 +485,7 @@
     kanan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false },
     belakang: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false }
   };
+  
   const drop            = $("drop");
   const previewImg      = $("preview");
   const dropPlaceholder = $("dropPlaceholder");
@@ -482,6 +506,153 @@
   let items = loadData();
   let currentImage = null;
   let toastTimer = null;
+
+  // Load API Key & Settings
+  aiApiKey.value = localStorage.getItem("aiApiKey") || "";
+  aiProvider.value = localStorage.getItem("aiProvider") || "gemini";
+  aiModel.value = localStorage.getItem("aiModel") || "gemini-3.8-flash";
+  
+  aiApiKey.addEventListener("input", () => localStorage.setItem("aiApiKey", aiApiKey.value.trim()));
+  aiProvider.addEventListener("change", () => {
+    localStorage.setItem("aiProvider", aiProvider.value);
+    if(aiProvider.value === "gemini") {
+      aiModel.innerHTML = '<option value="gemini-3.8-flash">Gemini 3.8 Flash</option><option value="gemini-2.5-flash">Gemini 2.5 Flash</option>';
+    } else if(aiProvider.value === "openai") {
+      aiModel.innerHTML = '<option value="gpt-4o-mini">GPT-4o Mini</option><option value="gpt-4o">GPT-4o</option>';
+    } else {
+      aiModel.innerHTML = '<option value="claude-3-haiku-20240307">Claude 3 Haiku</option><option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>';
+    }
+  });
+  aiModel.addEventListener("change", () => localStorage.setItem("aiModel", aiModel.value));
+
+  toggleAiBtn.addEventListener("click", () => {
+    aiPanel.style.display = aiPanel.style.display === "none" ? "block" : "none";
+  });
+
+  hidePlateChk.addEventListener("change", () => {
+    platePreview.style.opacity = hidePlateChk.checked ? "0" : "1";
+  });
+
+  // Load Bulk & Template
+  function loadBulkData() {
+    try {
+      bulkItems = JSON.parse(localStorage.getItem(BULK_STORAGE_KEY)) || [];
+      templateData = JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY)) || null;
+      if (templateData) {
+        applyTemplateMode();
+      }
+    } catch(e) {}
+  }
+
+  function applyTemplateMode() {
+    templateStatus.textContent = "Template Terkunci 🔒";
+    templateStatus.style.color = "#22c55e";
+    templateStatus.style.background = "rgba(34,197,94,0.1)";
+    $("setupActions").style.display = "none";
+    $("bulkActions").style.display = "flex";
+    bulkListCard.style.display = "block";
+    $("savedListCard").style.display = "none";
+    $("viewSelect").parentElement.style.display = "none";
+    $("drop").style.display = "none";
+    $("plateControls").style.display = "none";
+    $("aiPanel").style.display = "none";
+    $("toggleAiBtn").style.display = "none";
+    $("unlockTemplateBtn").style.display = "block";
+    
+    const thumbImg = $("templateThumb");
+    if (templateData.depan?.img) thumbImg.src = templateData.depan.img;
+    else if (templateData.kiri?.img) thumbImg.src = templateData.kiri.img;
+    else if (templateData.kanan?.img) thumbImg.src = templateData.kanan.img;
+    else if (templateData.belakang?.img) thumbImg.src = templateData.belakang.img;
+    thumbImg.style.display = "block";
+
+    renderBulk();
+  }
+
+  function saveBulkData() {
+    try {
+      localStorage.setItem(BULK_STORAGE_KEY, JSON.stringify(bulkItems));
+      return true;
+    } catch(e) { 
+      showToast("Gagal simpan Bulk", true); 
+      return false;
+    }
+  }
+
+  lockTemplateBtn.addEventListener("click", () => {
+    saveCurrentViewState();
+    let hasImage = viewData.depan.img || viewData.kiri.img || viewData.kanan.img || viewData.belakang.img;
+    if (!hasImage) return showToast("Import minimal 1 gambar dulu!", true);
+    
+    templateData = JSON.parse(JSON.stringify(viewData));
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templateData));
+    applyTemplateMode();
+    showToast("Template dikunci! Mode Bulk Aktif.", false);
+  });
+
+  $("unlockTemplateBtn").addEventListener("click", () => {
+    if (!confirm("Buka kunci template? Data bulk akan dihapus.")) return;
+    templateData = null;
+    bulkItems = [];
+    localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+    localStorage.removeItem(BULK_STORAGE_KEY);
+    
+    templateStatus.textContent = "Belum Terkunci";
+    templateStatus.style.color = "#ef4444";
+    templateStatus.style.background = "rgba(239,68,68,0.1)";
+    
+    $("setupActions").style.display = "block";
+    $("bulkActions").style.display = "none";
+    bulkListCard.style.display = "none";
+    $("savedListCard").style.display = "block";
+    $("viewSelect").parentElement.style.display = "block";
+    $("drop").style.display = "block";
+    $("aiPanel").style.display = "none";
+    $("toggleAiBtn").style.display = "block";
+    if (!imageWrap.hidden) $("plateControls").style.display = "block";
+    $("unlockTemplateBtn").style.display = "none";
+    
+    renderBulk();
+    showToast("Kembali ke Mode Setup");
+  });
+
+  function renderBulk() {
+    if (!bulkItems.length) {
+      bulkListEl.innerHTML = '<div class="empty">Belum ada data bulk.</div>';
+      return;
+    }
+    bulkListEl.innerHTML = bulkItems.map((it, index) => {
+      const dark = isDark(it.warna);
+      return `
+        <div class="item">
+          <div class="item-body">
+            <span class="plate-chip" style="background:${esc(it.warna)};color:${esc(it.warnaTeks)}; border-color: ${dark ? '#333' : '#111'};">
+              ${esc(it.nomor)}
+            </span>
+            <div class="meta">${esc(it.bulan || "-")}•${esc(it.tahun || "-")} · Plat: ${esc(it.warnaName)}</div>
+          </div>
+          <button class="del" data-index="${index}" title="Hapus">✕</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  bulkListEl.addEventListener("click", e => {
+    const btn = e.target.closest(".del");
+    if (!btn) return;
+    bulkItems.splice(parseInt(btn.dataset.index), 1);
+    saveBulkData();
+    renderBulk();
+    showToast("Item bulk dihapus");
+  });
+
+  $("clearBulkBtn")?.addEventListener("click", () => {
+    if(confirm("Hapus semua antrean bulk?")) {
+      bulkItems = [];
+      saveBulkData();
+      renderBulk();
+    }
+  });
 
   /* ---------- Storage ---------- */
   function loadData() {
@@ -530,7 +701,7 @@
 
   /* ---------- State Management (Simpan/Load per Sudut) ---------- */
   function saveCurrentViewState() {
-    if (imageWrap.hidden) return; // Jangan simpan kalau belum ada gambar
+    if (imageWrap.hidden) return;
     
     viewData[currentView] = {
       img: viewData[currentView].img,
@@ -557,7 +728,7 @@
       imageWrap.hidden = false;
       dragHint.hidden = false;
       dropPlaceholder.hidden = true;
-      plateControls.style.display = "block";
+      if (!templateData) plateControls.style.display = "block";
 
       platePreview.style.left = state.left;
       platePreview.style.top = state.top;
@@ -594,7 +765,6 @@
 
       updatePreview();
     } else {
-      // Kosongkan jika belum ada gambar
       previewImg.removeAttribute("src");
       imageWrap.hidden = true;
       dragHint.hidden = true;
@@ -623,7 +793,6 @@
     reader.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        // Kompres & perkecil supaya hemat penyimpanan
         const MAX = 1000;
         let w = img.width, h = img.height;
         const scale = Math.min(1, MAX / w, MAX / h);
@@ -643,12 +812,10 @@
         dragHint.hidden = false;
         dropPlaceholder.hidden = true;
 
-        // Reset posisi ke tengah
         platePreview.style.left = "50%";
         platePreview.style.top = "80%";
         plateYear.textContent = "11•24";
         
-        // Reset Slider ke awal
         scaleSlider.value = 100;
         rotateSlider.value = 0;
         noiseSlider.value = 15;
@@ -671,7 +838,7 @@
         nopolSizeVal.textContent = "38px";
         tahunSizeVal.textContent = "16px";
         
-        plateControls.style.display = "block"; // Tampilkan pengaturan manual
+        plateControls.style.display = "block";
         showToast("Silakan atur plat secara manual ✓", false);
       };
       img.onerror = () => showToast("Gambar tidak bisa dibaca", true);
@@ -717,23 +884,18 @@
     plateText.textContent = nomor;
     plateYear.textContent = bulan + "•" + tahun;
     
-    // Gunakan CSS Variables agar bayangan dan border tidak tertimpa
     platePreview.style.setProperty('--plate-bg', warna);
     platePreview.style.setProperty('--plate-color', warnaTeks);
     const isDarkColor = isDark(warna);
     platePreview.style.setProperty('--plate-border', isDarkColor ? "#333333" : "#111111");
     platePreview.style.setProperty('--plate-inner', isDarkColor ? "rgba(255,255,255,0.2)" : "#ffffff");
     
-    // Paksa warna teks langsung (fix bug warna tidak berubah)
     plateText.style.color = warnaTeks;
     plateYear.style.color = warnaTeks;
     
-    // Gunakan -webkit-text-stroke agar ketebalan bertambah tanpa merusak bentuk font
-    // Nilai dibagi 2 (0.5) agar tidak terlalu gendut saat digeser maksimal
     plateText.style.webkitTextStroke = thickness > 0 ? `${thickness * 0.5}px ${warnaTeks}` : "0px";
     plateYear.style.webkitTextStroke = thickness > 0 ? `${thickness * 0.3}px ${warnaTeks}` : "0px";
     
-    // Pastikan shadow mati total agar tidak pudar
     plateText.style.textShadow = "none";
     plateYear.style.textShadow = "none";
   }
@@ -755,7 +917,6 @@
 
   warnaEl.addEventListener("input", () => {
     updatePreview();
-    // Sinkronisasi: Jika warna kustom sama dengan preset, pilih di dropdown
     let matched = false;
     for (let i = 0; i < warnaPreset.options.length; i++) {
       if (warnaPreset.options[i].value === warnaEl.value) {
@@ -804,6 +965,11 @@
 
   /* ---------- Tambah Data ---------- */
   function tambahData() {
+    if (!templateData) {
+      showToast("Kunci template terlebih dahulu sebelum menambah bulk!", true);
+      return;
+    }
+
     const nomor = nomorEl.value.trim();
     const bulan = bulanEl.value.trim();
     const tahun = tahunEl.value.trim();
@@ -818,15 +984,7 @@
     const warnaTeks = warnaTeksEl.value;
     const warnaName = warnaPreset.selectedIndex >= 0 ? warnaPreset.options[warnaPreset.selectedIndex].textContent : "Kustom";
 
-    saveCurrentViewState(); // Pastikan perubahan terakhir tersimpan
-    
-    // Ambil gambar depan sebagai thumbnail list, jika kosong cari yang lain
-    let thumbImage = viewData.depan.img || viewData.kiri.img || viewData.kanan.img || viewData.belakang.img;
-
-    items.unshift({
-      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-      image: thumbImage,
-      views: JSON.parse(JSON.stringify(viewData)), // Simpan semua gambar & pengaturannya
+    bulkItems.push({
       nomor: nomor,
       bulan: bulan,
       tahun: tahun,
@@ -835,67 +993,19 @@
       warnaName: warnaName
     });
 
-    if (!saveData()) {
-      items.shift(); // batalkan kalau gagal simpan
-      return;
+    if(saveBulkData() === false) {
+       bulkItems.pop();
+       return;
     }
 
-    render();
-    resetForm();
-    showToast("Data berhasil ditambahkan ✓");
-  }
-
-  function resetForm() {
-    // Reset semua state gambar
-    viewData = {
-      depan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false },
-      kiri: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false },
-      kanan: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false },
-      belakang: { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, noise: 15, blur: 0, nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, hidden: false }
-    };
-    hidePlateChk.checked = false;
-    platePreview.style.opacity = "1";
-    currentView = "depan";
-    viewSelect.value = "depan";
-
+    renderBulk();
     nomorEl.value = "";
-    bulanEl.value = "";
-    tahunEl.value = "";
-    warnaEl.value = "#ffffff";
-    warnaTeksEl.value = "#000000";
-    if(warnaPreset) warnaPreset.selectedIndex = 0;
-    currentImage = null;
-    plateYear.textContent = "11•24";
-    previewImg.removeAttribute("src");
-    imageWrap.hidden = true;
-    dragHint.hidden = true;
-    dropPlaceholder.hidden = false;
-
-    // Reset posisi plat ke tengah bawah
-    platePreview.style.left = "";
-    platePreview.style.top = "";
-    plateControls.style.display = "none";
-    plateText.style.fontSize = "38px";
-    plateYear.style.fontSize = "16px";
-    if (nopolSizeSlider) nopolSizeSlider.value = 38;
-    if (tahunSizeSlider) tahunSizeSlider.value = 16;
-    if (tinggiSlider) {
-      tinggiSlider.value = 100;
-      plateText.style.transform = "scaleY(1)";
-      plateYear.style.transform = "scaleY(1)";
-      tinggiVal.textContent = "100%";
-    }
-    if (thicknessSlider) {
-      thicknessSlider.value = 1.5;
-      thicknessVal.textContent = "1.5px";
-    }
-    updatePreview();
     nomorEl.focus();
+    showToast("Nopol ditambahkan ke antrean bulk ✓");
   }
 
   $("addBtn").addEventListener("click", tambahData);
 
-  // Enter = tambah data
   [nomorEl, tahunEl].forEach(el => {
     el.addEventListener("keydown", e => {
       if (e.key === "Enter") {
@@ -905,7 +1015,7 @@
     });
   });
 
-  /* ---------- Hapus ---------- */
+  /* ---------- Hapus Data Tersimpan ---------- */
   listEl.addEventListener("click", e => {
     const btn = e.target.closest(".del");
     if (!btn) return;
@@ -933,7 +1043,7 @@
   platePreview.addEventListener("pointerdown", (e) => {
     if (imageWrap.hidden) return;
     e.preventDefault();
-    e.stopPropagation(); // Cegah buka file picker saat plat digeser
+    e.stopPropagation();
     
     isDragging = true;
     platePreview.setPointerCapture(e.pointerId);
@@ -962,7 +1072,6 @@
     let newLeft = startLeft + deltaLeft;
     let newTop = startTop + deltaTop;
     
-    // Batasi agar plat tidak keluar dari gambar
     newLeft = Math.max(0, Math.min(100, newLeft));
     newTop = Math.max(0, Math.min(100, newTop));
     
@@ -1040,7 +1149,7 @@
 
   thicknessSlider.addEventListener("input", updatePreview);
 
-  /* ---------- AI Logic (Gemini & Others) ---------- */
+  /* ---------- AI Logic ---------- */
   btnTestAi.addEventListener("click", async () => {
     const key = aiApiKey.value.trim();
     if (!key) return showToast("API Key kosong", true);
@@ -1058,7 +1167,6 @@
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
       } else {
-        // Test dummy untuk provider lain (karena CORS biasanya butuh backend)
         throw new Error("Tes koneksi langsung dari browser hanya didukung penuh untuk Gemini. Provider lain mungkin diblokir CORS.");
       }
       aiStatus.className = "ai-status-connected";
@@ -1110,17 +1218,14 @@
            const top = result.ymin / 10;
            const width = (result.xmax - result.xmin) / 10;
            
-           // Set posisi tengah
            platePreview.style.left = (left + (width/2)) + "%";
            platePreview.style.top = (top + ((result.ymax - result.ymin)/20)) + "%";
            
-           // Perkirakan skala (asumsi lebar plat asli ~ 40% dari bounding box AI agar pas)
            const imgWidth = previewImg.clientWidth;
            const plateWidthPx = (width / 100) * imgWidth;
            
-           // Plat CSS default lebarnya 230px
            let newScale = Math.round((plateWidthPx / 230) * 100);
-           newScale = Math.max(10, Math.min(200, newScale)); // Batasi 10-200%
+           newScale = Math.max(10, Math.min(200, newScale));
            
            scaleSlider.value = newScale;
            scaleVal.textContent = newScale + "%";
@@ -1140,11 +1245,179 @@
     }
   });
 
+  /* ---------- Render Canvas & Preview / Export ---------- */
+  async function renderPlateToCanvas(imgSrc, state, plate, canvas) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const ctx = canvas.getContext('2d');
+        const scale = Math.min(1, 1200 / img.width, 1200 / img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const pX = (parseFloat(state.left || 50) / 100) * canvas.width;
+        const pY = (parseFloat(state.top || 80) / 100) * canvas.height;
+        const pScale = (state.scale || 100) / 100;
+        const pRot = ((state.rotate || 0) * Math.PI) / 180;
+        
+        ctx.save();
+        ctx.translate(pX, pY);
+        ctx.rotate(pRot);
+        ctx.scale(pScale, pScale);
+        
+        const pW = 230;
+        const pH = 75;
+        
+        ctx.fillStyle = plate.warna;
+        ctx.beginPath();
+        if(ctx.roundRect) {
+          ctx.roundRect(-pW/2, -pH/2, pW, pH, 12);
+        } else {
+          ctx.rect(-pW/2, -pH/2, pW, pH);
+        }
+        ctx.fill();
+        
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = isDark(plate.warna) ? "#333333" : "#111111";
+        ctx.stroke();
+        
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = isDark(plate.warna) ? "rgba(255,255,255,0.2)" : "#ffffff";
+        ctx.beginPath();
+        if(ctx.roundRect) {
+          ctx.roundRect(-pW/2 + 2, -pH/2 + 2, pW - 4, pH - 4, 10);
+        } else {
+          ctx.rect(-pW/2 + 2, -pH/2 + 2, pW - 4, pH - 4);
+        }
+        ctx.stroke();
+        
+        ctx.fillStyle = plate.warnaTeks || (isDark(plate.warna) ? "#ffffff" : "#000000");
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        const nopolScaleY = (state.tinggi || 100) / 100;
+        ctx.save();
+        ctx.translate(0, -pH/2 + 28);
+        ctx.scale(1, nopolScaleY);
+        ctx.font = `900 ${state.nopolSize || 38}px 'FE-Schrift', Arial, sans-serif`;
+        if (state.thickness > 0) {
+          ctx.lineWidth = state.thickness;
+          ctx.strokeStyle = ctx.fillStyle;
+          ctx.strokeText(plate.nomor, 0, 0);
+        }
+        ctx.fillText(plate.nomor, 0, 0);
+        ctx.restore();
+        
+        const yearScaleY = (state.tinggi || 100) / 100;
+        ctx.save();
+        ctx.translate(0, pH/2 - 15);
+        ctx.scale(1, yearScaleY);
+        ctx.font = `900 ${state.tahunSize || 16}px 'FE-Schrift', Arial, sans-serif`;
+        const yearStr = plate.bulan + "•" + plate.tahun;
+        if (state.thickness > 0) {
+          ctx.lineWidth = state.thickness * 0.6;
+          ctx.strokeStyle = ctx.fillStyle;
+          ctx.strokeText(yearStr, 0, 0);
+        }
+        ctx.fillText(yearStr, 0, 0);
+        ctx.restore();
+        
+        ctx.restore();
+        resolve();
+      };
+      img.src = imgSrc;
+    });
+  }
+
+  $("btnPreviewBulk").addEventListener("click", async () => {
+    if (!templateData) return;
+    const tempPlate = {
+      nomor: nomorEl.value.trim() || "B 1234 XYZ",
+      bulan: bulanEl.value.trim() || "11",
+      tahun: tahunEl.value.trim() || "24",
+      warna: warnaEl.value,
+      warnaTeks: warnaTeksEl.value
+    };
+    
+    $("previewModal").style.display = "flex";
+    const container = $("previewContainer");
+    container.innerHTML = "<div style='color:#fff; text-align:center; grid-column:span 2;'>Memproses...</div>";
+    
+    const views = ["depan", "kiri", "kanan", "belakang"];
+    container.innerHTML = "";
+    
+    for (let v of views) {
+      const state = templateData[v];
+      if (!state || !state.img || state.hidden) continue;
+      
+      const div = document.createElement("div");
+      div.innerHTML = `<div style="font-size:12px; color:var(--muted); margin-bottom:4px; text-transform:capitalize;">${v}</div>`;
+      const canvas = document.createElement("canvas");
+      div.appendChild(canvas);
+      container.appendChild(div);
+      
+      await renderPlateToCanvas(state.img, state, tempPlate, canvas);
+    }
+  });
+
+  $("closePreviewBtn").addEventListener("click", () => {
+    $("previewModal").style.display = "none";
+  });
+
+  $("btnExportZip").addEventListener("click", async () => {
+    if (!bulkItems.length) return showToast("Belum ada data bulk", true);
+    if (!templateData) return;
+    
+    $("btnExportZip").textContent = "⏳ Memproses...";
+    $("btnExportZip").disabled = true;
+    
+    try {
+      const zip = new JSZip();
+      const folderHasil = zip.folder("Hasil");
+      
+      for (let i = 0; i < bulkItems.length; i++) {
+        const plate = bulkItems[i];
+        const safeNopol = plate.nomor.replace(/[^a-zA-Z0-9]/g, "");
+        const folderNopol = folderHasil.folder(safeNopol || `Plat_${i}`);
+        
+        const views = ["depan", "kiri", "kanan", "belakang"];
+        for (let v of views) {
+          const state = templateData[v];
+          if (!state || !state.img || state.hidden) continue;
+          
+          const canvas = document.createElement("canvas");
+          await renderPlateToCanvas(state.img, state, plate, canvas);
+          
+          const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.9));
+          folderNopol.file(`${safeNopol}_${v}.jpg`, blob);
+        }
+      }
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Hasil_Edit_Plat.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast("Export berhasil di-download!");
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal export ZIP", true);
+    } finally {
+      $("btnExportZip").textContent = "📦 Export ZIP";
+      $("btnExportZip").disabled = false;
+    }
+  });
+
   /* ---------- Init ---------- */
   updatePreview();
   render();
+  loadBulkData();
 
-  // Registrasi Service Worker (PWA)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
@@ -1153,7 +1426,6 @@
     });
   }
 
-  // Script memastikan status bar (theme-color) menyatu dengan warna aplikasi
   function updateStatusBar() {
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (!metaThemeColor) {
@@ -1161,7 +1433,6 @@
       metaThemeColor.name = "theme-color";
       document.head.appendChild(metaThemeColor);
     }
-    // Set warna status bar menjadi gelap sesuai warna background aplikasi
     metaThemeColor.setAttribute('content', '#0f1115');
   }
   
