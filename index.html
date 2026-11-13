@@ -521,12 +521,12 @@
             <i class="switch"></i>
           </label>
 
-          <input type="file" accept="image/*" id="fileInput" hidden>
+          <input type="file" accept="image/*" id="fileInput" multiple hidden>
           <div class="stage" id="stage">
             <div class="drop" id="drop" role="button" tabindex="0" aria-label="Import gambar mobil">
               <div class="drop-ic"><svg class="i"><use href="#i-image"/></svg></div>
               <strong>Import gambar mobil</strong>
-              <span>Ketuk untuk memilih, atau seret gambar ke sini</span>
+              <span>Pilih maksimal 4 gambar sekaligus (Depan, Kiri, Kanan, Belakang)</span>
             </div>
             <div class="image-wrap" id="imageWrap" hidden>
               <img id="preview" class="preview" alt="Preview mobil">
@@ -1238,33 +1238,74 @@
   window.addEventListener("resize", applyPlate);
 
   /* ================= Import gambar ================= */
-  function processFile(file) {
-    if (!file) return;
-    if (!file.type || !file.type.startsWith("image/")) { showToast("File harus berupa gambar", true); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1000;
-        const scale = Math.min(1, MAX / img.width, MAX / img.height);
-        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        const data = canvas.toDataURL("image/jpeg", 0.82);
+  function readImageFile(file) {
+    return new Promise((resolve) => {
+      if (!file || !file.type || !file.type.startsWith("image/")) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1000;
+          const scale = Math.min(1, MAX / img.width, MAX / img.height);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = () => resolve(null);
+        img.src = ev.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function processFiles(files) {
+    if (!files || files.length === 0) return;
+    
+    if (files.length === 1) {
+      const data = await readImageFile(files[0]);
+      if (data) {
         viewData[currentView] = freshState(viewData[currentView], data);
         loadViewState();
         showToast("Silakan atur plat secara manual ✓");
-      };
-      img.onerror = () => showToast("Gambar tidak bisa dibaca", true);
-      img.src = ev.target.result;
-    };
-    reader.onerror = () => showToast("Gagal membaca file", true);
-    reader.readAsDataURL(file);
+      } else {
+        showToast("Gambar tidak bisa dibaca", true);
+      }
+      return;
+    }
+
+    // Mode import banyak gambar (maks 4)
+    const fileList = Array.from(files).slice(0, 4);
+    showToast("Memproses " + fileList.length + " gambar...", false);
+    
+    const results = await Promise.all(fileList.map(f => readImageFile(f)));
+    
+    let successCount = 0;
+    results.forEach((data, i) => {
+      if (data) {
+        const view = VIEWS[i]; // Urutan: depan, kiri, kanan, belakang
+        viewData[view] = freshState(viewData[view], data);
+        successCount++;
+      }
+    });
+
+    currentView = VIEWS[0]; // Fokus kembali ke depan
+    loadViewState();
+    
+    if (successCount > 0) {
+      showToast(successCount + " gambar berhasil diimport otomatis!", false);
+    } else {
+      showToast("Gagal mengimport gambar", true);
+    }
   }
 
   fileInput.addEventListener("change", e => {
-    if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length) processFiles(e.target.files);
     fileInput.value = "";
   });
   drop.addEventListener("click", () => fileInput.click());
@@ -1281,8 +1322,9 @@
   stage.addEventListener("drop", e => {
     e.preventDefault();
     stage.classList.remove("dragover");
-    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) processFile(f);
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+      processFiles(e.dataTransfer.files);
+    }
   });
 
   /* ================= Geser plat ================= */
