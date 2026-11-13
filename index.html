@@ -1076,7 +1076,7 @@
     const d = isDark(p.warna);
     plEl.style.setProperty("--plate-bg", p.warna);
     plEl.style.setProperty("--plate-color", p.warnaTeks);
-    plEl.style.setProperty("--plate-border", d ? "#333333" : "#111111");
+    plEl.style.setProperty("--plate-border", p.warnaTeks); // Border luar mengikuti warna teks
     plEl.style.setProperty("--plate-inner", d ? "rgba(255,255,255,0.2)" : "#ffffff");
     plEl.style.setProperty("--noise-opacity", st.noise / 100);
     plEl.style.setProperty("--plate-blur", st.blur + "px");
@@ -1446,9 +1446,9 @@
   /* ================= Bulk ================= */
   function chipHtml(it) {
     const dark = isDark(it.warna);
-    // Paksa warna teks selalu menyesuaikan background plat (putih untuk plat gelap, hitam untuk terang)
+    // Paksa warna teks dan border selalu menyesuaikan background plat
     const textColor = dark ? "#ffffff" : "#111111";
-    return `<span class="plate-chip" style="background:${esc(it.warna)};color:${textColor};border-color:${dark ? "#333" : "#111"}">${esc(it.nomor)}</span>`;
+    return `<span class="plate-chip" style="background:${esc(it.warna)};color:${textColor};border-color:${textColor}">${esc(it.nomor)}</span>`;
   }
 
   function renderBulk() {
@@ -1887,9 +1887,9 @@
   function drawPlate(ctx, cx, cy, k, rot, st, plate) {
     const hw = PLATE_W / 2, hh = PLATE_H / 2;
     const bg = plate.warna, dark = isDark(bg);
-    const borderC = dark ? "#333333" : "#111111";
-    const innerC = dark ? "rgba(255,255,255,0.2)" : "#ffffff";
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
+    const borderC = txtC; // Border luar di canvas mengikuti warna teks
+    const innerC = dark ? "rgba(255,255,255,0.2)" : "#ffffff";
 
     ctx.save();
     ctx.translate(cx, cy);
