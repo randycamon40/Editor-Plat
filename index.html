@@ -97,7 +97,7 @@
     border-bottom:1px solid var(--line);
     padding-top:env(safe-area-inset-top);
   }
-  .appbar-in{max-width:1120px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .appbar-in{max-width:1320px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
   .brand{display:flex;align-items:center;gap:12px;min-width:0}
   .brand-mark{
     width:44px;height:30px;border-radius:7px;background:var(--signal);color:#111;
@@ -115,16 +115,46 @@
   .chip.ok i{background:var(--ok);box-shadow:0 0 0 3px rgba(12,154,101,.2)}
 
   /* ============ Layout ============ */
-  .layout{max-width:1120px;margin:0 auto;padding:16px}
+  .layout{max-width:1320px;margin:0 auto;padding:16px}
   .col{display:contents}
   .panel{display:none}
   .panel.active{display:block}
   @media (min-width:980px){
-    .layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:22px;align-items:start;padding:24px 20px}
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(0, 1.25fr) minmax(0, 0.75fr); /* Kolom kiri (editor) lebih lebar */
+      gap:32px;
+      align-items:start;
+      padding:32px 24px;
+    }
     .col{display:block;min-width:0}
     .panel{display:block}
     .bottom-nav{display:none !important}
     body{padding-bottom:40px}
+    
+    /* Card lebih lega di desktop */
+    .card{padding:26px; border-radius:28px;}
+    .card-head{margin-bottom:22px}
+    
+    /* Efek Hover Premium untuk List */
+    .item { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .item:hover {
+      border-color: var(--line-2);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -10px rgba(0,0,0,0.1);
+      background: var(--card);
+    }
+    
+    /* Efek Hover Tombol */
+    .btn-soft:hover, .btn-dark:hover, .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -8px rgba(0,0,0,0.25);
+      filter: brightness(1.05);
+    }
+    
+    /* Area Preview Lebih Besar */
+    .image-wrap .preview{ max-height: 60vh; }
+    .stage{ min-height: 380px; }
   }
 
   /* ============ Cards ============ */
@@ -234,7 +264,7 @@
   .drop strong{font-family:var(--font-display);font-size:17px;font-weight:700}
   .drop span{font-size:13px;color:rgba(241,244,250,.62)}
   .image-wrap{position:relative;width:fit-content;max-width:100%;line-height:0}
-  .image-wrap .preview{display:block;max-width:100%;max-height:min(58vh,460px);width:auto;height:auto;border-radius:10px}
+  .image-wrap .preview{display:block;max-width:100%;max-height:min(65vh,600px);width:auto;height:auto;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
   .stage-actions{display:flex;align-items:center;gap:8px;margin-top:12px}
   .stage-actions .hint{flex:1;font-size:12.5px;color:var(--ink-2);font-weight:500}
 
