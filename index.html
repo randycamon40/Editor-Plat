@@ -11,7 +11,7 @@
 <style>
   @font-face {
     font-family: 'FE-Schrift';
-    src: url('./GL-Nummernschild-Mtl.ttf') format('truetype');
+    src: url('./FE.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -153,7 +153,7 @@
     font-size: 38px; 
     letter-spacing: 1px; 
     word-spacing: 12px; 
-    margin-bottom: 0; font-weight: 900; z-index: 2;
+    margin-bottom: 0; font-weight: normal; z-index: 2;
     -webkit-text-stroke: 0px; 
     text-shadow: none;
   }
@@ -162,7 +162,7 @@
     display: inline-block;
     transform-origin: center center;
     font-family: 'FE-Schrift', Arial, Helvetica, sans-serif;
-    font-size: 15px; font-weight: 900; letter-spacing: 2px; opacity: 1; white-space:nowrap; margin-top:-3px; z-index: 2;
+    font-size: 15px; font-weight: normal; letter-spacing: 2px; opacity: 1; white-space:nowrap; margin-top:-3px; z-index: 2;
     -webkit-text-stroke: 0px;
     text-shadow: none;
   }
@@ -543,18 +543,14 @@
     plateText.style.color = warnaTeks;
     plateYear.style.color = warnaTeks;
     
-    // Hapus stroke dan gunakan text-shadow agar huruf padat, tebal, dan hitam pekat
-    plateText.style.webkitTextStroke = "0px";
-    plateYear.style.webkitTextStroke = "0px";
+    // Gunakan -webkit-text-stroke agar ketebalan bertambah tanpa merusak bentuk font
+    // Nilai dibagi 2 (0.5) agar tidak terlalu gendut saat digeser maksimal
+    plateText.style.webkitTextStroke = thickness > 0 ? `${thickness * 0.5}px ${warnaTeks}` : "0px";
+    plateYear.style.webkitTextStroke = thickness > 0 ? `${thickness * 0.3}px ${warnaTeks}` : "0px";
     
-    if (thickness > 0) {
-      const ts = `${thickness}px 0 0 ${warnaTeks}, -${thickness}px 0 0 ${warnaTeks}, 0 ${thickness}px 0 ${warnaTeks}, 0 -${thickness}px 0 ${warnaTeks}`;
-      plateText.style.textShadow = ts;
-      plateYear.style.textShadow = ts;
-    } else {
-      plateText.style.textShadow = "none";
-      plateYear.style.textShadow = "none";
-    }
+    // Pastikan shadow mati total agar tidak pudar
+    plateText.style.textShadow = "none";
+    plateYear.style.textShadow = "none";
   }
 
   nomorEl.addEventListener("input", () => {
