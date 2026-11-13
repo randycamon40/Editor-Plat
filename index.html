@@ -621,8 +621,8 @@
             <button type="button" class="icon-btn danger" id="removeImgBtn" title="Hapus gambar" aria-label="Hapus gambar"><svg class="i"><use href="#i-trash"/></svg></button>
           </div>
           <div class="field mt-s" id="brandField" hidden>
-            <label for="carBrand">Merek & Tipe Mobil (Terbaca AI)</label>
-            <input type="text" id="carBrand" class="inp" placeholder="Belum terdeteksi..." autocomplete="off">
+            <label>Merek & Tipe Mobil (Terbaca AI)</label>
+            <div id="carBrandText" style="font-size:14px;font-weight:600;padding:10px 14px;background:var(--card-2);border-radius:13px;color:var(--ink);border:1px solid var(--line);"></div>
           </div>
         </section>
 
@@ -697,7 +697,7 @@
             <h2>Atur plat &amp; template</h2>
             <p>Isi data plat, lalu kunci template.</p>
           </div>
-          <span class="chip" id="templateStatus"><i></i><b>Belum terkunci</b></span>
+
         </div>
 
         <div class="plate-hero" id="plateHero">
@@ -1258,13 +1258,40 @@
     groups.forEach(g => {
       const wrap = document.createElement("div");
       wrap.className = "ctl-group";
-      if (g.title) wrap.innerHTML = `<h3 class="sub-h">${g.title}</h3>`;
+      
+      let target = wrap;
+
+      if (g.title) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ai-toggle";
+        btn.style.padding = "12px 0";
+        btn.style.borderBottom = "1px solid var(--line)";
+        btn.style.marginBottom = "12px";
+        btn.innerHTML = `<div class="grow"><h3 class="sub-h" style="margin:0">${g.title}</h3></div><svg class="i ai-chev"><use href="#i-chevron"/></svg>`;
+        btn.setAttribute("aria-expanded", "false");
+
+        const body = document.createElement("div");
+        body.hidden = true;
+        body.style.paddingTop = "4px";
+
+        btn.addEventListener("click", () => {
+           body.hidden = !body.hidden;
+           btn.setAttribute("aria-expanded", String(!body.hidden));
+           btn.style.borderBottom = body.hidden ? "1px solid var(--line)" : "none";
+        });
+
+        wrap.appendChild(btn);
+        wrap.appendChild(body);
+        target = body;
+      }
+
       g.items.forEach(s => {
         const row = document.createElement("div");
         row.className = "ctl";
         row.innerHTML = `<label for="sl-${s.key}"><span>${s.label}</span><output id="sv-${s.key}"></output></label>
           <input type="range" id="sl-${s.key}" min="${s.min}" max="${s.max}" step="${s.step}">`;
-        wrap.appendChild(row);
+        target.appendChild(row);
         const input = row.querySelector("input"), out = row.querySelector("output");
         sliderEls[s.key] = { input, out, cfg: s };
         input.addEventListener("input", () => {
@@ -1366,10 +1393,10 @@
     }
     hidePlateChk.checked = !!st.hidden;
     if (st.brand) {
-      $("carBrand").value = st.brand;
+      $("carBrandText").textContent = st.brand;
       $("brandField").hidden = false;
     } else {
-      $("carBrand").value = "";
+      $("carBrandText").textContent = "";
       $("brandField").hidden = true;
     }
     syncSliders(st);
@@ -1386,9 +1413,7 @@
     applyPlate();
   });
 
-  $("carBrand").addEventListener("input", (e) => {
-    viewData[currentView].brand = e.target.value.trim();
-  });
+  // Input merek mobil sudah menjadi read-only
 
   previewImg.addEventListener("load", applyPlate);
   if (window.ResizeObserver) new ResizeObserver(() => applyPlate()).observe(previewImg);
@@ -1567,7 +1592,6 @@
   function updateTemplateUI() {
     const locked = !!templateData;
     setChip($("templateChip"), locked);
-    setChip($("templateStatus"), locked);
 
     $("setupActions").hidden = locked;
     $("bulkActions").hidden = !locked;
@@ -2049,7 +2073,7 @@
     if (r.brand && typeof r.brand === "string") {
       st.brand = r.brand;
       if (targetView === currentView) {
-        $("carBrand").value = r.brand;
+        $("carBrandText").textContent = r.brand;
         $("brandField").hidden = false;
       }
     }
