@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3204/3204168.png">
 <title>Plat Nomor App</title>
 
 <style>
@@ -744,6 +746,15 @@
   /* ---------- Init ---------- */
   updatePreview();
   render();
+
+  // Registrasi Service Worker (PWA)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker aktif!'))
+        .catch(err => console.log('Service Worker gagal:', err));
+    });
+  }
 
 })();
 </script>
