@@ -751,6 +751,7 @@
           <div id="textSlidersWrap" hidden>
             <div id="textSliders" style="margin-top:16px"></div>
             <p class="fit-note">Ukuran teks di atas adalah ukuran maksimal. Nopol yang lebih panjang otomatis dikecilkan agar tidak mentok ke tepi plat. Pengaturan ini berlaku untuk semua sudut.</p>
+            <button type="button" class="btn btn-soft btn-block mt-s" id="resetTextBtn">Reset Teks ke Default</button>
           </div>
         </div>
 
@@ -1278,6 +1279,15 @@
     const panel = $("textSlidersWrap");
     panel.hidden = !panel.hidden;
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
+  });
+
+  $("resetTextBtn").addEventListener("click", () => {
+    const defs = { nopolSize: 33, tahunSize: 16, tinggi: 110, tahunTinggi: 90, thickness: 0, autofit: true };
+    Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
+    syncSliders(viewData[currentView]);
+    applyPlate();
+    paintMiniPlates(bulkListEl);
+    showToast("Pengaturan teks dikembalikan ke default ✓");
   });
 
   $("applyAllBtn").addEventListener("click", () => {
