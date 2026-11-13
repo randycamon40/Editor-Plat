@@ -342,6 +342,32 @@
     flex-shrink: 0;
     position: relative;
   }
+  .row-num-wrap {
+    width: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+  .row-num-input {
+    width: 38px;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--line-2);
+    border-radius: 6px;
+    padding: 4px 0;
+    color: var(--ink);
+    font-weight: 700;
+    font-family: var(--font);
+  }
+  .row-num-input:focus {
+    outline: 2px solid var(--signal);
+    border-color: transparent;
+  }
   .plate-mini {
     transform: scale(0.5);
     transform-origin: top left;
@@ -1037,6 +1063,7 @@
   let templateData = null;
   let editorOpen = false;
   let editIndex = -1;
+  let bulkStartNumber = lsGet("platBulkStartNum", 1);
   let plateColorName = "Putih";
   let previewToken = 0;
   let exporting = false;
@@ -1558,6 +1585,11 @@
     }
     bulkListEl.innerHTML = bulkItems.map((it, i) => `
       <div class="item${i === editIndex ? " editing" : ""}">
+        <div class="row-num-wrap">
+          ${i === 0 
+            ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">` 
+            : `<span class="row-num-span">${bulkStartNumber + i}</span>`}
+        </div>
         ${chipHtml(it, true)}
         <div style="flex: 1;"></div>
         <div class="item-actions">
@@ -1568,6 +1600,20 @@
       </div>`).join("");
     paintMiniPlates(bulkListEl);
   }
+
+  bulkListEl.addEventListener("input", e => {
+    if (e.target.id === "bulkStartNum") {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        bulkStartNumber = val;
+        localStorage.setItem("platBulkStartNum", bulkStartNumber);
+        const spans = bulkListEl.querySelectorAll(".row-num-span");
+        spans.forEach((span, idx) => {
+          span.textContent = bulkStartNumber + idx + 1;
+        });
+      }
+    }
+  });
 
   bulkListEl.addEventListener("click", e => {
     const btn = e.target.closest("button[data-act]");
