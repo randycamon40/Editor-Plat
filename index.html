@@ -597,8 +597,8 @@
             <div class="image-wrap" id="imageWrap" hidden>
               <img id="preview" class="preview" alt="Preview mobil">
               <div class="plate plate-overlay" id="platePreview">
-                <span class="plate-text" id="plateText">B 1234 XYZ</span>
-                <span class="plate-year" id="plateYear">11•24</span>
+                <span class="plate-text" id="plateText">S 3 LVI</span>
+                <span class="plate-year" id="plateYear">11•03</span>
               </div>
             </div>
           </div>
@@ -681,8 +681,8 @@
 
         <div class="plate-hero" id="plateHero">
           <div class="plate" id="miniPlate">
-            <span class="plate-text" id="miniText">B 1234 XYZ</span>
-            <span class="plate-year" id="miniYear">11•24</span>
+            <span class="plate-text" id="miniText">S 3 LVI</span>
+            <span class="plate-year" id="miniYear">11•03</span>
           </div>
         </div>
 
@@ -693,7 +693,7 @@
 
         <div class="field">
           <label for="nomor">Nomor plat</label>
-          <input id="nomor" class="inp plate-input" type="text" placeholder="B 1234 XYZ" maxlength="15" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <input id="nomor" class="inp plate-input" type="text" placeholder="S 3 LVI" maxlength="15" autocomplete="off" autocapitalize="characters" spellcheck="false">
         </div>
 
         <div class="row2">
@@ -703,7 +703,7 @@
           </div>
           <div class="field">
             <label for="tahun">Tahun plat</label>
-            <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="24" maxlength="2" autocomplete="off">
+            <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
         </div>
 
@@ -1160,9 +1160,9 @@
   /* ================= Plat: gaya DOM ================= */
   function getPlate() {
     return {
-      nomor: nomorEl.value.trim() || "B 1234 XYZ",
+      nomor: nomorEl.value.trim() || "S 3 LVI",
       bulan: bulanEl.value.trim() || "11",
-      tahun: tahunEl.value.trim() || "24",
+      tahun: tahunEl.value.trim() || "03",
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value
     };
