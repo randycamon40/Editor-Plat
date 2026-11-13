@@ -626,7 +626,10 @@
               <button type="button" id="btnTestAi" class="btn btn-soft btn-sm">Tes koneksi</button>
               <div id="aiStatus" class="ai-status">Belum dites</div>
             </div>
-            <button type="button" id="btnRunAi" class="btn btn-dark btn-block"><svg class="i"><use href="#i-sparkles"/></svg><span>Deteksi otomatis sudut ini</span></button>
+            <div class="btn-row" style="margin-top:12px">
+              <button type="button" id="btnRunAi" class="btn btn-dark"><svg class="i"><use href="#i-sparkles"/></svg><span>Deteksi 1 sisi</span></button>
+              <button type="button" id="btnRunAiAll" class="btn btn-primary"><svg class="i"><use href="#i-sparkles"/></svg><span>Deteksi semua sisi</span></button>
+            </div>
           </div>
         </section>
 
@@ -1803,7 +1806,7 @@
 
   /* ================= AI ================= */
   const aiProvider = $("aiProvider"), aiModel = $("aiModel"), aiApiKey = $("aiApiKey");
-  const aiStatus = $("aiStatus"), btnRunAi = $("btnRunAi"), btnTestAi = $("btnTestAi");
+  const aiStatus = $("aiStatus"), btnRunAi = $("btnRunAi"), btnRunAiAll = $("btnRunAiAll"), btnTestAi = $("btnTestAi");
 
   function populateModels(provider, selected) {
     const list = AI_MODELS[provider] || AI_MODELS.gemini;
@@ -1923,27 +1926,32 @@
     }
   });
 
-  function applyAiBox(r) {
-    const st = viewData[currentView];
+  function applyAiBox(r, targetView = currentView) {
+    const st = viewData[targetView];
     const v = [r.ymin, r.xmin, r.ymax, r.xmax].map(Number);
     const missing = v.some(n => !isFinite(n) || n < 0) || v[2] <= v[0] || v[3] <= v[1];
     if (missing) {
       st.hidden = true;
-      hidePlateChk.checked = true;
-      applyPlate();
-      showToast("AI: Plat tidak terdeteksi, disembunyikan.");
-      return;
+      if (targetView === currentView) {
+        hidePlateChk.checked = true;
+        applyPlate();
+      }
+      return false;
     }
     const [ymin, xmin, ymax, xmax] = v;
     st.hidden = false;
-    hidePlateChk.checked = false;
+    if (targetView === currentView) {
+      hidePlateChk.checked = false;
+    }
     st.left = clamp((xmin + xmax) / 20, 0, 100) + "%";
     st.top = clamp((ymin + ymax) / 20, 0, 100) + "%";
     const frac = (xmax - xmin) / 1000;                       // lebar plat / lebar gambar
     st.scale = clamp(Math.round(frac * REF_W / PLATE_W * 100), 10, 200);
-    syncSliders(st);
-    applyPlate();
-    showToast("AI berhasil menyesuaikan plat ✓");
+    if (targetView === currentView) {
+      syncSliders(st);
+      applyPlate();
+    }
+    return true;
   }
 
   btnRunAi.addEventListener("click", async () => {
@@ -1953,19 +1961,59 @@
     if (!key) return showToast("Isi API Key dulu", true);
 
     const label = btnRunAi.querySelector("span");
-    label.textContent = "Memproses AI...";
+    label.textContent = "Memproses...";
     btnRunAi.disabled = true;
+    btnRunAiAll.disabled = true;
     try {
       const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, st.img, false);
       const m = String(text).match(/\{[\s\S]*\}/);
       if (!m) throw new Error("Respons AI tidak bisa dibaca");
-      applyAiBox(JSON.parse(m[0]));
+      const ok = applyAiBox(JSON.parse(m[0]), currentView);
+      showToast(ok ? "AI berhasil menyesuaikan plat ✓" : "AI: Plat tidak terdeteksi, disembunyikan.");
     } catch (err) {
       console.error(err);
       showToast("Gagal AI: " + err.message, true);
     } finally {
-      label.textContent = "Deteksi otomatis sudut ini";
+      label.textContent = "Deteksi 1 sisi";
       btnRunAi.disabled = false;
+      btnRunAiAll.disabled = false;
+    }
+  });
+
+  btnRunAiAll.addEventListener("click", async () => {
+    const key = aiApiKey.value.trim();
+    if (!key) return showToast("Isi API Key dulu", true);
+    
+    const availableViews = VIEWS.filter(v => viewData[v].img);
+    if (availableViews.length === 0) return showToast("Import gambar dulu", true);
+
+    const label = btnRunAiAll.querySelector("span");
+    const oldText = label.textContent;
+    btnRunAi.disabled = true;
+    btnRunAiAll.disabled = true;
+
+    let successCount = 0;
+    try {
+      for (let i = 0; i < availableViews.length; i++) {
+        const v = availableViews[i];
+        label.textContent = `Proses (${i+1}/${availableViews.length})...`;
+        const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
+        const m = String(text).match(/\{[\s\S]*\}/);
+        if (m) {
+          const ok = applyAiBox(JSON.parse(m[0]), v);
+          if (ok) successCount++;
+        }
+        await sleep(1000); // Jeda 1 detik agar tidak kena rate limit API
+      }
+      showToast(`Selesai! ${successCount} plat berhasil dideteksi AI ✓`, false);
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal AI: " + err.message, true);
+    } finally {
+      label.textContent = oldText;
+      btnRunAi.disabled = false;
+      btnRunAiAll.disabled = false;
+      loadViewState(); // Refresh UI untuk sudut saat ini
     }
   });
 
