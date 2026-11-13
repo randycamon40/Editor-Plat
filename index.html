@@ -1321,42 +1321,38 @@
         const pScale = (state.scale || 100) / 100;
         const pRot = ((state.rotate || 0) * Math.PI) / 180;
         
-        // Hitung rasio gambar canvas (resolusi penuh) dengan gambar HTML (tampilan layar)
-        const htmlW = previewImg.clientWidth || 400;
-        const ratio = canvas.width / htmlW;
-        
-        // Ukuran dasar plat di HTML adalah 230x75
-        const pW = 230 * ratio;
-        const pH = 75 * ratio;
+        // Lebar dasar plat = 25% dari lebar gambar asli
+        const baseW = canvas.width * 0.25;
+        const pW = baseW * pScale;
+        const pH = pW * (75 / 230);
         
         ctx.save();
         ctx.translate(pX, pY);
         ctx.rotate(pRot);
-        ctx.scale(pScale, pScale); // Skala SEMUA elemen di sini agar proporsional
         
         // Background
         ctx.fillStyle = plate.warna;
         ctx.beginPath();
         if(ctx.roundRect) {
-          ctx.roundRect(-pW/2, -pH/2, pW, pH, 12 * ratio);
+          ctx.roundRect(-pW/2, -pH/2, pW, pH, pW * 0.05);
         } else {
           ctx.rect(-pW/2, -pH/2, pW, pH);
         }
         ctx.fill();
         
         // Outer Border
-        ctx.lineWidth = 4 * ratio;
+        ctx.lineWidth = pW * 0.015;
         ctx.strokeStyle = isDark(plate.warna) ? "#333333" : "#111111";
         ctx.stroke();
         
         // Inner Border
-        ctx.lineWidth = 2 * ratio;
+        ctx.lineWidth = pW * 0.008;
         ctx.strokeStyle = isDark(plate.warna) ? "rgba(255,255,255,0.2)" : "#ffffff";
         ctx.beginPath();
         if(ctx.roundRect) {
-          ctx.roundRect(-pW/2 + 2*ratio, -pH/2 + 2*ratio, pW - 4*ratio, pH - 4*ratio, 10 * ratio);
+          ctx.roundRect(-pW/2 + pW*0.01, -pH/2 + pW*0.01, pW - pW*0.02, pH - pW*0.02, pW*0.04);
         } else {
-          ctx.rect(-pW/2 + 2*ratio, -pH/2 + 2*ratio, pW - 4*ratio, pH - 4*ratio);
+          ctx.rect(-pW/2 + pW*0.01, -pH/2 + pW*0.01, pW - pW*0.02, pH - pW*0.02);
         }
         ctx.stroke();
         
@@ -1365,38 +1361,31 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         
-        const nopolScaleY = (state.tinggi || 100) / 100;
-        const yearScaleY = (state.tinggi || 100) / 100;
-        
-        // Skala font dasar
-        const fontNopolSize = (state.nopolSize || 38) * ratio;
-        const fontYearSize = (state.tahunSize || 16) * ratio;
+        // Skala font proporsional dengan lebar plat
+        const fontNopolSize = pW * 0.16 * (state.nopolSize / 38);
+        const fontYearSize = pW * 0.07 * (state.tahunSize / 16);
         
         // Nopol Text
         ctx.save();
-        ctx.translate(0, -pH/2 + pH * 0.35);
-        ctx.scale(1, nopolScaleY);
-        ctx.font = `900 ${fontNopolSize}px 'FE-Schrift', Arial, sans-serif`;
-        
-        // Spasi tambahan untuk meniru word-spacing CSS
-        const displayNomor = plate.nomor.replace(/ /g, '   ');
-        
+        ctx.scale(1, (state.tinggi || 100) / 100);
+        ctx.translate(0, (-pH * 0.15) / ((state.tinggi || 100) / 100));
+        ctx.font = `normal ${fontNopolSize}px 'FE-Schrift', Arial, sans-serif`;
         if (state.thickness > 0) {
-          ctx.lineWidth = state.thickness * ratio;
+          ctx.lineWidth = fontNopolSize * 0.04;
           ctx.strokeStyle = ctx.fillStyle;
-          ctx.strokeText(displayNomor, 0, 0);
+          ctx.strokeText(plate.nomor, 0, 0);
         }
-        ctx.fillText(displayNomor, 0, 0);
+        ctx.fillText(plate.nomor, 0, 0);
         ctx.restore();
         
         // Year Text
         ctx.save();
-        ctx.translate(0, pH/2 - pH * 0.25);
-        ctx.scale(1, yearScaleY);
-        ctx.font = `900 ${fontYearSize}px 'FE-Schrift', Arial, sans-serif`;
+        ctx.scale(1, (state.tinggi || 100) / 100);
+        ctx.translate(0, (pH * 0.25) / ((state.tinggi || 100) / 100));
+        ctx.font = `normal ${fontYearSize}px 'FE-Schrift', Arial, sans-serif`;
         const yearStr = plate.bulan + "•" + plate.tahun;
         if (state.thickness > 0) {
-          ctx.lineWidth = (state.thickness * 0.6) * ratio;
+          ctx.lineWidth = fontYearSize * 0.04;
           ctx.strokeStyle = ctx.fillStyle;
           ctx.strokeText(yearStr, 0, 0);
         }
