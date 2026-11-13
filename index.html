@@ -1711,16 +1711,15 @@
       return `
         <div class="item">
           ${thumb}
-          <div class="item-body">
-            ${chipHtml(it, false)}
-            <div class="meta"><span class="tag">${esc(it.bulan || "-")}•${esc(it.tahun || "-")}</span><span class="tag">${esc(it.warnaName || "Kustom")}</span></div>
-          </div>
+          ${chipHtml(it, true)}
+          <div style="flex: 1;"></div>
           <div class="item-actions">
             <button class="icon-btn" data-act="reuse" data-id="${esc(it.id)}" title="Pakai lagi" aria-label="Pakai lagi ${esc(it.nomor)}">${ico("redo")}</button>
             <button class="icon-btn danger del" data-act="del" data-id="${esc(it.id)}" title="Hapus" aria-label="Hapus ${esc(it.nomor)}">${ico("x")}</button>
           </div>
         </div>`;
     }).join("");
+    paintMiniPlates(listEl);
   }
 
   listEl.addEventListener("click", e => {
