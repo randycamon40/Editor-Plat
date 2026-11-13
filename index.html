@@ -299,8 +299,8 @@
   .plate-text.just{display:flex;justify-content:space-between;width:206px;word-spacing:0}
   .plate-text .np{display:inline-block;margin-right:-1px}
   .plate-year{
-    position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;top:3px;transform-origin:center center;
-    font-family:'FE-Schrift',Arial,Helvetica,sans-serif;font-size:16px;font-weight:normal;letter-spacing:2px;
+    position:relative;display:inline-flex;align-items:center;justify-content:center;gap:2px;top:3px;transform-origin:center center;
+    font-family:'FE-Schrift',Arial,Helvetica,sans-serif;font-size:16px;font-weight:normal;letter-spacing:1px;
     white-space:nowrap;margin-top:2px;z-index:2;
   }
   /* .num & .dot mewarisi letter-spacing dari .plate-year, tanpa margin hack */
@@ -891,7 +891,7 @@
   const VIEW_LABEL = { depan: "Depan", kiri: "Kiri", kanan: "Kanan", belakang: "Belakang" };
   const PLATE_W = 230, PLATE_H = 75;
   const REF_W = 600;               // lebar acuan gambar: ukuran plat selalu relatif terhadap lebar gambar
-  const NOPOL_LS = 1, NOPOL_WS = 12, YEAR_LS = 2;
+  const NOPOL_LS = 1, NOPOL_WS = 12, YEAR_LS = 1;
 
   const PRESETS = [
     { n: "Putih", v: "#ffffff" }, { n: "Hitam", v: "#111111" }, { n: "Kuning", v: "#f5c518" },
@@ -2184,7 +2184,7 @@
       drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
     }
     const yearCY = top + n + 2 + y / 2 + 3;
-    const gapY = 6;
+    const gapY = 2;
     ctx.font = y + "px " + FONT_Y;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
     const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * yB.length;
