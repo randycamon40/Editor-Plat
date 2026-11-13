@@ -914,13 +914,14 @@
     { title: "", items: [
       { key: "nopolSize", label: "Ukuran Teks Nopol (maks)", min: 8, max: 70, step: 1, unit: "px" },
       { key: "tahunSize", label: "Ukuran Teks Tahun (maks)", min: 4, max: 30, step: 1, unit: "px" },
-      { key: "tinggi", label: "Tinggi Teks", min: 50, max: 150, step: 1, unit: "%" },
+      { key: "tinggi", label: "Tinggi Teks Nopol", min: 50, max: 150, step: 1, unit: "%" },
+      { key: "tahunTinggi", label: "Tinggi Teks Tahun", min: 50, max: 150, step: 1, unit: "%" },
       { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur"];     // per sudut
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "thickness", "autofit"]; // berlaku semua sudut
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "thickness"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit"]; // berlaku semua sudut
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
   const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -1033,7 +1034,7 @@
   /* ================= State ================= */
   function defaultState() {
     return { img: null, left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 15, blur: 0,
-             nopolSize: 38, tahunSize: 16, tinggi: 100, thickness: 1.5, autofit: true, hidden: false };
+             nopolSize: 38, tahunSize: 16, tinggi: 100, tahunTinggi: 100, thickness: 1.5, autofit: true, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
   function freshState(old, img) {
@@ -1176,8 +1177,8 @@
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    const sy = "scaleY(" + (st.tinggi / 100) + ")";
-    tEl.style.transform = sy; yEl.style.transform = sy;
+    tEl.style.transform = "scaleY(" + (st.tinggi / 100) + ")";
+    yEl.style.transform = "scaleY(" + ((st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100) + ")";
     tEl.style.color = p.warnaTeks; yEl.style.color = p.warnaTeks;
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + p.warnaTeks : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + p.warnaTeks : "0px";
@@ -2167,7 +2168,8 @@
     const fit = fitSizes(st, plate);
     const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
-    const sy = (st.tinggi || 100) / 100;
+    const syNopol = (st.tinggi || 100) / 100;
+    const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100;
     const th = st.thickness || 0;
     const parts = nomorParts(plate.nomor);
     if (st.autofit !== false && parts.length >= 2) {
@@ -2179,9 +2181,9 @@
       xs[last] = half - w[last];
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
-        drawSpaced(ctx, pt, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i]));
+        drawSpaced(ctx, pt, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i]));
     } else {
-      drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
+      drawSpaced(ctx, plate.nomor, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
     }
     const yearCY = top + n + 2 + y / 2 + 3;
     const gapY = 2;
@@ -2192,11 +2194,11 @@
     const dW = ctx.measureText("•").width + YEAR_LS;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
-    drawSpaced(ctx, plate.bulan, yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
     yx += bW + gapY;
-    drawSpaced(ctx, "•", yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
     yx += dW + gapY;
-    drawSpaced(ctx, plate.tahun, yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
 
     ctx.restore();
     ctx.restore();
