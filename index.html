@@ -1446,7 +1446,9 @@
   /* ================= Bulk ================= */
   function chipHtml(it) {
     const dark = isDark(it.warna);
-    return `<span class="plate-chip" style="background:${esc(it.warna)};color:${esc(it.warnaTeks || (dark ? "#fff" : "#111"))};border-color:${dark ? "#333" : "#111"}">${esc(it.nomor)}</span>`;
+    // Paksa warna teks selalu menyesuaikan background plat (putih untuk plat gelap, hitam untuk terang)
+    const textColor = dark ? "#ffffff" : "#111111";
+    return `<span class="plate-chip" style="background:${esc(it.warna)};color:${textColor};border-color:${dark ? "#333" : "#111"}">${esc(it.nomor)}</span>`;
   }
 
   function renderBulk() {
