@@ -81,6 +81,9 @@
     font-family:inherit;
   }
   .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,140,255,.15)}
+  .field input[type="color"]{padding:4px;width:55px;height:44px;cursor:pointer;flex-shrink:0;}
+  .field input[type="color"]::-webkit-color-swatch-wrapper{padding:0;}
+  .field input[type="color"]::-webkit-color-swatch{border:1px solid var(--border);border-radius:6px;}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
   .preview-label{font-size:12px;color:var(--muted);font-weight:600;margin:6px 0 8px}
@@ -293,14 +296,17 @@
 
         <div class="field">
           <label for="warna">Warna Plat</label>
-          <select id="warna">
-            <option value="#ffffff">Putih</option>
-            <option value="#111111">Hitam</option>
-            <option value="#f5c518">Kuning</option>
-            <option value="#e63946">Merah</option>
-            <option value="#2ecc71">Hijau</option>
-            <option value="#3498db">Biru</option>
-          </select>
+          <div style="display:flex; gap:12px; align-items:stretch;">
+            <input type="color" id="warna" value="#ffffff">
+            <select id="warnaPreset" style="flex:1;">
+              <option value="#ffffff">Putih</option>
+              <option value="#111111">Hitam</option>
+              <option value="#f5c518">Kuning</option>
+              <option value="#e63946">Merah</option>
+              <option value="#2ecc71">Hijau</option>
+              <option value="#3498db">Biru</option>
+            </select>
+          </div>
         </div>
 
 
@@ -341,6 +347,7 @@
   const bulanEl         = $("bulan");
   const tahunEl         = $("tahun");
   const warnaEl         = $("warna");
+  const warnaPreset     = $("warnaPreset");
   const imageWrap       = $("imageWrap");
   const dragHint        = $("dragHint");
   const platePreview    = $("platePreview");
@@ -522,7 +529,24 @@
     updatePreview();
   });
 
-  warnaEl.addEventListener("change", updatePreview);
+  warnaEl.addEventListener("input", () => {
+    updatePreview();
+    // Sinkronisasi: Jika warna kustom sama dengan preset, pilih di dropdown
+    let matched = false;
+    for (let i = 0; i < warnaPreset.options.length; i++) {
+      if (warnaPreset.options[i].value === warnaEl.value) {
+        warnaPreset.selectedIndex = i;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) warnaPreset.selectedIndex = -1;
+  });
+
+  warnaPreset.addEventListener("change", () => {
+    warnaEl.value = warnaPreset.value;
+    updatePreview();
+  });
 
   /* ---------- Render Daftar ---------- */
   function render() {
@@ -565,7 +589,7 @@
     }
 
     const warna = warnaEl.value;
-    const warnaName = warnaEl.options[warnaEl.selectedIndex].textContent;
+    const warnaName = warnaPreset.selectedIndex >= 0 ? warnaPreset.options[warnaPreset.selectedIndex].textContent : "Kustom";
 
     items.unshift({
       id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
@@ -591,6 +615,8 @@
     nomorEl.value = "";
     bulanEl.value = "";
     tahunEl.value = "";
+    warnaEl.value = "#ffffff";
+    if(warnaPreset) warnaPreset.selectedIndex = 0;
     currentImage = null;
     previewImg.removeAttribute("src");
     imageWrap.hidden = true;
