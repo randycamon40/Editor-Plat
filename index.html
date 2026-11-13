@@ -271,7 +271,7 @@
   /* ============ Plat (DOM) ============ */
   .plate{
     position:relative;
-    border-radius:12px;padding:2px 0;
+    border-radius:8px;padding:2px 0;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     font-family:var(--plate-font);font-weight:900;line-height:1;
     border:4px solid var(--plate-border,#111);
@@ -298,20 +298,19 @@
   .plate-text.just{display:flex;justify-content:space-between;width:206px;word-spacing:0}
   .plate-text .np{display:inline-block;margin-right:-1px}
   .plate-year{
-    position:relative;display:inline-block;transform-origin:center center;
+    position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;top:3px;transform-origin:center center;
     font-family:'FE-Schrift',Arial,Helvetica,sans-serif;font-size:16px;font-weight:normal;letter-spacing:2px;
     white-space:nowrap;margin-top:2px;z-index:2;
   }
+  /* .num & .dot mewarisi letter-spacing dari .plate-year, tanpa margin hack */
   .plate-overlay{
     position:absolute;top:80%;left:50%;transform:translate(-50%,-50%);
     cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;z-index:3;
   }
   .plate-overlay:active{cursor:grabbing}
   .plate-hero{
-    border-radius:18px;background:var(--road);padding:22px 12px;margin-bottom:16px;
-    background-image:repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.035) 22px 24px);
+    border-radius:18px;padding:22px 12px;margin-bottom:16px;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
-    border:1px solid rgba(255,255,255,.06);
   }
   .plate-hero .plate{transform:scale(var(--fit,1));transform-origin:center}
 
@@ -735,15 +734,23 @@
           </div>
         </div>
 
+        <label class="switch-row" style="margin-bottom:14px; padding-top:0;">
+          <span>Auto fit ke lebar plat</span>
+          <input type="checkbox" id="autofitChk" checked>
+          <i class="switch"></i>
+        </label>
+
         <div class="text-editor">
-          <h3 class="sub-h">Teks plat</h3>
-          <label class="switch-row" style="padding-top:0;margin-bottom:12px">
-            <span>Auto fit ke lebar plat</span>
-            <input type="checkbox" id="autofitChk" checked>
-            <i class="switch"></i>
-          </label>
-          <div id="textSliders"></div>
-          <p class="fit-note">Ukuran teks di atas adalah ukuran maksimal. Nopol yang lebih panjang otomatis dikecilkan agar tidak mentok ke tepi plat. Pengaturan ini berlaku untuk semua sudut.</p>
+          <button type="button" class="ai-toggle" id="toggleTextSlidersBtn" aria-expanded="false" aria-controls="textSlidersWrap" style="padding:0;margin-bottom:0;">
+            <div class="grow">
+              <h3 class="sub-h" style="margin:0">Teks plat</h3>
+            </div>
+            <svg class="i ai-chev"><use href="#i-chevron"/></svg>
+          </button>
+          <div id="textSlidersWrap" hidden>
+            <div id="textSliders" style="margin-top:16px"></div>
+            <p class="fit-note">Ukuran teks di atas adalah ukuran maksimal. Nopol yang lebih panjang otomatis dikecilkan agar tidak mentok ke tepi plat. Pengaturan ini berlaku untuk semua sudut.</p>
+          </div>
         </div>
 
         <div id="setupActions">
@@ -997,6 +1004,7 @@
       b.classList.toggle("on", on);
       if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
+    if (name === "plat") applyPlate();
     if (window.matchMedia("(max-width: 979px)").matches) window.scrollTo({ top: 0, behavior: "smooth" });
   }
   document.querySelectorAll(".nav-btn").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -1163,7 +1171,7 @@
     plEl.style.setProperty("--noise-opacity", st.noise / 100);
     plEl.style.setProperty("--plate-blur", st.blur + "px");
     setNomorDOM(tEl, p.nomor, st.autofit);
-    yEl.textContent = p.bulan + "•" + p.tahun;
+    yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
@@ -1187,6 +1195,7 @@
     platePreview.style.top = st.top;
     platePreview.style.transform = `translate(-50%, -50%) scale(${currentK(st)}) rotate(${st.rotate}deg) skew(${st.skewX || 0}deg, ${st.skewY || 0}deg)`;
     platePreview.style.opacity = st.hidden ? "0" : "1";
+    platePreview.style.pointerEvents = st.hidden ? "none" : "";
     stylePlate(platePreview, plateText, plateYear, st, p);
 
     stylePlate(miniPlate, miniText, miniYear, st, p);
@@ -1261,6 +1270,12 @@
     setTextSetting("autofit", $("autofitChk").checked);
     applyPlate();
     paintMiniPlates(bulkListEl);
+  });
+
+  $("toggleTextSlidersBtn").addEventListener("click", () => {
+    const panel = $("textSlidersWrap");
+    panel.hidden = !panel.hidden;
+    $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
 
   $("applyAllBtn").addEventListener("click", () => {
@@ -2118,18 +2133,18 @@
     ctx.shadowColor = "rgba(0,0,0,0.6)";
     ctx.shadowBlur = 12 * k;
     ctx.shadowOffsetY = 4 * k;
-    rr(ctx, -hw, -hh, PLATE_W, PLATE_H, 12);
+    rr(ctx, -hw, -hh, PLATE_W, PLATE_H, 8);
     ctx.fillStyle = borderC;
     ctx.fill();
     ctx.restore();
 
     // Isi plat
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 8);
+    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 4);
     ctx.fillStyle = bg;
     ctx.fill();
 
     ctx.save();
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 8);
+    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, 4);
     ctx.clip();
 
     // Cincin dalam 2px
@@ -2167,8 +2182,20 @@
     } else {
       drawSpaced(ctx, plate.nomor, top + n / 2, n, sy, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
     }
-    drawSpaced(ctx, plate.bulan + "•" + plate.tahun, top + n + 2 + y / 2, y, sy, th * 0.3, YEAR_LS, 0,
-      FONT_Y, txtC);
+    const yearCY = top + n + 2 + y / 2 + 3;
+    const gapY = 6;
+    ctx.font = y + "px " + FONT_Y;
+    const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
+    const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * yB.length;
+    const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * yT.length;
+    const dW = ctx.measureText("•").width + YEAR_LS;
+    const totalY = bW + gapY + dW + gapY + tW;
+    let yx = -totalY / 2;
+    drawSpaced(ctx, plate.bulan, yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    yx += bW + gapY;
+    drawSpaced(ctx, "•", yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    yx += dW + gapY;
+    drawSpaced(ctx, plate.tahun, yearCY, y, sy, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
 
     ctx.restore();
     ctx.restore();
@@ -2293,6 +2320,7 @@
           const canvas = document.createElement("canvas");
           await renderPlateToCanvas(state.img, state, plate, canvas, cache);
           const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", exportQuality));
+          if (!blob) throw new Error("Render gagal: " + safe + "_" + v);
           folderNopol.file(safe + "_" + v + ".jpg", blob);
           canvas.width = canvas.height = 0;
           done++;
