@@ -280,9 +280,13 @@
             <label for="tahunSizeSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ukuran Teks Tahun <span id="tahunSizeVal" style="color:var(--accent);">16px</span></label>
             <input type="range" id="tahunSizeSlider" min="4" max="30" value="16" style="padding:0;">
           </div>
-          <div class="field" style="margin-bottom:0;">
+          <div class="field">
             <label for="tinggiSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Tinggi Teks <span id="tinggiVal" style="color:var(--accent);">100%</span></label>
             <input type="range" id="tinggiSlider" min="50" max="150" value="100" style="padding:0;">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="thicknessSlider" style="display:flex; justify-content:space-between; margin-bottom:4px;">Ketebalan Teks <span id="thicknessVal" style="color:var(--accent);">1.5px</span></label>
+            <input type="range" id="thicknessSlider" min="0" max="4" step="0.5" value="1.5" style="padding:0;">
           </div>
         </div>
       </section>
@@ -467,11 +471,13 @@
         nopolSizeSlider.value = 38;
         tahunSizeSlider.value = 16;
         tinggiSlider.value = 100;
+        thicknessSlider.value = 1.5;
         plateText.style.fontSize = "38px";
         plateYear.style.fontSize = "16px";
         plateText.style.transform = "scaleY(1)";
         plateYear.style.transform = "scaleY(1)";
         tinggiVal.textContent = "100%";
+        thicknessVal.textContent = "1.5px";
         updatePlateTransform();
         platePreview.style.setProperty('--noise-opacity', 0.15);
         platePreview.style.setProperty('--plate-blur', "0px");
@@ -521,6 +527,7 @@
     const tahun = tahunEl.value.trim() || "24";
     const warna = warnaEl.value;
     const warnaTeks = warnaTeksEl.value;
+    const thickness = parseFloat(thicknessSlider.value);
 
     plateText.textContent = nomor;
     plateYear.textContent = bulan + "•" + tahun;
@@ -531,11 +538,23 @@
     const isDarkColor = isDark(warna);
     platePreview.style.setProperty('--plate-border', isDarkColor ? "#333333" : "#111111");
     platePreview.style.setProperty('--plate-inner', isDarkColor ? "rgba(255,255,255,0.2)" : "#ffffff");
-    // Paksa stroke dan shadow jadi kosong agar huruf FE-Schrift padat & tajam
+    
+    // Paksa warna teks langsung (fix bug warna tidak berubah)
+    plateText.style.color = warnaTeks;
+    plateYear.style.color = warnaTeks;
+    
+    // Hapus stroke dan gunakan text-shadow agar huruf padat, tebal, dan hitam pekat
     plateText.style.webkitTextStroke = "0px";
     plateYear.style.webkitTextStroke = "0px";
-    plateText.style.textShadow = "none";
-    plateYear.style.textShadow = "none";
+    
+    if (thickness > 0) {
+      const ts = `${thickness}px 0 0 ${warnaTeks}, -${thickness}px 0 0 ${warnaTeks}, 0 ${thickness}px 0 ${warnaTeks}, 0 -${thickness}px 0 ${warnaTeks}`;
+      plateText.style.textShadow = ts;
+      plateYear.style.textShadow = ts;
+    } else {
+      plateText.style.textShadow = "none";
+      plateYear.style.textShadow = "none";
+    }
   }
 
   nomorEl.addEventListener("input", () => {
@@ -667,6 +686,10 @@
       plateYear.style.transform = "scaleY(1)";
       tinggiVal.textContent = "100%";
     }
+    if (thicknessSlider) {
+      thicknessSlider.value = 1.5;
+      thicknessVal.textContent = "1.5px";
+    }
     updatePreview();
     nomorEl.focus();
   }
@@ -767,6 +790,7 @@
   const nopolSizeSlider = $("nopolSizeSlider");
   const tahunSizeSlider = $("tahunSizeSlider");
   const tinggiSlider = $("tinggiSlider");
+  const thicknessSlider = $("thicknessSlider");
   
   const scaleVal = $("scaleVal");
   const rotateVal = $("rotateVal");
@@ -775,6 +799,7 @@
   const nopolSizeVal = $("nopolSizeVal");
   const tahunSizeVal = $("tahunSizeVal");
   const tinggiVal = $("tinggiVal");
+  const thicknessVal = $("thicknessVal");
 
   function updatePlateTransform() {
     const scale = scaleSlider.value / 100;
@@ -813,6 +838,8 @@
      plateYear.style.transform = `scaleY(${scale})`;
      tinggiVal.textContent = tinggiSlider.value + "%";
   });
+
+  thicknessSlider.addEventListener("input", updatePreview);
 
   /* ---------- Init ---------- */
   updatePreview();
