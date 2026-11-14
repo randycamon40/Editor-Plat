@@ -2151,72 +2151,95 @@ if (name === "history") renderHistory();
         let foundM = false;
         let foundY = false;
 
-        // 1. Cari tahun 4 digit (misal 2026)
-        let year4 = text.match(/\b\d{4}\b/);
-        if (year4) {
-          parsedYear = year4[0].slice(-2);
-          foundY = true;
+        // 1. Cek format gabungan (misal "07.27", "10/2026", "2026-10")
+        const dateMatch = text.match(/^(\d{1,2})[\s.\-\/](\d{2,4})$/);
+        const dateMatchRev = text.match(/^(\d{4})[\s.\-\/](\d{1,2})$/);
+        if (dateMatch) {
+            let m = parseInt(dateMatch[1], 10);
+            let y = dateMatch[2];
+            if (m >= 1 && m <= 12) {
+                parsedMonth = dateMatch[1].padStart(2, '0');
+                parsedYear = y.length === 4 ? y.slice(-2) : y.padStart(2, '0');
+                foundM = true; foundY = true;
+            }
+        } else if (dateMatchRev) {
+            let m = parseInt(dateMatchRev[2], 10);
+            let y = dateMatchRev[1];
+            if (m >= 1 && m <= 12) {
+                parsedMonth = dateMatchRev[2].padStart(2, '0');
+                parsedYear = y.slice(-2);
+                foundM = true; foundY = true;
+            }
         }
 
-        // 2. Cari nama bulan (misal "oktober", "okt")
-        let words = text.split(/[\s\/\-]+/);
-        words.forEach(w => {
-          if (BULAN_MAP[w]) {
-            parsedMonth = BULAN_MAP[w];
-            foundM = true;
+        if (!foundM || !foundY) {
+          // 2. Cari tahun 4 digit (misal 2026)
+          let year4 = text.match(/\b\d{4}\b/);
+          if (year4 && !foundY) {
+            parsedYear = year4[0].slice(-2);
+            foundY = true;
           }
-        });
 
-        // 3. Cari bulan dari sisa angka (misal format "10/2026" atau "10 2026")
-        if (!foundM) {
-          let cleanText = year4 ? text.replace(year4[0], "").trim() : text;
-          cleanText = cleanText.replace(/^\/|\/$/g, "");
-          if (/^\d{1,2}$/.test(cleanText)) {
-            const num = parseInt(cleanText, 10);
-            if (num >= 1 && num <= 12 && parsedMonth === null) {
-              parsedMonth = cleanText.padStart(2, '0');
+          // 3. Cari nama bulan (misal "oktober", "okt")
+          let words = text.split(/[\s\/\-.,]+/);
+          words.forEach(w => {
+            if (BULAN_MAP[w] && !foundM) {
+              parsedMonth = BULAN_MAP[w];
               foundM = true;
             }
-          }
-        }
+          });
 
-        // 4. Cari tahun 2 digit jika belum ketemu (misal "Okt 26")
-        if (!foundY) {
-          if (!(foundM && text === parsedMonth && text.length <= 2)) {
-            let year2 = text.match(/\b\d{2}\b/);
-            if (year2) {
-              parsedYear = year2[0];
-              foundY = true;
-            }
-          }
-        }
-
-        // 5. Cari angka murni jika belum ketemu (misal input dipisah koma: "10", "26")
-        if (!foundM && !foundY) {
-          if (/^\d{1,2}$/.test(text)) {
-            const num = parseInt(text, 10);
-            if (parsedMonth === null) {
-              if (num >= 1 && num <= 12) {
-                parsedMonth = text.padStart(2, '0');
-                foundM = true;
-              } else {
-                msgs.push("Bulan '" + text + "' tidak valid (01-12)");
-                parsedMonth = "01";
+          // 4. Cari bulan dari sisa angka (misal format "10/2026")
+          if (!foundM) {
+            let cleanText = year4 ? text.replace(year4[0], "").trim() : text;
+            cleanText = cleanText.replace(/^[\s\/\-.,]+|[\s\/\-.,]+$/g, "");
+            if (/^\d{1,2}$/.test(cleanText)) {
+              const num = parseInt(cleanText, 10);
+              if (num >= 1 && num <= 12 && parsedMonth === null) {
+                parsedMonth = cleanText.padStart(2, '0');
                 foundM = true;
               }
-            } else if (parsedYear === null) {
-              parsedYear = text.padStart(2, '0');
-              foundY = true;
             }
-          } else if (/^\d{2}$/.test(text)) {
-            if (parsedYear === null) {
-              parsedYear = text;
-              foundY = true;
+          }
+
+          // 5. Cari tahun 2 digit jika belum ketemu
+          if (!foundY) {
+            if (!(foundM && text === parsedMonth && text.length <= 2)) {
+              let year2 = text.match(/\b\d{2}\b/);
+              if (year2 && year2[0] !== parsedMonth) {
+                parsedYear = year2[0];
+                foundY = true;
+              }
+            }
+          }
+
+          // 6. Cari angka murni jika belum ketemu
+          if (!foundM && !foundY) {
+            if (/^\d{1,2}$/.test(text)) {
+              const num = parseInt(text, 10);
+              if (parsedMonth === null) {
+                if (num >= 1 && num <= 12) {
+                  parsedMonth = text.padStart(2, '0');
+                  foundM = true;
+                } else {
+                  msgs.push("Bulan '" + text + "' tidak valid (01-12)");
+                  parsedMonth = "01";
+                  foundM = true;
+                }
+              } else if (parsedYear === null) {
+                parsedYear = text.padStart(2, '0');
+                foundY = true;
+              }
+            } else if (/^\d{2}$/.test(text)) {
+              if (parsedYear === null) {
+                parsedYear = text;
+                foundY = true;
+              }
             }
           }
         }
 
-        // 6. Jika bukan bulan/tahun, coba parsing warna
+        // 7. Jika bukan bulan/tahun, coba parsing warna
         if (!foundM && !foundY) {
           const c = parseColorToken(t);
           if (c) {
