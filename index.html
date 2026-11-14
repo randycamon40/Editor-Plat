@@ -2964,11 +2964,11 @@ if (name === "history") renderHistory();
     });
     
     $("expTotalImgs").textContent = total;
-    const sizePerImg = exportQuality === 0.75 ? 100 : exportQuality === 0.9 ? 200 : 350;
+    const sizePerImg = exportQuality === 0.75 ? 20 : exportQuality === 0.9 ? 45 : 75;
     const totalSizeMB = (total * sizePerImg) / 1024;
     $("expTotalSize").textContent = totalSizeMB.toFixed(1) + " MB";
     
-    const timePerImg = 0.15;
+    const timePerImg = 0.25;
     const totalTime = Math.ceil(total * timePerImg);
     $("expTotalTime").textContent = totalTime < 60 ? totalTime + " detik" : Math.ceil(totalTime/60) + " menit";
   }
