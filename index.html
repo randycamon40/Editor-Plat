@@ -926,8 +926,17 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
   let toastTimer = null;
   const toastEl = $("toast");
-  function showToast(msg, isError, action) {
+  function showToast(msg, isError, action, iconName) {
     toastEl.textContent = "";
+    if (iconName) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "i");
+      svg.setAttribute("style", "margin-right:2px");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", "#i-" + iconName);
+      svg.appendChild(use);
+      toastEl.appendChild(svg);
+    }
     const sp = document.createElement("span");
     sp.textContent = msg;
     toastEl.appendChild(sp);
@@ -948,8 +957,49 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
   /* ---------- Sheet & konfirmasi ---------- */
   let pendingConfirm = null;
-  function openSheet(id) { $(id).classList.add("open"); }
-  function closeSheet(id) {
+  let ignoreNextPopState = false;
+  let lastBackPress = 0;
+
+  if (window.history && window.history.pushState) {
+    history.pushState({ page: "app" }, "");
+  }
+
+  window.addEventListener("popstate", (e) => {
+    if (ignoreNextPopState) {
+      ignoreNextPopState = false;
+      history.pushState({ page: "app" }, "");
+      return;
+    }
+    const openSheets = document.querySelectorAll('.sheet.open');
+    if (openSheets.length > 0) {
+      const topSheet = openSheets[openSheets.length - 1];
+      closeSheet(topSheet.id, true);
+      if (document.querySelector('.sheet.open')) {
+        history.pushState({ modal: true }, "");
+      } else {
+        history.pushState({ page: "app" }, "");
+      }
+    } else {
+      const now = Date.now();
+      if (now - lastBackPress < 2000) {
+        // Biarkan browser mengeksekusi back (keluar aplikasi)
+      } else {
+        lastBackPress = now;
+        showToast("Tekan sekali lagi untuk keluar", false, null, "plate");
+        history.pushState({ page: "app" }, "");
+      }
+    }
+  });
+
+  function openSheet(id) { 
+    const wasOpen = document.querySelector('.sheet.open');
+    $(id).classList.add("open"); 
+    if (!wasOpen) {
+      history.pushState({ modal: id }, "");
+    }
+  }
+
+  function closeSheet(id, fromHistory = false) {
     $(id).classList.remove("open");
     $(id).querySelectorAll(".sheet-panel").forEach(p => p.style.transform = "");
     if (id === "previewModal") {
@@ -960,6 +1010,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       }, 300);
     }
     if (id === "confirmModal" && pendingConfirm) { const f = pendingConfirm; pendingConfirm = null; f(false); }
+    
+    if (!fromHistory) {
+      if (!document.querySelector('.sheet.open') && history.state && history.state.modal) {
+        ignoreNextPopState = true;
+        history.back();
+      }
+    }
   }
   document.querySelectorAll("[data-sheet]").forEach(s => {
     s.addEventListener("click", e => { if (e.target === s) closeSheet(s.id); });
@@ -1034,7 +1091,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       $("confirmTitle").textContent = title;
       $("confirmText").textContent = text;
       $("confirmOk").textContent = okLabel || "Ya, lanjutkan";
-      const done = v => { pendingConfirm = null; $("confirmModal").classList.remove("open"); res(v); };
+              const done = v => { 
+          if (pendingConfirm) {
+            pendingConfirm = null; 
+            closeSheet("confirmModal"); 
+            res(v); 
+          }
+        };
       pendingConfirm = done;
       $("confirmOk").onclick = () => done(true);
       $("confirmCancel").onclick = () => done(false);
