@@ -1025,6 +1025,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
   });
 
   function openSheet(id) { 
+    document.body.appendChild($(id)); // Pindahkan ke urutan DOM paling akhir agar tampil di atas
     $(id).classList.add("open"); 
     history.pushState({ modal: id }, "");
   }
