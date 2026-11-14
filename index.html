@@ -565,7 +565,6 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
           <button class="btn btn-soft" id="btnPreviewBulk"><svg class="i"><use href="#i-eye"/></svg>Preview</button>
           <button class="btn btn-primary" id="addBtn"><svg class="i"><use href="#i-plus"/></svg><span id="addBtnLabel">Tambah ke bulk</span></button>
         </div>
-        <button type="button" class="btn btn-soft btn-block mt-s" id="pasteBtn" hidden><svg class="i"><use href="#i-list-plus"/></svg>Tempel banyak nopol sekaligus</button>
       </section>
     </section>
   </div>
@@ -596,22 +595,12 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
 
         <div class="strip" id="templateStrip" aria-label="Template mobil aktif"></div>
 
-        <div class="lbl">Kualitas hasil JPG</div>
-        <div class="seg seg3" id="qualitySeg">
-          <button type="button" data-q="0.75">Hemat</button>
-          <button type="button" data-q="0.9" class="on">Standar</button>
-          <button type="button" data-q="0.98">Maksimal</button>
-        </div>
-
         <div class="btn-row mt">
           <button class="btn btn-primary" id="btnExportZip"><svg class="i"><use href="#i-package"/></svg><span>Export ZIP</span></button>
           <button class="btn btn-soft" id="btnSaveHistoryBulk"><svg class="i"><use href="#i-vault"/></svg>Simpan ke Vault</button>
         </div>
-        <div id="exportProgress" class="mt" hidden>
-          <div class="progress-txt"><span id="progressLabel">Memproses…</span><span id="progressNum">0/0</span></div>
-          <div class="progress"><i id="progressBar"></i></div>
-        </div>
 
+        <button type="button" class="btn btn-soft btn-block mt" id="pasteBtn" hidden><svg class="i"><use href="#i-list-plus"/></svg>Tempel banyak nopol sekaligus</button>
         <div class="search-wrap"><svg class="i"><use href="#i-search"/></svg><input id="bulkSearch" class="inp" type="search" placeholder="Cari nopol di antrean…" autocomplete="off"></div>
         <div class="list mt" id="bulkList"></div>
 
@@ -843,6 +832,37 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
     </div>
     <button class="btn btn-primary btn-block" id="sendFeedbackBtn"><svg class="i"><use href="#i-upload"/></svg>Kirim via Email</button>
   </div>
+</div>
+
+<!-- ============ Modal Export Options ============ -->
+<div class="sheet" id="exportOptionsModal" data-sheet>
+  <div class="sheet-panel small">
+    <div class="sheet-head"><h2>Opsi Export ZIP</h2><button id="closeExportOptionsBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="field">
+      <span class="lbl">Kualitas Gambar</span>
+      <div class="seg seg3" id="exportQualitySeg">
+        <button type="button" data-q="0.75">Hemat</button>
+        <button type="button" data-q="0.9" class="on">Standar</button>
+        <button type="button" data-q="0.98">Maksimal</button>
+      </div>
+    </div>
+    <div class="field" style="background:var(--s2);padding:12px;border-radius:12px;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px;font-weight:600"><span>Total Gambar:</span><span id="expTotalImgs">0</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px;font-weight:600"><span>Perkiraan Ukuran:</span><span id="expTotalSize">0 MB</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:600"><span>Estimasi Waktu:</span><span id="expTotalTime">0 detik</span></div>
+    </div>
+    <button class="btn btn-primary btn-block mt" id="startExportBtn">Mulai Export</button>
+  </div>
+</div>
+
+<!-- ============ Fullscreen Export Progress ============ -->
+<div id="exportOverlay" hidden style="position:fixed;inset:0;z-index:150;background:rgba(6,9,16,.85);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+  <h2 style="font-family:var(--f-d);font-size:24px;margin-bottom:8px">Mengekspor ZIP...</h2>
+  <p id="expOverlayCount" style="font-size:16px;margin-bottom:20px;color:#ccc">0 / 0 Gambar</p>
+  <div style="width:100%;max-width:300px;height:12px;background:rgba(255,255,255,.2);border-radius:10px;overflow:hidden;margin-bottom:12px">
+    <div id="expOverlayBar" style="height:100%;width:0%;background:var(--ac);transition:width .15s"></div>
+  </div>
+  <div id="expOverlayPct" style="font-size:24px;font-weight:bold">0%</div>
 </div>
 
 <!-- ============ Modal Konfirmasi ============ -->
@@ -2327,8 +2347,7 @@ if (name === "history") renderHistory();
       $("renameInput").value = currentName;
       openSheet("renameModal");
     } else if (act === "export_batch") {
-      const ok = await askConfirm("Export ZIP?", "Apakah kamu yakin ingin mengekspor antrean ini?", "Export");
-      if (ok) doExport([{ folderName: null, plates: batch.plates, template: batch.template }], btn, false);
+      openExportModal([{ folderName: null, plates: batch.plates, template: batch.template }], btn, false);
     } else if (act === "preview_batch") {
       const title = batch.name || `Antrean #${historyBatches.length - idx}`;
       $("historyPreviewTitle").textContent = title + " (" + batch.date + ")";
@@ -2930,18 +2949,75 @@ if (name === "history") renderHistory();
     const q = localStorage.getItem(QUALITY_KEY);
     if (q) exportQuality = parseFloat(q) || 0.9;
   } catch (e) {}
-  function paintQuality() {
-    document.querySelectorAll("#qualitySeg button").forEach(b =>
-      b.classList.toggle("on", Math.abs(parseFloat(b.dataset.q) - exportQuality) < 0.001));
-  }
   if (![0.75, 0.9, 0.98].includes(exportQuality)) exportQuality = 0.9;
-  paintQuality();
-  $("qualitySeg").addEventListener("click", e => {
+
+  let pendingExportData = null;
+
+  function updateExportEstimates() {
+    if (!pendingExportData) return;
+    let total = 0;
+    pendingExportData.exportGroups.forEach(g => {
+      if (!g.plates || !g.plates.length) return;
+      const activeTpl = g.template || templateData;
+      const views = VIEWS.filter(v => activeTpl && activeTpl[v] && activeTpl[v].img);
+      total += g.plates.length * views.length;
+    });
+    
+    $("expTotalImgs").textContent = total;
+    const sizePerImg = exportQuality === 0.75 ? 100 : exportQuality === 0.9 ? 200 : 350;
+    const totalSizeMB = (total * sizePerImg) / 1024;
+    $("expTotalSize").textContent = totalSizeMB.toFixed(1) + " MB";
+    
+    const timePerImg = 0.15;
+    const totalTime = Math.ceil(total * timePerImg);
+    $("expTotalTime").textContent = totalTime < 60 ? totalTime + " detik" : Math.ceil(totalTime/60) + " menit";
+  }
+
+  function openExportModal(groups, btn, save) {
+    if (exporting) return;
+    let allPlates = [];
+    groups.forEach(g => { if (Array.isArray(g.plates)) allPlates = allPlates.concat(g.plates); });
+    if (!allPlates.length) return showToast("Data kosong", true);
+    
+    let globalTpl = templateData;
+    if (!globalTpl || !Object.values(globalTpl).some(v => v && v.img)) {
+      for (let g of groups) {
+        if (g.template && Object.values(g.template).some(v => v && v.img)) {
+          globalTpl = g.template;
+          break;
+        }
+      }
+    }
+    if (!globalTpl) return showToast("Kunci template terlebih dahulu!", true);
+    if (typeof JSZip === "undefined") return showToast("Library ZIP belum termuat. Cek koneksi internet.", true);
+
+    pendingExportData = { exportGroups: groups, btnElement: btn, saveToVault: save };
+    
+    document.querySelectorAll("#exportQualitySeg button").forEach(b =>
+      b.classList.toggle("on", Math.abs(parseFloat(b.dataset.q) - exportQuality) < 0.001));
+    
+    updateExportEstimates();
+    openSheet("exportOptionsModal");
+  }
+
+  $("exportQualitySeg").addEventListener("click", e => {
     const b = e.target.closest("button[data-q]");
     if (!b) return;
     exportQuality = parseFloat(b.dataset.q);
     try { localStorage.setItem(QUALITY_KEY, String(exportQuality)); } catch(e) {}
-    paintQuality();
+    document.querySelectorAll("#exportQualitySeg button").forEach(x =>
+      x.classList.toggle("on", Math.abs(parseFloat(x.dataset.q) - exportQuality) < 0.001));
+    updateExportEstimates();
+  });
+
+  $("closeExportOptionsBtn").addEventListener("click", () => closeSheet("exportOptionsModal"));
+
+  $("startExportBtn").addEventListener("click", () => {
+    if (!pendingExportData) return;
+    closeSheet("exportOptionsModal");
+    const { exportGroups, btnElement, saveToVault } = pendingExportData;
+    pendingExportData = null;
+    doExport(exportGroups, btnElement, saveToVault);
   });
 
   function makeThumb(canvas) {
@@ -2981,28 +3057,22 @@ if (name === "history") renderHistory();
       total += g.plates.length * views.length;
     });
 
-    const label = btnElement.querySelector("span") || btnElement;
-    const oldHTML = label.innerHTML;
-    
     if (total === 0) {
       exporting = false;
-      btnElement.disabled = false;
-      label.innerHTML = oldHTML;
-      const _pc = $("exportProgress"); if (_pc) _pc.hidden = true;
       return showToast("Gagal: Gambar mobil belum di-import atau template kosong!", true);
     }
     
     let done = 0;
     exporting = true;
-    btnElement.disabled = true;
-    label.innerHTML = "Memproses...";
     
-    const progContainer = $("exportProgress");
-    if (progContainer) progContainer.hidden = false;
+    const expOverlay = $("exportOverlay");
+    expOverlay.hidden = false;
     
     const setProg = () => {
-      if ($("progressNum")) $("progressNum").textContent = done + "/" + total;
-      if ($("progressBar")) $("progressBar").style.width = (total ? done / total * 100 : 0) + "%";
+      const pct = total ? Math.round(done / total * 100) : 0;
+      $("expOverlayCount").textContent = done + " / " + total + " Gambar";
+      $("expOverlayPct").textContent = pct + "%";
+      $("expOverlayBar").style.width = pct + "%";
     };
     setProg();
 
@@ -3052,7 +3122,7 @@ if (name === "history") renderHistory();
         }
       }
 
-      label.innerHTML = "Membuat ZIP...";
+      $("expOverlayCount").textContent = "Menyelesaikan ZIP...";
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
@@ -3104,23 +3174,18 @@ if (name === "history") renderHistory();
       showToast("Gagal export ZIP", true);
     } finally {
       exporting = false;
-      btnElement.disabled = false;
-      label.innerHTML = oldHTML;
-      if (progContainer) setTimeout(() => { progContainer.hidden = true; }, 1200);
+      setTimeout(() => { $("exportOverlay").hidden = true; }, 800);
     }
   }
 
-  $("btnExportZip").addEventListener("click", async (e) => {
+  $("btnExportZip").addEventListener("click", (e) => {
     const exportBtn = e.currentTarget;
     if (!bulkItems.length) return showToast("Belum ada data bulk", true);
-    const ok = await askConfirm("Export ZIP?", "Apakah kamu yakin ingin mengekspor antrean bulk ini?", "Export");
-    if (ok) {
-      const platesClone = JSON.parse(JSON.stringify(bulkItems));
-      doExport([{ folderName: null, plates: platesClone }], exportBtn, true);
-    }
+    const platesClone = JSON.parse(JSON.stringify(bulkItems));
+    openExportModal([{ folderName: null, plates: platesClone }], exportBtn, true);
   });
 
-  $("btnExportAllVault").addEventListener("click", async (e) => {
+  $("btnExportAllVault").addEventListener("click", (e) => {
     const vaultBtn = e.currentTarget;
     const groups = historyBatches.map((b, idx) => ({
       folderName: b.name || `Antrean #${historyBatches.length - idx}`,
@@ -3129,9 +3194,7 @@ if (name === "history") renderHistory();
     })).filter(g => g.plates && g.plates.length > 0);
     
     if (!groups.length) return showToast("Vault kosong", true);
-    
-    const ok = await askConfirm("Export Semua Vault?", "Apakah kamu yakin ingin mengekspor seluruh antrean yang ada di Vault?", "Export");
-    if (ok) doExport(groups, vaultBtn, false);
+    openExportModal(groups, vaultBtn, false);
   });
 
   /* ================= Init ================= */
