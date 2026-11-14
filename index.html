@@ -761,6 +761,10 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
       <button id="closePasteBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
     <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- bulan,tahun, dan warna plat mengikuti template&#10;R 4 NDY, 05, 92 <- hanya ubah bulan dan tahun&#10;S 3 LVI, hitam <- hanya ubah warna&#10;S 8233 HQ, 05, 31, kuning <- untuk ubah bulan,tahun, dan warna" spellcheck="false" autocapitalize="characters"></textarea>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button type="button" class="btn btn-soft" id="btnImportCsv"><svg class="i"><use href="#i-package"/></svg>Import File (CSV/TXT)</button>
+      <input type="file" id="pasteFileInput" accept=".csv, .txt" hidden>
+    </div>
     <div class="count-line" id="pasteCount">0 nopol terdeteksi</div>
     <div id="pasteWarnings" class="paste-warnings"></div>
     <button class="btn btn-primary btn-block" id="pasteAddBtn"><svg class="i"><use href="#i-plus"/></svg>Tambahkan ke antrean</button>
@@ -1000,18 +1004,13 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
   window.addEventListener("popstate", (e) => {
     if (ignoreNextPopState) {
       ignoreNextPopState = false;
-      history.pushState({ page: "app" }, "");
       return;
     }
     const openSheets = document.querySelectorAll('.sheet.open');
     if (openSheets.length > 0) {
       const topSheet = openSheets[openSheets.length - 1];
       closeSheet(topSheet.id, true);
-      if (document.querySelector('.sheet.open')) {
-        history.pushState({ modal: true }, "");
-      } else {
-        history.pushState({ page: "app" }, "");
-      }
+      // Jangan pushState di sini, biarkan browser mengembalikan state history sebelumnya secara natural
     } else {
       const now = Date.now();
       if (now - lastBackPress < 2000) {
@@ -1040,7 +1039,12 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
         if (previewToken === oldToken) $(id).querySelector("#previewContainer").innerHTML = ""; 
       }, 300);
     }
-    if (id === "confirmModal" && pendingConfirm) { const f = pendingConfirm; pendingConfirm = null; f(false); }
+    if (id === "confirmModal" && pendingConfirm) { 
+      const f = pendingConfirm; 
+      pendingConfirm = null; 
+      f(false, fromHistory); 
+      return; 
+    }
     
     if (!fromHistory) {
       if (history.state && history.state.modal) {
@@ -1122,13 +1126,12 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
       $("confirmTitle").textContent = title;
       $("confirmText").textContent = text;
       $("confirmOk").textContent = okLabel || "Ya, lanjutkan";
-              const done = v => { 
-          if (pendingConfirm) {
-            pendingConfirm = null; 
-            closeSheet("confirmModal"); 
-            res(v); 
-          }
-        };
+      const done = (v, fromHist = false) => { 
+        if (pendingConfirm !== done) return;
+        pendingConfirm = null; 
+        closeSheet("confirmModal", fromHist); 
+        res(v); 
+      };
       pendingConfirm = done;
       $("confirmOk").onclick = () => done(true);
       $("confirmCancel").onclick = () => done(false);
@@ -2067,7 +2070,7 @@ if (name === "history") renderHistory();
     const warnings = [];
     text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
       const parts = line.split(/[,;\t|]+/).map(s => s.trim()).filter((s, i) => i === 0 || s);
-      const rawNomor = (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15);
+      let rawNomor = (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15);
       const msgs = [];
       if (!rawNomor) {
         msgs.push("Nomor plat kosong");
@@ -2075,11 +2078,15 @@ if (name === "history") renderHistory();
         msgs.push("Nopol harus ada huruf & angka");
       } else if (/[^A-Z0-9\s]/.test(rawNomor)) {
         msgs.push("Karakter tidak valid di nopol");
-      } else if (!rawNomor.includes(" ")) {
-        msgs.push("Nopol harus pakai spasi (misal: B 1234 XYZ)");
-      } else if (/[0-9][A-Z]/.test(rawNomor)) {
-        msgs.push("Tambah spasi setelah angka (misal: B 3784 ECG)");
       }
+
+      // Auto-format nopol agar ada spasinya (misal: B3784ECG -> B 3784 ECG)
+      const cleanNopol = rawNomor.replace(/[^A-Z0-9]/g, "");
+      const m = cleanNopol.match(/^([A-Z]{1,2})([0-9]{1,4})([A-Z]{0,3})$/);
+      if (m) {
+        rawNomor = m[1] + " " + m[2] + (m[3] ? " " + m[3] : "");
+      }
+
       const it = Object.assign({}, base, { nomor: rawNomor });
       let parsedMonth = null, parsedYear = null;
       parts.slice(1).forEach(t => {
@@ -2121,6 +2128,19 @@ if (name === "history") renderHistory();
     setTimeout(() => $("pasteArea").focus(), 80);
   });
   $("closePasteBtn").addEventListener("click", () => closeSheet("pasteModal"));
+  
+  $("btnImportCsv").addEventListener("click", () => $("pasteFileInput").click());
+  $("pasteFileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      $("pasteArea").value = ev.target.result;
+      $("pasteArea").dispatchEvent(new Event("input")); // Trigger validasi
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset input
+  });
   $("pasteArea").addEventListener("input", () => {
     const { items, warnings } = parsePaste($("pasteArea").value);
     const countEl = $("pasteCount");
