@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
-<script>try{var _m=localStorage.getItem("platTheme");if(_m==="light"||_m==="dark")document.documentElement.setAttribute("data-theme",_m)}catch(e){}</script>
+<script>try{var _m=localStorage.getItem("platTheme");if(_m==="light"||_m==="dark")document.documentElement.setAttribute("data-theme",_m);var _d=_m==="dark"||(_m!=="light"&&window.matchMedia("(prefers-color-scheme:dark)").matches);document.querySelector('meta[name="theme-color"]').setAttribute("content",_d?"#18181b":"#eceff3")}catch(e){}</script>
 <style>
 @font-face{font-family:'FE-Schrift';src:url('./FE.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
 
@@ -29,22 +29,22 @@
   --f-d:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
   --f:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   --plate-font:'FE-Schrift','Arial Black',Impact,sans-serif;
-  --nav-h:62px;
+  --nav-h:72px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
   color-scheme:dark;
-  --bg:#0a0e15;--s1:#131925;--s2:#1b2332;--s3:#27314a;
-  --line:#242d3f;--line2:#36425c;
-  --tx:#eef1f7;--tx2:#a0aac0;--tx3:#6c778f;
+  --bg:#18181b;--s1:#27272a;--s2:#3f3f46;--s3:#52525b;
+  --line:#3f3f46;--line2:#52525b;
+  --tx:#f4f4f5;--tx2:#a1a1aa;--tx3:#71717a;
   --ac-ink:#fff;--ok:#34d399;--ok-bg:rgba(52,211,153,.16);--bad:#f87171;--bad-bg:rgba(248,113,113,.16);
-  --stage:#070a10;}}
+  --stage:#09090b;}}
 :root[data-theme=dark]{
   color-scheme:dark;
-  --bg:#0a0e15;--s1:#131925;--s2:#1b2332;--s3:#27314a;
-  --line:#242d3f;--line2:#36425c;
-  --tx:#eef1f7;--tx2:#a0aac0;--tx3:#6c778f;
+  --bg:#18181b;--s1:#27272a;--s2:#3f3f46;--s3:#52525b;
+  --line:#3f3f46;--line2:#52525b;
+  --tx:#f4f4f5;--tx2:#a1a1aa;--tx3:#71717a;
   --ac-ink:#fff;--ok:#34d399;--ok-bg:rgba(52,211,153,.16);--bad:#f87171;--bad-bg:rgba(248,113,113,.16);
-  --stage:#070a10;}
+  --stage:#09090b;}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea{-webkit-user-select:text;user-select:text}
@@ -127,7 +127,7 @@ button{cursor:pointer}
 .inp:focus,.sel:focus,.txt:focus{border-color:var(--ac);background:var(--s1)}
 .inp.plate-input{font-family:var(--plate-font);font-size:24px;letter-spacing:2px;text-transform:uppercase;min-height:56px}
 .txt{padding:13px 14px;min-height:150px;resize:vertical;line-height:1.5}
-.f-row{display:grid;grid-template-columns:1fr 68px 68px;gap:10px;align-items:end;margin-bottom:14px}
+.f-row{display:grid;grid-template-columns:1fr 44px 44px;gap:6px;align-items:end;margin-bottom:14px}
 .f-row .field{margin:0}
 .f-row .inp{min-height:56px;padding:0;text-align:center}
 .f-row .inp.plate-input{padding:0 12px;text-align:left}
@@ -177,7 +177,7 @@ button{cursor:pointer}
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     font-family:var(--plate-font);font-weight:900;line-height:1;
     border:4px solid var(--plate-border,#111);
-    box-shadow:inset 0 0 0 2px var(--plate-inner,#fff), 0 4px 12px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.15);
     background:var(--plate-bg,#f4f6f8);
     color:var(--plate-color,#111);
     width:230px;height:75px;flex-shrink:0;
@@ -208,7 +208,7 @@ button{cursor:pointer}
   .plate-overlay:active{cursor:grabbing}
 /* ============ akhir blok plat ============ */
 
-.plate-hero{padding:22px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--stage)}
+.plate-hero{padding:22px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center}
 .plate-hero .plate{transform:scale(var(--fit,1));transform-origin:center}
 
 /* ---- Slider ---- */
@@ -292,8 +292,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .seg.seg3 button{display:flex;align-items:center;justify-content:center;gap:6px}
 
 /* ---- Bottom nav ---- */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);background:var(--s1);border-top:1px solid var(--line);padding:5px 4px calc(5px + env(safe-area-inset-bottom))}
-.nav-btn{border:0;background:transparent;color:var(--tx3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:700;min-height:50px;position:relative;border-radius:12px}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);background:var(--s1);border-top:1px solid var(--line);padding:6px 4px calc(12px + env(safe-area-inset-bottom))}
+.nav-btn{border:0;background:transparent;color:var(--tx3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;line-height:1.2;font-weight:700;min-height:54px;padding-bottom:4px;position:relative;border-radius:12px}
 .nav-btn .nv{position:relative;width:46px;height:26px;border-radius:13px;display:grid;place-items:center}
 .nav-btn.on{color:var(--ac)}
 .nav-btn.on .nv{background:rgba(var(--ac-rgb),.15)}
@@ -326,6 +326,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .loading{grid-column:1/-1;text-align:center;color:var(--tx2);padding:24px;font-weight:600}
 @media (max-width:600px){#previewContainer{grid-template-columns:1fr}}
 .count-line{font-size:13px;font-weight:600;color:var(--tx2);margin:8px 0 14px}
+.paste-warnings{display:none;flex-direction:column;gap:6px;margin:0 0 12px;max-height:200px;overflow-y:auto}
+.paste-warn{padding:8px 10px;border-radius:9px;background:var(--bad-bg);color:var(--bad);font-size:12px;font-weight:600;line-height:1.35;border-left:3px solid var(--bad)}
+.paste-warn .pw-line{font-family:var(--plate-font);font-size:14px;letter-spacing:.5px;margin-bottom:3px;word-break:break-word}
+.paste-warn .pw-msg{font-size:11.5px;opacity:.92}
 body.kb-open .bottom-nav{display:none !important}
 body.kb-open .sheet-panel{padding-bottom:30vh !important}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
@@ -743,6 +747,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     </div>
     <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG&#10;R 4 NDY, 05, 92, hitam&#10;S 3 LVI, 11, 03, kuning" spellcheck="false" autocapitalize="characters"></textarea>
     <div class="count-line" id="pasteCount">0 nopol terdeteksi</div>
+    <div id="pasteWarnings" class="paste-warnings"></div>
     <button class="btn btn-primary btn-block" id="pasteAddBtn"><svg class="i"><use href="#i-plus"/></svg>Tambahkan ke antrean</button>
   </div>
 </div>
@@ -996,6 +1001,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
   function askConfirm(title, text, okLabel) {
     return new Promise(res => {
+      if (pendingConfirm) pendingConfirm(false);
       $("confirmTitle").textContent = title;
       $("confirmText").textContent = text;
       $("confirmOk").textContent = okLabel || "Ya, lanjutkan";
@@ -1184,23 +1190,23 @@ if (name === "history") renderHistory();
   }
   function stylePlate(plEl, tEl, yEl, st, p) {
     const d = isDark(p.warna);
-    plEl.style.borderRadius = (st.radius !== undefined ? st.radius : 8) + "px";
+    plEl.style.borderRadius = (st.radius !== undefined && st.radius !== null ? st.radius : 8) + "px";
     plEl.style.setProperty("--plate-bg", p.warna);
     plEl.style.setProperty("--plate-color", p.warnaTeks);
     plEl.style.setProperty("--plate-border", p.warnaTeks); // Border luar mengikuti warna teks
-    plEl.style.setProperty("--plate-inner", d ? "rgba(255,255,255,0.45)" : "#ffffff");
-    plEl.style.setProperty("--noise-opacity", st.noise / 100);
+    plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 15) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
     setNomorDOM(tEl, p.nomor, st.autofit);
     yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    tEl.style.transform = "scaleY(" + (st.tinggi / 100) + ")";
-    yEl.style.transform = "scaleY(" + ((st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100) + ")";
-    tEl.style.color = p.warnaTeks; yEl.style.color = p.warnaTeks;
-    tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + p.warnaTeks : "0px";
-    yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + p.warnaTeks : "0px";
+    tEl.style.transform = "scaleY(" + ((st.tinggi || 110) / 100) + ")";
+    yEl.style.transform = "scaleY(" + ((st.tahunTinggi || 100) / 100) + ")";
+    const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
+    tEl.style.color = txtColor; yEl.style.color = txtColor;
+    tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
+    yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
   }
 
   function currentK(st) {
@@ -1234,8 +1240,10 @@ if (name === "history") renderHistory();
     if (!hero || !hero.clientWidth) return;
     const avail = hero.clientWidth - 24;
     const f = Math.min(1.35, avail / PLATE_W);
-    hero.style.setProperty("--fit", f > 0 ? f : 1);
-    hero.style.minHeight = Math.round(PLATE_H * Math.min(1.35, f) + 44) + "px";
+    if (f > 0) {
+      hero.style.setProperty("--fit", f);
+      hero.style.minHeight = Math.round(PLATE_H * f + 44) + "px";
+    }
   }
 
   /* ================= Slider ================= */
@@ -1304,13 +1312,16 @@ if (name === "history") renderHistory();
   }
   function paintSlider(key) {
     const { input, out, cfg } = sliderEls[key];
-    const v = parseFloat(input.value);
+    let v = parseFloat(input.value);
+    if (isNaN(v)) v = cfg.min;
     out.textContent = v + cfg.unit;
     input.style.setProperty("--p", ((v - cfg.min) / (cfg.max - cfg.min) * 100) + "%");
   }
   function syncSliders(st) {
+    const defs = defaultState();
     ALL_SLIDER_KEYS.forEach(k => {
-      sliderEls[k].input.value = st[k];
+      const val = st[k] !== undefined ? st[k] : defs[k];
+      sliderEls[k].input.value = val;
       paintSlider(k);
     });
     $("autofitChk").checked = st.autofit !== false;
@@ -1414,11 +1425,11 @@ if (name === "history") renderHistory();
     const prev = viewData[currentView].hidden;
     viewData[currentView].hidden = hidePlateChk.checked;
     if (templateData) {
-      const prevTpl = templateData[currentView].hidden;
-      templateData[currentView].hidden = hidePlateChk.checked;
+      const prevTpl = templateData[currentView] ? templateData[currentView].hidden : undefined;
+      if (templateData[currentView]) templateData[currentView].hidden = hidePlateChk.checked;
       if (!await saveTemplate()) {
         viewData[currentView].hidden = prev;
-        templateData[currentView].hidden = prevTpl;
+        if (templateData[currentView]) templateData[currentView].hidden = prevTpl;
         hidePlateChk.checked = prev;
       }
     }
@@ -1447,7 +1458,10 @@ if (name === "history") renderHistory();
           const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
           const canvas = document.createElement("canvas");
           canvas.width = w; canvas.height = h;
-          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL("image/jpeg", 0.82));
         };
         img.onerror = () => resolve(null);
@@ -1480,9 +1494,10 @@ if (name === "history") renderHistory();
     const results = await Promise.all(fileList.map(f => readImageFile(f)));
     
     let successCount = 0;
+    const startIndex = VIEWS.indexOf(currentView);
     results.forEach((data, i) => {
       if (data) {
-        const view = VIEWS[i]; // Urutan: depan, kiri, kanan, belakang
+        const view = VIEWS[(startIndex + i) % VIEWS.length]; // Mulai dari tab aktif
         viewData[view] = freshState(viewData[view], data);
         successCount++;
       }
@@ -1670,6 +1685,10 @@ if (name === "history") renderHistory();
     await lsSet("platActiveVaultIndex", activeVaultIndex);
     currentView = "depan";
     cancelEditUI();
+    nomorEl.value = "";
+    bulanEl.value = "";
+    tahunEl.value = "";
+    setPlateColor("#ffffff", "Putih", true);
     updateTemplateUI();
     loadViewState();
     setTab("studio");
@@ -1868,12 +1887,16 @@ if (name === "history") renderHistory();
   $("cancelEditBtn").addEventListener("click", () => {
     cancelEditUI();
     nomorEl.value = "";
+    bulanEl.value = "";
+    tahunEl.value = "";
+    setPlateColor("#ffffff", "Putih", true);
     applyPlate();
     renderBulk();
   });
 
   async function tambahData() {
     if (!templateData) { showToast("Kunci template terlebih dahulu sebelum menambah bulk!", true); return; }
+    if (bulkItems.length >= 500 && editIndex < 0) { showToast("Maksimal 500 nopol dalam satu antrean!", true); return; }
     const it = currentFormItem();
     if (!it.nomor) { showToast("Nomor plat belum diisi", true); nomorEl.focus(); return; }
 
@@ -1903,44 +1926,97 @@ if (name === "history") renderHistory();
     const k = String(t || "").trim().toLowerCase();
     const p = PRESETS.find(x => x.n.toLowerCase() === k);
     if (p) return { hex: p.v, name: p.n };
-    const m = k.match(/^#?([0-9a-f]{6})$/);
+    let m = k.match(/^#?([0-9a-f]{3})$/);
+    if (m) m = ["", m[1][0]+m[1][0] + m[1][1]+m[1][1] + m[1][2]+m[1][2]];
+    else m = k.match(/^#?([0-9a-f]{6})$/);
     if (m) return { hex: "#" + m[1], name: nameFor("#" + m[1]) };
     return null;
   }
   function parsePaste(text) {
     const base = currentFormItem();
-    return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(line => {
+    const items = [];
+    const warnings = [];
+    text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
       const parts = line.split(/[,;\t|]+/).map(s => s.trim()).filter((s, i) => i === 0 || s);
-      const it = Object.assign({}, base, { nomor: (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15) });
-      const nums = [];
+      const rawNomor = (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15);
+      const msgs = [];
+      if (!rawNomor) {
+        msgs.push("Nomor plat kosong");
+      } else if (!/[A-Z]/.test(rawNomor) || !/[0-9]/.test(rawNomor)) {
+        msgs.push("Nopol harus ada huruf & angka");
+      } else if (/[^A-Z0-9\s]/.test(rawNomor)) {
+        msgs.push("Karakter tidak valid di nopol");
+      }
+      const it = Object.assign({}, base, { nomor: rawNomor });
+      let parsedMonth = null, parsedYear = null;
       parts.slice(1).forEach(t => {
-        if (/^\d{1,2}$/.test(t)) { nums.push(t); return; }
-        const c = parseColorToken(t);
-        if (c) {
-          it.warna = c.hex;
-          it.warnaName = c.name;
-          it.warnaTeks = isDark(c.hex) ? "#ffffff" : "#000000";   // plat gelap: teks otomatis putih
+        if (/^\d{4}$/.test(t)) {
+          parsedYear = t.slice(-2);
+        } else if (/^\d{1,2}$/.test(t)) {
+          if (parsedMonth === null) {
+            const m = parseInt(t, 10);
+            if (m < 1 || m > 12) msgs.push("Bulan '" + t + "' tidak valid (01-12)");
+            parsedMonth = t;
+          } else if (parsedYear === null) {
+            parsedYear = t;
+          }
+        } else {
+          const c = parseColorToken(t);
+          if (c) {
+            it.warna = c.hex;
+            it.warnaName = c.name;
+            it.warnaTeks = isDark(c.hex) ? "#ffffff" : "#000000";
+          } else {
+            msgs.push("'" + t + "' bukan bulan/warna valid");
+          }
         }
       });
-      if (nums[0] !== undefined) it.bulan = nums[0];
-      if (nums[1] !== undefined) it.tahun = nums[1];
-      return it;
-    }).filter(it => it.nomor);
+      if (parsedMonth !== null) it.bulan = parsedMonth;
+      if (parsedYear !== null) it.tahun = parsedYear;
+      if (msgs.length) warnings.push({ line, msgs });
+      else items.push(it);
+    });
+    return { items, warnings };
   }
   $("pasteBtn").addEventListener("click", () => {
     $("pasteArea").value = "";
     $("pasteCount").textContent = "0 nopol terdeteksi";
+    $("pasteCount").style.color = "";
+    $("pasteWarnings").innerHTML = "";
+    $("pasteWarnings").style.display = "none";
     openSheet("pasteModal");
     setTimeout(() => $("pasteArea").focus(), 80);
   });
   $("closePasteBtn").addEventListener("click", () => closeSheet("pasteModal"));
   $("pasteArea").addEventListener("input", () => {
-    $("pasteCount").textContent = parsePaste($("pasteArea").value).length + " nopol terdeteksi";
+    const { items, warnings } = parsePaste($("pasteArea").value);
+    const countEl = $("pasteCount");
+    const warnHost = $("pasteWarnings");
+    if (warnings.length === 0) {
+      countEl.textContent = items.length + " nopol terdeteksi";
+      countEl.style.color = "";
+      warnHost.innerHTML = "";
+      warnHost.style.display = "none";
+    } else {
+      countEl.textContent = items.length + " nopol valid, " + warnings.length + " baris bermasalah";
+      countEl.style.color = "var(--bad)";
+      warnHost.style.display = "flex";
+      warnHost.innerHTML = warnings.map(w =>
+        `<div class="paste-warn"><div class="pw-line">${esc(w.line.length > 40 ? w.line.slice(0,40) + "…" : w.line)}</div><div class="pw-msg">${esc(w.msgs.join(" · "))}</div></div>`
+      ).join("");
+    }
   });
   $("pasteAddBtn").addEventListener("click", async () => {
-    const list = parsePaste($("pasteArea").value);
-    if (!list.length) return showToast("Belum ada nopol untuk ditambahkan", true);
+    const { items: list, warnings } = parsePaste($("pasteArea").value);
+    if (!list.length) {
+      if (warnings.length) return showToast("Semua baris bermasalah. Perbaiki dulu.", true);
+      return showToast("Belum ada nopol untuk ditambahkan", true);
+    }
     if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol dalam satu antrean!", true);
+    if (warnings.length > 0) {
+      const ok = await askConfirm("Ada baris bermasalah", warnings.length + " baris tidak valid akan dilewati. Lanjut menambahkan " + list.length + " nopol valid?", "Lanjutkan");
+      if (!ok) return;
+    }
     const before = bulkItems.length;
     bulkItems = bulkItems.concat(list);
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
@@ -2385,7 +2461,6 @@ if (name === "history") renderHistory();
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
     const borderC = txtC; // Border luar di canvas mengikuti warna teks
-    const innerC = dark ? "rgba(255,255,255,0.45)" : "#ffffff";
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -2416,10 +2491,7 @@ if (name === "history") renderHistory();
     rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, Math.max(0, r - 4));
     ctx.clip();
 
-    // Cincin dalam 2px
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = innerC;
-    ctx.stroke();
+    // Cincin dalam dihilangkan
 
     // Noise
     if (st.noise > 0 && noiseCanvas) {
@@ -2525,6 +2597,10 @@ if (name === "history") renderHistory();
       if (token !== previewToken) return;
       frag.appendChild(div);
     }
+    if (!frag.hasChildNodes()) {
+      container.innerHTML = "<div class='empty'>" + ico("image") + "<b>Tidak ada gambar</b><span>Template belum memiliki gambar untuk dipreview.</span></div>";
+      return;
+    }
     container.innerHTML = "";
     container.appendChild(frag);
   }
@@ -2573,7 +2649,7 @@ if (name === "history") renderHistory();
     
     if (!allPlates.length) return showToast("Data kosong", true);
     let globalTpl = templateData;
-    if (!globalTpl) {
+    if (!globalTpl || !Object.values(globalTpl).some(v => v && v.img)) {
       for (let g of exportGroups) {
         if (g.template && Object.values(g.template).some(v => v && v.img)) {
           globalTpl = g.template;
@@ -2758,7 +2834,8 @@ if (name === "history") renderHistory();
 
   async function initApp() {
     const storedStart = await lsGet("platBulkStartNum", 1);
-    bulkStartNumber = parseInt(storedStart, 10) || 1;
+    bulkStartNumber = parseInt(storedStart, 10);
+    if (isNaN(bulkStartNumber)) bulkStartNumber = 1;
     activeVaultIndex = parseInt(await lsGet("platActiveVaultIndex", -1), 10);
     if (isNaN(activeVaultIndex)) activeVaultIndex = -1;
     historyBatches = await loadHistoryBatches();
@@ -2884,7 +2961,7 @@ if (name === "history") renderHistory();
   applyAccentColor(savedAccent);
 
   function updateStatusBar() {
-    const c = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+    const c = isDarkNow() ? "#18181b" : "#eceff3";
     document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute("content", c));
   }
 
