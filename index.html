@@ -2136,20 +2136,88 @@ if (name === "history") renderHistory();
         rawNomor = m[1] + " " + m[2] + (m[3] ? " " + m[3] : "");
       }
 
+      const BULAN_MAP = {
+        "januari": "01", "jan": "01", "februari": "02", "feb": "02", "pebruari": "02",
+        "maret": "03", "mar": "03", "april": "04", "apr": "04", "mei": "05", 
+        "juni": "06", "jun": "06", "juli": "07", "jul": "07", "agustus": "08", 
+        "agu": "08", "ags": "08", "september": "09", "sep": "09", "sept": "09", 
+        "oktober": "10", "okt": "10", "november": "11", "nov": "11", "desember": "12", "des": "12"
+      };
+
       const it = Object.assign({}, base, { nomor: rawNomor });
       let parsedMonth = null, parsedYear = null;
       parts.slice(1).forEach(t => {
-        if (/^\d{4}$/.test(t)) {
-          parsedYear = t.slice(-2);
-        } else if (/^\d{1,2}$/.test(t)) {
-          if (parsedMonth === null) {
-            const m = parseInt(t, 10);
-            if (m < 1 || m > 12) msgs.push("Bulan '" + t + "' tidak valid (01-12)");
-            parsedMonth = t;
-          } else if (parsedYear === null) {
-            parsedYear = t;
+        const text = t.toLowerCase().trim();
+        let foundM = false;
+        let foundY = false;
+
+        // 1. Cari tahun 4 digit (misal 2026)
+        let year4 = text.match(/\b\d{4}\b/);
+        if (year4) {
+          parsedYear = year4[0].slice(-2);
+          foundY = true;
+        }
+
+        // 2. Cari nama bulan (misal "oktober", "okt")
+        let words = text.split(/[\s\/\-]+/);
+        words.forEach(w => {
+          if (BULAN_MAP[w]) {
+            parsedMonth = BULAN_MAP[w];
+            foundM = true;
           }
-        } else {
+        });
+
+        // 3. Cari bulan dari sisa angka (misal format "10/2026" atau "10 2026")
+        if (!foundM) {
+          let cleanText = year4 ? text.replace(year4[0], "").trim() : text;
+          cleanText = cleanText.replace(/^\/|\/$/g, "");
+          if (/^\d{1,2}$/.test(cleanText)) {
+            const num = parseInt(cleanText, 10);
+            if (num >= 1 && num <= 12 && parsedMonth === null) {
+              parsedMonth = cleanText.padStart(2, '0');
+              foundM = true;
+            }
+          }
+        }
+
+        // 4. Cari tahun 2 digit jika belum ketemu (misal "Okt 26")
+        if (!foundY) {
+          if (!(foundM && text === parsedMonth && text.length <= 2)) {
+            let year2 = text.match(/\b\d{2}\b/);
+            if (year2) {
+              parsedYear = year2[0];
+              foundY = true;
+            }
+          }
+        }
+
+        // 5. Cari angka murni jika belum ketemu (misal input dipisah koma: "10", "26")
+        if (!foundM && !foundY) {
+          if (/^\d{1,2}$/.test(text)) {
+            const num = parseInt(text, 10);
+            if (parsedMonth === null) {
+              if (num >= 1 && num <= 12) {
+                parsedMonth = text.padStart(2, '0');
+                foundM = true;
+              } else {
+                msgs.push("Bulan '" + text + "' tidak valid (01-12)");
+                parsedMonth = "01";
+                foundM = true;
+              }
+            } else if (parsedYear === null) {
+              parsedYear = text.padStart(2, '0');
+              foundY = true;
+            }
+          } else if (/^\d{2}$/.test(text)) {
+            if (parsedYear === null) {
+              parsedYear = text;
+              foundY = true;
+            }
+          }
+        }
+
+        // 6. Jika bukan bulan/tahun, coba parsing warna
+        if (!foundM && !foundY) {
           const c = parseColorToken(t);
           if (c) {
             it.warna = c.hex;
@@ -2179,33 +2247,32 @@ if (name === "history") renderHistory();
   $("closePasteBtn").addEventListener("click", () => closeSheet("pasteModal"));
   
   $("btnImportCsv").addEventListener("click", () => $("pasteFileInput").click());
-  $("pasteFileInput").addEventListener("change", e => {
+  $("pasteFileInput").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      let text = ev.target.result || "";
+    
+    try {
+      // Menggunakan fungsi .text() modern yang lebih stabil di WebView
+      let text = await file.text();
       
-      // 1. Hapus karakter BOM (Byte Order Mark) yang sering ditambahkan Excel
       if (text.charCodeAt(0) === 0xFEFF) {
         text = text.slice(1);
       }
       
-      // 2. Deteksi jika file disimpan dalam format UTF-16 (banyak karakter null)
       if (text.includes("\u0000")) {
-        showToast("Format file tidak didukung. Harap simpan CSV sebagai 'UTF-8'", true);
+        showToast("Format file tidak didukung. Simpan CSV sebagai 'UTF-8'", true);
         return;
       }
 
-      // 3. Bersihkan karakter aneh di awal file
       text = text.replace(/^\s+|\s+$/g, "");
 
       $("pasteArea").value = text;
-      $("pasteArea").dispatchEvent(new Event("input")); // Trigger validasi
-    };
-    reader.onerror = () => showToast("Gagal membaca file", true);
-    reader.readAsText(file, "UTF-8");
-    e.target.value = ""; // Reset input
+      $("pasteArea").dispatchEvent(new Event("input"));
+      showToast("File berhasil dibaca ✓");
+    } catch (err) {
+      showToast("Gagal membaca file: " + err.message, true);
+    }
+    e.target.value = ""; 
   });
   $("pasteArea").addEventListener("input", (e) => {
     const start = e.target.selectionStart;
