@@ -778,6 +778,38 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   </div>
 </div>
 
+<!-- ============ Modal Edit Vault ============ -->
+<div class="sheet" id="editVaultItemModal" data-sheet>
+  <div class="sheet-panel small">
+    <div class="sheet-head">
+      <h2>Edit Nopol</h2>
+      <button id="closeEditVaultBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="f-row">
+      <div class="field">
+        <label for="editVNomor">Nomor</label>
+        <input id="editVNomor" class="inp plate-input" type="text" maxlength="15" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="editVBulan">Bulan</label>
+        <input id="editVBulan" class="inp" type="text" maxlength="2" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="editVTahun">Tahun</label>
+        <input id="editVTahun" class="inp" type="text" maxlength="2" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label for="editVWarna">Warna Plat</label>
+      <input type="color" id="editVWarna" style="width:100%;height:44px;padding:4px;border-radius:12px;border:2px solid var(--line);background:var(--s2);cursor:pointer;">
+    </div>
+    <div class="btn-row mt">
+      <button class="btn btn-soft" id="editVCancelBtn">Batal</button>
+      <button class="btn btn-primary" id="editVSaveBtn">Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ Modal Ubah Nama ============ -->
 <div class="sheet" id="renameModal" data-sheet>
   <div class="sheet-panel small">
@@ -993,11 +1025,8 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   });
 
   function openSheet(id) { 
-    const wasOpen = document.querySelector('.sheet.open');
     $(id).classList.add("open"); 
-    if (!wasOpen) {
-      history.pushState({ modal: id }, "");
-    }
+    history.pushState({ modal: id }, "");
   }
 
   function closeSheet(id, fromHistory = false) {
@@ -1013,7 +1042,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     if (id === "confirmModal" && pendingConfirm) { const f = pendingConfirm; pendingConfirm = null; f(false); }
     
     if (!fromHistory) {
-      if (!document.querySelector('.sheet.open') && history.state && history.state.modal) {
+      if (history.state && history.state.modal) {
         ignoreNextPopState = true;
         history.back();
       }
@@ -1230,6 +1259,8 @@ if (name === "history") renderHistory();
   let previewToken = 0;
   let renameIndex = -1;
   let activeVaultIndex = -1;
+  let editVaultBatchIdx = -1;
+  let editVaultPlateIdx = -1;
   let exporting = false;
   let bulkQ = "";
   const normQ = s => String(s).toUpperCase().replace(/\s+/g, "");
@@ -2232,10 +2263,111 @@ if (name === "history") renderHistory();
         <div class="item">
           <div class="row-num-wrap"><span class="row-num-span">${i + 1}</span></div>
           ${chipHtml(p, true)}
+          <div class="item-actions">
+            <button class="icon-btn" data-vact="preview" data-b="${idx}" data-p="${i}" title="Preview" aria-label="Preview">${ico("eye")}</button>
+            <button class="icon-btn" data-vact="edit" data-b="${idx}" data-p="${i}" title="Edit" aria-label="Edit">${ico("pencil")}</button>
+            <button class="icon-btn danger" data-vact="del" data-b="${idx}" data-p="${i}" title="Hapus" aria-label="Hapus">${ico("x")}</button>
+          </div>
         </div>
       `).join("");
       paintMiniPlates($("historyPreviewGrid"));
       openSheet("historyPreviewModal");
+    }
+  });
+
+  $("historyPreviewGrid").addEventListener("click", async e => {
+    const btn = e.target.closest("button[data-vact]");
+    if (!btn) return;
+    const bIdx = parseInt(btn.dataset.b, 10);
+    const pIdx = parseInt(btn.dataset.p, 10);
+    const act = btn.dataset.vact;
+    const batch = historyBatches[bIdx];
+    if (!batch || !batch.plates || !batch.plates[pIdx]) return;
+    const plate = batch.plates[pIdx];
+
+    if (act === "preview") {
+      const tpl = batch.template || templateData;
+      if (!tpl) return showToast("Template untuk antrean ini tidak ditemukan", true);
+      openPreview(plate, plate.nomor, tpl);
+    } else if (act === "del") {
+      const ok = await askConfirm("Hapus nopol?", "Nopol " + plate.nomor + " akan dihapus dari antrean ini.", "Hapus");
+      if (!ok) return;
+      batch.plates.splice(pIdx, 1);
+      await saveHistoryBatches();
+      
+      if (batch.plates.length === 0) {
+        closeSheet("historyPreviewModal");
+        showToast("Nopol dihapus, antrean menjadi kosong");
+      } else {
+        const newTitle = batch.name || `Antrean #${historyBatches.length - bIdx}`;
+        $("historyPreviewTitle").textContent = newTitle + " (" + batch.date + ")";
+        $("historyPreviewGrid").innerHTML = batch.plates.map((p, i) => `
+          <div class="item">
+            <div class="row-num-wrap"><span class="row-num-span">${i + 1}</span></div>
+            ${chipHtml(p, true)}
+            <div class="item-actions">
+              <button class="icon-btn" data-vact="preview" data-b="${bIdx}" data-p="${i}" title="Preview">${ico("eye")}</button>
+              <button class="icon-btn" data-vact="edit" data-b="${bIdx}" data-p="${i}" title="Edit">${ico("pencil")}</button>
+              <button class="icon-btn danger" data-vact="del" data-b="${bIdx}" data-p="${i}" title="Hapus">${ico("x")}</button>
+            </div>
+          </div>
+        `).join("");
+        paintMiniPlates($("historyPreviewGrid"));
+        showToast("Nopol dihapus dari antrean");
+      }
+      renderHistory();
+    } else if (act === "edit") {
+      editVaultBatchIdx = bIdx;
+      editVaultPlateIdx = pIdx;
+      $("editVNomor").value = plate.nomor || "";
+      $("editVBulan").value = plate.bulan || "";
+      $("editVTahun").value = plate.tahun || "";
+      $("editVWarna").value = plate.warna || "#ffffff";
+      openSheet("editVaultItemModal");
+      setTimeout(() => $("editVNomor").focus(), 80);
+    }
+  });
+
+  $("closeEditVaultBtn").addEventListener("click", () => closeSheet("editVaultItemModal"));
+  $("editVCancelBtn").addEventListener("click", () => closeSheet("editVaultItemModal"));
+  $("editVSaveBtn").addEventListener("click", async () => {
+    if (editVaultBatchIdx < 0 || editVaultPlateIdx < 0) return;
+    const nomor = $("editVNomor").value.toUpperCase().trim();
+    if (!nomor) return showToast("Nomor plat tidak boleh kosong", true);
+    
+    const batch = historyBatches[editVaultBatchIdx];
+    if (!batch || !batch.plates || !batch.plates[editVaultPlateIdx]) return;
+
+    const hex = $("editVWarna").value;
+    const p = batch.plates[editVaultPlateIdx];
+    p.nomor = nomor;
+    p.bulan = $("editVBulan").value.replace(/\D/g, "").slice(0, 2) || "11";
+    p.tahun = $("editVTahun").value.replace(/\D/g, "").slice(0, 2) || "03";
+    p.warna = hex;
+    p.warnaTeks = isDark(hex) ? "#ffffff" : "#000000";
+    p.warnaName = nameFor(hex);
+
+    if (await saveHistoryBatches()) {
+      closeSheet("editVaultItemModal");
+      showToast("Nopol berhasil diperbarui ✓");
+      
+      const newTitle = batch.name || `Antrean #${historyBatches.length - editVaultBatchIdx}`;
+      $("historyPreviewTitle").textContent = newTitle + " (" + batch.date + ")";
+      $("historyPreviewGrid").innerHTML = batch.plates.map((pl, i) => `
+        <div class="item">
+          <div class="row-num-wrap"><span class="row-num-span">${i + 1}</span></div>
+          ${chipHtml(pl, true)}
+          <div class="item-actions">
+            <button class="icon-btn" data-vact="preview" data-b="${editVaultBatchIdx}" data-p="${i}" title="Preview">${ico("eye")}</button>
+            <button class="icon-btn" data-vact="edit" data-b="${editVaultBatchIdx}" data-p="${i}" title="Edit">${ico("pencil")}</button>
+            <button class="icon-btn danger" data-vact="del" data-b="${editVaultBatchIdx}" data-p="${i}" title="Hapus">${ico("x")}</button>
+          </div>
+        </div>
+      `).join("");
+      paintMiniPlates($("historyPreviewGrid"));
+      renderHistory();
+    } else {
+      showToast("Gagal menyimpan perubahan", true);
     }
   });
 
@@ -2677,8 +2809,9 @@ if (name === "history") renderHistory();
   }
 
   /* ---------- Preview ---------- */
-  async function openPreview(plate, title) {
-    if (!templateData) return;
+  async function openPreview(plate, title, customTpl) {
+    const activeTpl = customTpl || templateData;
+    if (!activeTpl) return;
     const token = ++previewToken;
     $("previewTitle").textContent = title ? "Preview · " + title : "Preview hasil";
     const container = $("previewContainer");
@@ -2687,7 +2820,7 @@ if (name === "history") renderHistory();
 
     const frag = document.createDocumentFragment();
     for (const v of VIEWS) {
-      const state = templateData[v];
+      const state = activeTpl[v];
       if (!state || !state.img) continue;
       const div = document.createElement("div");
       div.innerHTML = `<div class="vcap">${VIEW_LABEL[v]}</div>`;
