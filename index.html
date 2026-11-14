@@ -1753,8 +1753,16 @@ if (name === "history") renderHistory();
     e.target.setSelectionRange(start, end);
     applyPlate();
   });
-  bulanEl.addEventListener("input", () => { bulanEl.value = bulanEl.value.replace(/\D/g, "").slice(0, 2); applyPlate(); });
-  tahunEl.addEventListener("input", () => { tahunEl.value = tahunEl.value.replace(/\D/g, "").slice(0, 2); applyPlate(); });
+  const handleNumericInput = (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    const val = e.target.value.replace(/\D/g, "").slice(0, 2);
+    e.target.value = val;
+    e.target.setSelectionRange(Math.min(start, val.length), Math.min(end, val.length));
+    applyPlate();
+  };
+  bulanEl.addEventListener("input", handleNumericInput);
+  tahunEl.addEventListener("input", handleNumericInput);
 
   /* ================= Template ================= */
   function setChip(el, locked) {
@@ -1916,7 +1924,7 @@ if (name === "history") renderHistory();
         <div class="row-num-wrap">
           ${i === 0 && !bulkQ
             ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">`
-            : `<span class="row-num-span">${bulkStartNumber + i}</span>`}
+            : `<span class="row-num-span" data-i="${i}">${bulkStartNumber + i}</span>`}
         </div>
         ${chipHtml(it, true)}
         <div class="item-actions">
@@ -1937,8 +1945,9 @@ if (name === "history") renderHistory();
         bulkStartNumber = val;
         await lsSet("platBulkStartNum", bulkStartNumber);
         const spans = bulkListEl.querySelectorAll(".row-num-span");
-        spans.forEach((span, idx) => {
-          span.textContent = bulkStartNumber + idx + 1;
+        spans.forEach((span) => {
+          const originalIndex = parseInt(span.dataset.i, 10);
+          span.textContent = bulkStartNumber + originalIndex;
         });
       }
     }
@@ -2161,8 +2170,13 @@ if (name === "history") renderHistory();
     reader.readAsText(file);
     e.target.value = ""; // Reset input
   });
-  $("pasteArea").addEventListener("input", () => {
-    const { items, warnings } = parsePaste($("pasteArea").value);
+  $("pasteArea").addEventListener("input", (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(start, end);
+    
+    const { items, warnings } = parsePaste(e.target.value);
     const countEl = $("pasteCount");
     const warnHost = $("pasteWarnings");
     if (warnings.length === 0) {
@@ -2254,10 +2268,16 @@ if (name === "history") renderHistory();
       const prevBulk = JSON.parse(JSON.stringify(bulkItems));
       const prevTpl = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       const prevView = JSON.parse(JSON.stringify(viewData));
+      const prevStartNum = bulkStartNumber;
       
       bulkItems = Array.isArray(batch.plates) ? JSON.parse(JSON.stringify(batch.plates)) : [];
       editIndex = -1;
       cancelEditUI();
+      
+      if (batch.startNumber !== undefined) {
+        bulkStartNumber = batch.startNumber;
+        await lsSet("platBulkStartNum", bulkStartNumber);
+      }
       
       if (batch.template) {
         templateData = JSON.parse(JSON.stringify(batch.template));
@@ -2294,6 +2314,8 @@ if (name === "history") renderHistory();
         bulkItems = prevBulk;
         templateData = prevTpl;
         viewData = prevView;
+        bulkStartNumber = prevStartNum;
+        await lsSet("platBulkStartNum", bulkStartNumber);
         await saveBulkData();
         await saveTemplate();
         loadViewState();
@@ -3049,13 +3071,15 @@ if (name === "history") renderHistory();
           historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(exportGroups[0].plates));
           historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
           historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+          historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
         } else {
           const newBatch = {
             id: Date.now().toString(),
             name: getDefaultBatchName() || undefined,
             date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
             plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
-            template: templateData ? JSON.parse(JSON.stringify(templateData)) : null
+            template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+            startNumber: bulkStartNumber
           };
           historyBatches.unshift(newBatch);
           activeVaultIndex = 0;
@@ -3159,7 +3183,14 @@ if (name === "history") renderHistory();
   }
 
   /* ================= Fitur baru ================= */
-  $("bulkSearch").addEventListener("input", e => { bulkQ = normQ(e.target.value); renderBulk(); });
+  $("bulkSearch").addEventListener("input", (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(start, end);
+    bulkQ = normQ(e.target.value); 
+    renderBulk(); 
+  });
 
   $("closeHistoryPreviewBtn").addEventListener("click", () => closeSheet("historyPreviewModal"));
 
@@ -3194,6 +3225,7 @@ if (name === "history") renderHistory();
       historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
       historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+      historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
       
       if (await saveHistoryBatches()) {
         renderHistory();
@@ -3210,7 +3242,8 @@ if (name === "history") renderHistory();
         name: getDefaultBatchName() || undefined,
         date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
         plates: JSON.parse(JSON.stringify(bulkItems)),
-        template: templateData ? JSON.parse(JSON.stringify(templateData)) : null
+        template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+        startNumber: bulkStartNumber
       };
       historyBatches.unshift(newBatch);
       activeVaultIndex = 0;
