@@ -216,6 +216,7 @@ button{cursor:pointer}
 /* ---- Slider ---- */
 .text-editor{margin:4px 0 16px;padding:14px;border-radius:14px;background:var(--s2)}
 .text-editor .ctl-group{margin-bottom:0}
+#pasteArea{text-transform:uppercase}
 .fit-note{font-size:12.5px;color:var(--tx2);margin-top:4px}
 .ctl-group{margin-bottom:12px}
 .ctl-group:last-of-type{margin-bottom:12px}
@@ -285,7 +286,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .locked-note p{font-size:13.5px;color:var(--tx2);margin-top:3px}
 .search-wrap{position:relative;margin-top:14px}
 .search-wrap .i{position:absolute;left:13px;top:15px;color:var(--tx3);pointer-events:none}
-.search-wrap .inp{padding-left:42px;min-height:48px}
+.search-wrap .inp{padding-left:42px;min-height:48px;text-transform:uppercase}
 .stat-row{display:flex;gap:8px;margin-bottom:12px}
 .stat{flex:1;background:var(--s2);border-radius:12px;padding:9px 10px;text-align:center}
 .stat b{display:block;font-family:var(--f-d);font-size:24px;line-height:1;font-weight:700}
@@ -1745,7 +1746,13 @@ if (name === "history") renderHistory();
     warnaTeksEl.value = b.dataset.tcolor; applyPlate();
   }));
 
-  nomorEl.addEventListener("input", () => { nomorEl.value = nomorEl.value.toUpperCase(); applyPlate(); });
+  nomorEl.addEventListener("input", (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(start, end);
+    applyPlate();
+  });
   bulanEl.addEventListener("input", () => { bulanEl.value = bulanEl.value.replace(/\D/g, "").slice(0, 2); applyPlate(); });
   tahunEl.addEventListener("input", () => { tahunEl.value = tahunEl.value.replace(/\D/g, "").slice(0, 2); applyPlate(); });
 
@@ -1793,6 +1800,7 @@ if (name === "history") renderHistory();
     if (!hasImage) return showToast("Import minimal 1 gambar dulu!", true);
 
     templateData = JSON.parse(JSON.stringify(viewData));
+    templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = null; return; }
 
     // Auto tambah ke bulk jika nomor sudah diisi
@@ -1846,6 +1854,7 @@ if (name === "history") renderHistory();
     if (!VIEWS.some(v => viewData[v].img)) return showToast("Template butuh minimal 1 gambar", true);
     const prev = templateData;
     templateData = JSON.parse(JSON.stringify(viewData));
+    templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = prev; return; }
     editorOpen = false;
     activeVaultIndex = -1;
@@ -2255,6 +2264,14 @@ if (name === "history") renderHistory();
         VIEWS.forEach(v => { viewData[v] = Object.assign(defaultState(), templateData[v] || {}); });
         const first = VIEWS.find(v => viewData[v].img);
         if (first) currentView = first;
+        
+        const fd = templateData._formDefaults || (batch.plates && batch.plates[0]);
+        if (fd) {
+          bulanEl.value = fd.bulan || "";
+          tahunEl.value = fd.tahun || "";
+          warnaTeksEl.value = fd.warnaTeks || (isDark(fd.warna || "#fff") ? "#ffffff" : "#000000");
+          setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+        }
       } else {
         templateData = null;
         VIEWS.forEach(v => { viewData[v] = defaultState(); });
@@ -2362,6 +2379,12 @@ if (name === "history") renderHistory();
     }
   });
 
+  $("editVNomor").addEventListener("input", (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(start, end);
+  });
   $("closeEditVaultBtn").addEventListener("click", () => closeSheet("editVaultItemModal"));
   $("editVCancelBtn").addEventListener("click", () => closeSheet("editVaultItemModal"));
   $("editVSaveBtn").addEventListener("click", async () => {
@@ -3098,6 +3121,14 @@ if (name === "history") renderHistory();
       VIEWS.forEach(v => { viewData[v] = Object.assign(defaultState(), t[v] || {}); });
       const first = VIEWS.find(v => viewData[v].img);
       if (first) currentView = first;
+      
+      const fd = templateData._formDefaults || (bulkItems.length > 0 ? bulkItems[0] : null);
+      if (fd) {
+        bulanEl.value = fd.bulan || "";
+        tahunEl.value = fd.tahun || "";
+        warnaTeksEl.value = fd.warnaTeks || (isDark(fd.warna || "#fff") ? "#ffffff" : "#000000");
+        setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+      }
     }
   }
 
