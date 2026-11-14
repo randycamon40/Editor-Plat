@@ -1295,6 +1295,17 @@ if (name === "history") renderHistory();
     return false;
   }
 
+  function getDefaultBatchName() {
+    const tpl = templateData || viewData;
+    if (!tpl) return "";
+    for (const v of VIEWS) {
+      if (tpl[v] && tpl[v].brand && tpl[v].brand.trim() !== "" && tpl[v].brand.trim().toLowerCase() !== "tidak diketahui") {
+        return tpl[v].brand.trim();
+      }
+    }
+    return "";
+  }
+
   /* ================= Elemen ================= */
   const fileInput = $("fileInput"), drop = $("drop"), stage = $("stage");
   const previewImg = $("preview"), imageWrap = $("imageWrap"), stageActions = $("stageActions");
@@ -3018,6 +3029,7 @@ if (name === "history") renderHistory();
         } else {
           const newBatch = {
             id: Date.now().toString(),
+            name: getDefaultBatchName() || undefined,
             date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
             plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
             template: templateData ? JSON.parse(JSON.stringify(templateData)) : null
@@ -3164,6 +3176,7 @@ if (name === "history") renderHistory();
       // Buat Vault baru
       const newBatch = {
         id: Date.now().toString(),
+        name: getDefaultBatchName() || undefined,
         date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
         plates: JSON.parse(JSON.stringify(bulkItems)),
         template: templateData ? JSON.parse(JSON.stringify(templateData)) : null
