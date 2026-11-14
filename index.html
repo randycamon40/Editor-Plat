@@ -753,7 +753,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
     <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- bulan,tahun, dan warna plat mengikuti template&#10;R 4 NDY, 05, 92 <- hanya ubah bulan dan tahun&#10;S 3 LVI, hitam <- hanya ubah warna&#10;S 8233 HQ, 05, 31, kuning <- untuk ubah bulan,tahun, dan warna" spellcheck="false" autocapitalize="characters"></textarea>
     <div class="btn-row" style="margin-bottom:12px">
       <button type="button" class="btn btn-soft" id="btnImportCsv"><svg class="i"><use href="#i-package"/></svg>Import File (CSV/TXT)</button>
-      <input type="file" id="pasteFileInput" accept=".csv, .txt" hidden>
+      <input type="file" id="pasteFileInput" accept=".csv, .txt, text/csv, text/plain, */*" hidden>
     </div>
     <div class="count-line" id="pasteCount">0 nopol terdeteksi</div>
     <div id="pasteWarnings" class="paste-warnings"></div>
@@ -2184,10 +2184,27 @@ if (name === "history") renderHistory();
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      $("pasteArea").value = ev.target.result;
+      let text = ev.target.result || "";
+      
+      // 1. Hapus karakter BOM (Byte Order Mark) yang sering ditambahkan Excel
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+      
+      // 2. Deteksi jika file disimpan dalam format UTF-16 (banyak karakter null)
+      if (text.includes("\u0000")) {
+        showToast("Format file tidak didukung. Harap simpan CSV sebagai 'UTF-8'", true);
+        return;
+      }
+
+      // 3. Bersihkan karakter aneh di awal file
+      text = text.replace(/^\s+|\s+$/g, "");
+
+      $("pasteArea").value = text;
       $("pasteArea").dispatchEvent(new Event("input")); // Trigger validasi
     };
-    reader.readAsText(file);
+    reader.onerror = () => showToast("Gagal membaca file", true);
+    reader.readAsText(file, "UTF-8");
     e.target.value = ""; // Reset input
   });
   $("pasteArea").addEventListener("input", (e) => {
