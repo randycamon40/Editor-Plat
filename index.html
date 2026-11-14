@@ -149,6 +149,7 @@ button{cursor:pointer}
 .seg button.has::after{content:"";position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--ok)}
 .switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13.5px;font-weight:600;color:var(--tx);cursor:pointer;padding:12px 14px;margin-top:10px;background:var(--s2);border-radius:12px}
 .switch-row.flat{margin:0 0 14px}
+.switch-row.inline{margin:0;padding:0;background:transparent;flex:1;justify-content:space-between;gap:8px;min-width:0}
 .switch-row input{position:absolute;opacity:0;pointer-events:none}
 .switch{width:44px;height:26px;border-radius:999px;background:var(--line2);position:relative;transition:background .15s;flex-shrink:0}
 .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.35)}
@@ -168,7 +169,7 @@ button{cursor:pointer}
 .image-wrap .preview{display:block;max-width:100%;max-height:min(65vh,600px);width:auto;height:auto;border-radius:8px}
 .stage-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}
 .stage-actions .hint{flex:1;min-width:0}
-.brand-tag{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brand-tag{position:absolute;top:10px;left:10px;z-index:5;background:rgba(15,27,45,.85);color:#fff;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:700;backdrop-filter:blur(4px);max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
 
 /* ============ Plat (DOM) - jangan diubah: harus identik dengan render canvas ============ */
   .plate{
@@ -432,6 +433,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
             </div>
             <div class="image-wrap" id="imageWrap" hidden>
               <img id="preview" class="preview" alt="Preview mobil">
+              <span class="brand-tag" id="carBrandText" hidden></span>
               <div class="plate plate-overlay" id="platePreview">
                 <span class="plate-text" id="plateText">S 3 LVI</span>
                 <span class="plate-year" id="plateYear">11•03</span>
@@ -439,16 +441,14 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
             </div>
           </div>
           <div class="stage-actions" id="stageActions" hidden>
-            <span class="hint"><span class="brand-tag" id="carBrandText" hidden></span></span>
+            <label class="switch-row inline">
+              <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Sembunyikan plat</span>
+              <input type="checkbox" id="hidePlateChk">
+              <i class="switch"></i>
+            </label>
             <button type="button" class="btn btn-soft btn-sm" id="replaceBtn"><svg class="i"><use href="#i-replace"/></svg>Ganti</button>
             <button type="button" class="icon-btn danger" id="removeImgBtn" title="Hapus gambar" aria-label="Hapus gambar"><svg class="i"><use href="#i-trash"/></svg></button>
           </div>
-
-          <label class="switch-row">
-            <span>Sembunyikan plat di sudut ini</span>
-            <input type="checkbox" id="hidePlateChk">
-            <i class="switch"></i>
-          </label>
 
           <div class="btn-row mt-s" id="aiActionBtns" hidden>
             <button type="button" id="btnRunAi" class="btn btn-dark"><svg class="i"><use href="#i-sparkles"/></svg><span>Deteksi 1 sisi</span></button>
