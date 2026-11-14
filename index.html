@@ -50,8 +50,9 @@
 input,textarea{-webkit-user-select:text;user-select:text}
 [hidden]{display:none !important}
 html{-webkit-text-size-adjust:100%}
+html,body{overscroll-behavior-y:none;overscroll-behavior-x:none}
 body{margin:0;font-family:var(--f);font-size:15px;line-height:1.45;color:var(--tx);background:var(--bg);min-height:100vh;
-  -webkit-font-smoothing:antialiased;touch-action:manipulation;overscroll-behavior-y:contain;
+  -webkit-font-smoothing:antialiased;touch-action:manipulation;
   padding-bottom:calc(var(--nav-h) + 22px + env(safe-area-inset-bottom))}
 h1,h2,h3,p{margin:0}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
