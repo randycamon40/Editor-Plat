@@ -2077,6 +2077,8 @@ if (name === "history") renderHistory();
         msgs.push("Karakter tidak valid di nopol");
       } else if (!rawNomor.includes(" ")) {
         msgs.push("Nopol harus pakai spasi (misal: B 1234 XYZ)");
+      } else if (/[0-9][A-Z]/.test(rawNomor)) {
+        msgs.push("Tambah spasi setelah angka (misal: B 3784 ECG)");
       }
       const it = Object.assign({}, base, { nomor: rawNomor });
       let parsedMonth = null, parsedYear = null;
