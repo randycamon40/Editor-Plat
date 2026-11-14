@@ -857,17 +857,24 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
     return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
   }
-  const idb = (typeof localforage !== "undefined") ? localforage.createInstance({ name: "platNomorDB" }) : null;
+  let idb = null;
+  try {
+    if (typeof localforage !== "undefined") idb = localforage.createInstance({ name: "platNomorDB" });
+  } catch (e) { console.warn("IndexedDB diblokir browser."); }
   async function lsGet(k, fb) {
     if (!idb) { try { const r = localStorage.getItem(k); return r == null ? fb : JSON.parse(r); } catch (e) { return fb; } }
     try { const r = await idb.getItem(k); return r == null ? fb : r; } catch (e) { return fb; }
   }
   async function lsSet(k, v) {
-    if (!idb) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
-    try { await idb.setItem(k, v); return true; } catch (e) { return false; }
+    if (!idb) { 
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; } 
+      catch (e) { showToast("Memori browser penuh (LocalStorage).", true); return false; } 
+    }
+    try { await idb.setItem(k, v); return true; } 
+    catch (e) { showToast("Gagal simpan ke IndexedDB. Memori penuh?", true); return false; }
   }
   async function lsRemove(k) {
-    if (!idb) { localStorage.removeItem(k); return; }
+    if (!idb) { try { localStorage.removeItem(k); } catch(e) {} return; }
     try { await idb.removeItem(k); } catch (e) {}
   }
   function nameFor(hex) {
@@ -891,7 +898,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   function closeSheet(id) {
     $(id).classList.remove("open");
     $(id).querySelectorAll(".sheet-panel").forEach(p => p.style.transform = "");
-    if (id === "previewModal") previewToken++;
+    if (id === "previewModal") {
+      previewToken++;
+      const oldToken = previewToken;
+      setTimeout(() => { 
+        if (previewToken === oldToken) $(id).querySelector("#previewContainer").innerHTML = ""; 
+      }, 300);
+    }
     if (id === "confirmModal" && pendingConfirm) { const f = pendingConfirm; pendingConfirm = null; f(false); }
   }
   document.querySelectorAll("[data-sheet]").forEach(s => {
@@ -954,7 +967,8 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   });
   document.addEventListener("focusout", () => {
     setTimeout(() => {
-      if (!document.activeElement.matches("input, textarea")) {
+      const act = document.activeElement;
+      if (!act || !act.matches("input, textarea")) {
         document.body.classList.remove("kb-open");
       }
     }, 50);
@@ -981,8 +995,11 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       b.classList.toggle("on", on);
       if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
+    document.body.classList.remove("kb-open");
+    if (document.activeElement) document.activeElement.blur();
     if (name === "plat") applyPlate();
     if (name === "bulk") renderBulk();
+if (name === "history") renderHistory();
     if (window.matchMedia("(max-width: 979px)").matches) window.scrollTo({ top: 0, behavior: "smooth" });
   }
   document.querySelectorAll(".nav-btn").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -1104,7 +1121,12 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     return Array.isArray(d) ? d : [];
   }
   async function saveHistoryBatches() {
-    if (await lsSet(HISTORY_KEY, historyBatches)) return true;
+    if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
+    if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
+    if (await lsSet(HISTORY_KEY, historyBatches)) {
+      await lsSet("platActiveVaultIndex", activeVaultIndex);
+      return true;
+    }
     showToast("Penyimpanan penuh. Hapus beberapa data lama.", true);
     return false;
   }
@@ -1193,6 +1215,12 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   /* ================= Slider ================= */
   const sliderEls = {};
   let tplSaveTimer = null;
+  function scheduleTemplateSave() {
+    if (templateData) {
+      clearTimeout(tplSaveTimer);
+      tplSaveTimer = setTimeout(() => { saveTemplate(); }, 400);
+    }
+  }
   function buildSliders(host, groups) {
     host.innerHTML = "";
     groups.forEach(g => {
@@ -1236,8 +1264,15 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
         sliderEls[s.key] = { input, out, cfg: s };
         input.addEventListener("input", () => {
           const v = parseFloat(input.value);
-          if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, v);
-          else viewData[currentView][s.key] = v;
+          if (TEXT_KEYS.includes(s.key)) {
+            setTextSetting(s.key, v);
+          } else {
+            viewData[currentView][s.key] = v;
+            if (templateData && templateData[currentView]) {
+              templateData[currentView][s.key] = v;
+              scheduleTemplateSave();
+            }
+          }
           paintSlider(s.key);
           applyPlate();
           paintMiniPlates(bulkListEl);
@@ -1298,9 +1333,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     let n = 0;
     VIEWS.forEach(v => {
       if (v === currentView || !viewData[v].img) return;
-      STYLE_KEYS.forEach(k => viewData[v][k] = src[k]);
+      STYLE_KEYS.forEach(k => {
+        viewData[v][k] = src[k];
+        if (templateData && templateData[v]) templateData[v][k] = src[k];
+      });
       n++;
     });
+    if (templateData) scheduleTemplateSave();
     showToast(n ? `Gaya plat diterapkan ke ${n} sudut lain ✓` : "Belum ada sudut lain yang punya gambar", !n);
   });
 
@@ -1350,8 +1389,18 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   });
   viewSelect.addEventListener("change", () => { currentView = viewSelect.value; loadViewState(); });
 
-  hidePlateChk.addEventListener("change", () => {
+  hidePlateChk.addEventListener("change", async () => {
+    const prev = viewData[currentView].hidden;
     viewData[currentView].hidden = hidePlateChk.checked;
+    if (templateData) {
+      const prevTpl = templateData[currentView].hidden;
+      templateData[currentView].hidden = hidePlateChk.checked;
+      if (!await saveTemplate()) {
+        viewData[currentView].hidden = prev;
+        templateData[currentView].hidden = prevTpl;
+        hidePlateChk.checked = prev;
+      }
+    }
     applyPlate();
   });
 
@@ -1476,6 +1525,12 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     if (!isDragging) return;
     isDragging = false;
     try { platePreview.releasePointerCapture(e.pointerId); } catch (err) {}
+    const st = viewData[currentView];
+    if (templateData && templateData[currentView]) {
+      templateData[currentView].left = st.left;
+      templateData[currentView].top = st.top;
+      scheduleTemplateSave();
+    }
   };
   platePreview.addEventListener("pointerup", endDrag);
   platePreview.addEventListener("pointercancel", endDrag);
@@ -1573,6 +1628,8 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       added = true;
     }
     editorOpen = false;
+    activeVaultIndex = -1;
+    await lsSet("platActiveVaultIndex", -1);
     updateTemplateUI();
     setTab("bulk");
     showToast(added ? "Template dikunci & Nopol masuk ke Bulk!" : "Template dikunci ✓");
@@ -1610,6 +1667,8 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     templateData = JSON.parse(JSON.stringify(viewData));
     if (!await saveTemplate()) { templateData = prev; return; }
     editorOpen = false;
+    activeVaultIndex = -1;
+    await lsSet("platActiveVaultIndex", -1);
     updateTemplateUI();
     showToast("Template diperbarui ✓");
   });
@@ -1682,12 +1741,12 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     paintMiniPlates(bulkListEl);
   }
 
-  bulkListEl.addEventListener("input", e => {
+  bulkListEl.addEventListener("input", async e => {
     if (e.target.id === "bulkStartNum") {
       const val = parseInt(e.target.value, 10);
       if (!isNaN(val) && val >= 0) {
         bulkStartNumber = val;
-        lsSet("platBulkStartNum", bulkStartNumber);
+        await lsSet("platBulkStartNum", bulkStartNumber);
         const spans = bulkListEl.querySelectorAll(".row-num-span");
         spans.forEach((span, idx) => {
           span.textContent = bulkStartNumber + idx + 1;
@@ -1825,6 +1884,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   $("pasteAddBtn").addEventListener("click", async () => {
     const list = parsePaste($("pasteArea").value);
     if (!list.length) return showToast("Belum ada nopol untuk ditambahkan", true);
+    if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol dalam satu antrean!", true);
     const before = bulkItems.length;
     bulkItems = bulkItems.concat(list);
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
@@ -1836,12 +1896,14 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
   /* ================= Riwayat (Data Tersimpan) ================= */
   function renderHistory() {
-    if (!historyBatches.length) {
+    if (!historyBatches || !historyBatches.length) {
+      if (!historyBatches) historyBatches = [];
       listEl.innerHTML = `<div class="empty">${ico("vault")}<b>Vault masih kosong</b><span>Antrean bulk yang kamu simpan akan muncul di sini.</span></div>`;
       $("btnExportAllVault").hidden = true;
       return;
     }
     listEl.innerHTML = historyBatches.map((batch, idx) => {
+      const count = batch.plates ? batch.plates.length : 0;
       return `
         <div class="item">
           <div style="flex:1;">
@@ -1849,10 +1911,10 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
               ${esc(batch.name || `Antrean #${historyBatches.length - idx}`)}
               <button class="icon-btn" data-act="rename_batch" data-idx="${idx}" style="width:26px;height:26px;border-radius:8px;border:none;background:transparent;color:var(--ink-3);" title="Ubah Nama" aria-label="Ubah Nama">${ico("pencil")}</button>
             </div>
-            <div style="font-size:12.5px;color:var(--ink-2);margin-top:2px;">${batch.plates.length} Nopol &bull; ${batch.date}</div>
+            <div style="font-size:12.5px;color:var(--ink-2);margin-top:2px;">${count} Nopol &bull; ${batch.date || '-'}</div>
           </div>
           <div class="item-actions">
-            <button class="icon-btn" data-act="export_batch" data-idx="${idx}" title="Export ZIP" aria-label="Export ${batch.plates.length} nopol">${ico("package")}</button>
+            <button class="icon-btn" data-act="export_batch" data-idx="${idx}" title="Export ZIP" aria-label="Export ${count} nopol">${ico("package")}</button>
             <button class="icon-btn" data-act="preview_batch" data-idx="${idx}" title="Preview" aria-label="Preview Antrean">${ico("eye")}</button>
             <button class="icon-btn" data-act="load_batch" data-idx="${idx}" title="Muat ke Bulk" aria-label="Muat ke Bulk">${ico("redo")}</button>
             <button class="icon-btn danger del" data-act="del_batch" data-idx="${idx}" title="Hapus" aria-label="Hapus Antrean">${ico("x")}</button>
@@ -1882,17 +1944,26 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       const ok = await askConfirm("Muat ke Bulk?", "Antrean bulk dan template mobil (jika ada) akan dimuat. Lanjutkan?", "Muat");
       if (!ok) return;
       
-      bulkItems = JSON.parse(JSON.stringify(batch.plates));
+      const prevBulk = JSON.parse(JSON.stringify(bulkItems));
+      const prevTpl = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
+      const prevView = JSON.parse(JSON.stringify(viewData));
+      
+      bulkItems = Array.isArray(batch.plates) ? JSON.parse(JSON.stringify(batch.plates)) : [];
+      editIndex = -1;
+      cancelEditUI();
       
       if (batch.template) {
         templateData = JSON.parse(JSON.stringify(batch.template));
-        if (!await saveTemplate()) return;
         VIEWS.forEach(v => { viewData[v] = Object.assign(defaultState(), templateData[v] || {}); });
         const first = VIEWS.find(v => viewData[v].img);
         if (first) currentView = first;
+      } else {
+        templateData = null;
+        VIEWS.forEach(v => { viewData[v] = defaultState(); });
+        currentView = "depan";
       }
 
-      if (await saveBulkData()) {
+      if (await saveBulkData() && await saveTemplate()) {
         activeVaultIndex = idx;
         await lsSet("platActiveVaultIndex", activeVaultIndex);
         updateTemplateUI();
@@ -1904,6 +1975,14 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
           setTab("studio");
           showToast("Data dimuat. Kunci template dulu untuk mulai export!", false);
         }
+      } else {
+        bulkItems = prevBulk;
+        templateData = prevTpl;
+        viewData = prevView;
+        await saveBulkData();
+        await saveTemplate();
+        loadViewState();
+        showToast("Gagal memuat antrean. Memori penuh?", true);
       }
     } else if (act === "rename_batch") {
       const currentName = batch.name || `Antrean #${historyBatches.length - idx}`;
@@ -1916,7 +1995,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     } else if (act === "preview_batch") {
       const title = batch.name || `Antrean #${historyBatches.length - idx}`;
       $("historyPreviewTitle").textContent = title + " (" + batch.date + ")";
-      $("historyPreviewGrid").innerHTML = batch.plates.map((p, i) => `
+      $("historyPreviewGrid").innerHTML = (batch.plates || []).map((p, i) => `
         <div class="item">
           <div class="row-num-wrap"><span class="row-num-span">${i + 1}</span></div>
           ${chipHtml(p, true)}
@@ -1928,11 +2007,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   });
 
   $("clearBtn").addEventListener("click", async () => {
-    if (!items.length) return;
+    if (!historyBatches || !historyBatches.length) return showToast("Vault sudah kosong", true);
     const ok = await askConfirm("Hapus semua data?", "Semua data yang tersimpan di riwayat akan dihapus.", "Hapus semua");
     if (!ok) return;
-    items = [];
-    saveHistory();
+    historyBatches = [];
+    activeVaultIndex = -1;
+    await lsSet("platActiveVaultIndex", activeVaultIndex);
+    await saveHistoryBatches();
     renderHistory();
     showToast("Semua data dihapus");
   });
@@ -1946,19 +2027,25 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     aiModel.innerHTML = list.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
     aiModel.value = list.some(m => m[0] === selected) ? selected : list[0][0];
   }
-  aiApiKey.value = localStorage.getItem("aiApiKey") || "";
-  aiProvider.value = localStorage.getItem("aiProvider") || "gemini";
-  if (!AI_MODELS[aiProvider.value]) aiProvider.value = "gemini";
-  populateModels(aiProvider.value, localStorage.getItem("aiModel") || "gemini-3.8-flash");
+  try {
+    aiApiKey.value = localStorage.getItem("aiApiKey") || "";
+    aiProvider.value = localStorage.getItem("aiProvider") || "gemini";
+    if (!AI_MODELS[aiProvider.value]) aiProvider.value = "gemini";
+    populateModels(aiProvider.value, localStorage.getItem("aiModel") || "gemini-3.8-flash");
+  } catch(e) {
+    aiApiKey.value = "";
+    aiProvider.value = "gemini";
+    populateModels("gemini", "gemini-3.8-flash");
+  }
 
-  aiApiKey.addEventListener("input", () => localStorage.setItem("aiApiKey", aiApiKey.value.trim()));
+  aiApiKey.addEventListener("input", () => { try { localStorage.setItem("aiApiKey", aiApiKey.value.trim()); } catch(e) {} });
   aiProvider.addEventListener("change", () => {
-    localStorage.setItem("aiProvider", aiProvider.value);
+    try { localStorage.setItem("aiProvider", aiProvider.value); } catch(e) {}
     populateModels(aiProvider.value, "");
-    localStorage.setItem("aiModel", aiModel.value);
+    try { localStorage.setItem("aiModel", aiModel.value); } catch(e) {}
     setAiStatus("", "Belum dites");
   });
-  aiModel.addEventListener("change", () => localStorage.setItem("aiModel", aiModel.value));
+  aiModel.addEventListener("change", () => { try { localStorage.setItem("aiModel", aiModel.value); } catch(e) {} });
 
   $("toggleAiBtn").addEventListener("click", () => {
     const panel = $("aiPanel");
@@ -2086,10 +2173,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       }
     }
 
-    const v = [r.ymin, r.xmin, r.ymax, r.xmax].map(Number);
+    const v = [Number(r.ymin), Number(r.xmin), Number(r.ymax), Number(r.xmax)];
     const missing = v.some(n => !isFinite(n) || n < 0) || v[2] <= v[0] || v[3] <= v[1];
     if (missing) {
       st.hidden = true;
+      if (templateData && templateData[targetView]) {
+        templateData[targetView].hidden = true;
+      }
       if (targetView === currentView) {
         hidePlateChk.checked = true;
         applyPlate();
@@ -2105,6 +2195,18 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     st.top = clamp((ymin + ymax) / 20, 0, 100) + "%";
     const frac = (xmax - xmin) / 1000;                       // lebar plat / lebar gambar
     st.scale = clamp(Math.round(frac * REF_W / PLATE_W * 100), 10, 200);
+    if (templateData && templateData[targetView]) {
+      templateData[targetView].left = st.left;
+      templateData[targetView].top = st.top;
+      templateData[targetView].scale = st.scale;
+      templateData[targetView].hidden = st.hidden;
+    }
+    if (templateData && templateData[targetView]) {
+      templateData[targetView].left = st.left;
+      templateData[targetView].top = st.top;
+      templateData[targetView].scale = st.scale;
+      templateData[targetView].hidden = st.hidden;
+    }
     if (targetView === currentView) {
       syncSliders(st);
       applyPlate();
@@ -2127,6 +2229,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       const m = String(text).match(/\{[\s\S]*\}/);
       if (!m) throw new Error("Respons AI tidak bisa dibaca");
       const ok = applyAiBox(JSON.parse(m[0]), currentView);
+      if (templateData) await saveTemplate();
       showToast(ok ? "AI berhasil menyesuaikan plat ✓" : "AI: Plat tidak terdeteksi, disembunyikan.");
     } catch (err) {
       console.error(err);
@@ -2154,6 +2257,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     try {
       for (let i = 0; i < availableViews.length; i++) {
         const v = availableViews[i];
+        if (!viewData[v] || !viewData[v].img) continue; // Skip jika gambar tiba-tiba dihapus
         label.textContent = `Proses (${i+1}/${availableViews.length})...`;
         const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
         const m = String(text).match(/\{[\s\S]*\}/);
@@ -2163,6 +2267,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
         }
         await sleep(1000); // Jeda 1 detik agar tidak kena rate limit API
       }
+      if (templateData) await saveTemplate();
       showToast(`Selesai! ${successCount} plat berhasil dideteksi AI ✓`, false);
     } catch (err) {
       console.error(err);
@@ -2325,10 +2430,23 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     canvas.width = Math.round(img.width * sc);
     canvas.height = Math.round(img.height * sc);
     const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     if (state.hidden) return;
     const st = Object.assign(defaultState(), state);
+    st.nopolSize = Number(st.nopolSize) || 33;
+    st.tahunSize = Number(st.tahunSize) || 16;
+    st.tinggi = Number(st.tinggi) || 110;
+    st.tahunTinggi = Number(st.tahunTinggi) || 90;
+    st.scale = Number(st.scale) || 100;
+    st.rotate = Number(st.rotate) || 0;
+    st.skewX = Number(st.skewX) || 0;
+    st.skewY = Number(st.skewY) || 0;
+    st.noise = Number(st.noise) || 0;
+    st.blur = Number(st.blur) || 0;
+    st.radius = Number(st.radius) || 0;
+    st.thickness = Number(st.thickness) || 0;
     const pX = (parseFloat(st.left) / 100) * canvas.width;
     const pY = (parseFloat(st.top) / 100) * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
@@ -2368,7 +2486,11 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   $("closePreviewBtn").addEventListener("click", () => closeSheet("previewModal"));
 
   /* ================= Export ZIP ================= */
-  let exportQuality = parseFloat(localStorage.getItem(QUALITY_KEY)) || 0.9;
+  let exportQuality = 0.9;
+  try {
+    const q = localStorage.getItem(QUALITY_KEY);
+    if (q) exportQuality = parseFloat(q) || 0.9;
+  } catch (e) {}
   function paintQuality() {
     document.querySelectorAll("#qualitySeg button").forEach(b =>
       b.classList.toggle("on", Math.abs(parseFloat(b.dataset.q) - exportQuality) < 0.001));
@@ -2379,7 +2501,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     const b = e.target.closest("button[data-q]");
     if (!b) return;
     exportQuality = parseFloat(b.dataset.q);
-    localStorage.setItem(QUALITY_KEY, String(exportQuality));
+    try { localStorage.setItem(QUALITY_KEY, String(exportQuality)); } catch(e) {}
     paintQuality();
   });
 
@@ -2397,13 +2519,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   async function doExport(exportGroups, btnElement, saveToVault = false) {
     if (exporting) return;
     let allPlates = [];
-    exportGroups.forEach(g => { if (g.plates) allPlates = allPlates.concat(g.plates); });
+    exportGroups.forEach(g => { if (Array.isArray(g.plates)) allPlates = allPlates.concat(g.plates); });
     
     if (!allPlates.length) return showToast("Data kosong", true);
     let globalTpl = templateData;
     if (!globalTpl) {
       for (let g of exportGroups) {
-        if (g.template && g.template.depan && g.template.depan.img) {
+        if (g.template && Object.values(g.template).some(v => v && v.img)) {
           globalTpl = g.template;
           break;
         }
@@ -2419,10 +2541,19 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       const views = VIEWS.filter(v => tpl[v] && tpl[v].img);
       total += g.plates.length * views.length;
     });
-    let done = 0;
 
     const label = btnElement.querySelector("span") || btnElement;
     const oldHTML = label.innerHTML;
+    
+    if (total === 0) {
+      exporting = false;
+      btnElement.disabled = false;
+      label.innerHTML = oldHTML;
+      const _pc = $("exportProgress"); if (_pc) _pc.hidden = true;
+      return showToast("Gagal: Gambar mobil belum di-import atau template kosong!", true);
+    }
+    
+    let done = 0;
     exporting = true;
     btnElement.disabled = true;
     label.innerHTML = "Memproses...";
@@ -2441,6 +2572,7 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       const folderHasil = zip.folder("Hasil");
       const cache = {};
 
+      const usedFolders = new Set();
       for (let g of exportGroups) {
         if (!g.plates || !g.plates.length) continue;
         const activeTpl = g.template || globalTpl;
@@ -2448,14 +2580,20 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
         let currentFolder = folderHasil;
         if (g.folderName) {
-          const safeFolderName = g.folderName.replace(/[\\/:*?"<>|]/g, "_");
+          let safeFolderName = g.folderName.replace(/[\\/:*?"<>|]/g, "_");
+          let originalName = safeFolderName;
+          let counter = 1;
+          while (usedFolders.has(safeFolderName.toLowerCase())) {
+            safeFolderName = originalName + " (" + (counter++) + ")";
+          }
+          usedFolders.add(safeFolderName.toLowerCase());
           currentFolder = folderHasil.folder(safeFolderName);
         }
 
         const used = new Set();
         for (let i = 0; i < g.plates.length; i++) {
           const plate = g.plates[i];
-          let safe = plate.nomor.replace(/[^a-zA-Z0-9]/g, "") || ("Plat_" + i);
+          let safe = String(plate.nomor || "").replace(/[^a-zA-Z0-9]/g, "") || ("Plat_" + i);
           if (used.has(safe.toLowerCase())) safe += "_" + (i + 1);
           used.add(safe.toLowerCase());
           const folderNopol = currentFolder.folder(safe);
@@ -2484,9 +2622,12 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
 
       if (saveToVault && exportGroups.length > 0) {
+        const prevBatches = JSON.parse(JSON.stringify(historyBatches));
+        const prevIndex = activeVaultIndex;
+        
         if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
           historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(exportGroups[0].plates));
           historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
@@ -2503,8 +2644,16 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
           await lsSet("platActiveVaultIndex", activeVaultIndex);
         }
         if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
-        await saveHistoryBatches();
-        renderHistory();
+        if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
+        if (await saveHistoryBatches()) {
+          await lsSet("platActiveVaultIndex", activeVaultIndex);
+          renderHistory();
+        } else {
+          historyBatches = prevBatches;
+          activeVaultIndex = prevIndex;
+          await lsSet("platActiveVaultIndex", activeVaultIndex);
+          renderHistory();
+        }
       }
 
       showToast("Export berhasil di-download!");
@@ -2522,7 +2671,10 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   $("btnExportZip").addEventListener("click", async (e) => {
     if (!bulkItems.length) return showToast("Belum ada data bulk", true);
     const ok = await askConfirm("Export ZIP?", "Apakah kamu yakin ingin mengekspor antrean bulk ini?", "Export");
-    if (ok) doExport([{ folderName: null, plates: bulkItems }], e.currentTarget, true);
+    if (ok) {
+      const platesClone = JSON.parse(JSON.stringify(bulkItems));
+      doExport([{ folderName: null, plates: platesClone }], e.currentTarget, true);
+    }
   });
 
   $("btnExportAllVault").addEventListener("click", async (e) => {
@@ -2553,9 +2705,10 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
   }
 
   async function initApp() {
-    bulkStartNum = await lsGet("platBulkStartNum", 1);
-    bulkStartNumber = bulkStartNum;
-    activeVaultIndex = await lsGet("platActiveVaultIndex", -1);
+    const storedStart = await lsGet("platBulkStartNum", 1);
+    bulkStartNumber = parseInt(storedStart, 10) || 1;
+    activeVaultIndex = parseInt(await lsGet("platActiveVaultIndex", -1), 10);
+    if (isNaN(activeVaultIndex)) activeVaultIndex = -1;
     historyBatches = await loadHistoryBatches();
     await loadBulkData();
     
@@ -2602,9 +2755,13 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
 
   $("btnSaveHistoryBulk").addEventListener("click", async () => {
     if (!bulkItems.length) return showToast("Antrean masih kosong", true);
+    if (!historyBatches) historyBatches = [];
     
     if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
       // Update Vault yang sudah ada
+      const prevBatches = JSON.parse(JSON.stringify(historyBatches));
+      const prevIndex = activeVaultIndex;
+      
       historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
       historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
@@ -2612,6 +2769,10 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       if (await saveHistoryBatches()) {
         renderHistory();
         showToast("Vault berhasil diperbarui ✓");
+      } else {
+        historyBatches = prevBatches;
+        activeVaultIndex = prevIndex;
+        renderHistory();
       }
     } else {
       // Buat Vault baru
@@ -2624,9 +2785,17 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
       historyBatches.unshift(newBatch);
       activeVaultIndex = 0;
       await lsSet("platActiveVaultIndex", activeVaultIndex);
+      if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
+      if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
+      await lsSet("platActiveVaultIndex", activeVaultIndex);
+      
       if (await saveHistoryBatches()) {
         renderHistory();
         showToast(bulkItems.length + " Nopol disimpan ke Vault ✓");
+      } else {
+        historyBatches.shift();
+        activeVaultIndex = -1;
+        renderHistory();
       }
     }
   });
@@ -2660,13 +2829,15 @@ body.kb-open .sheet-panel{padding-bottom:30vh !important}
     if (!styleEl) { styleEl = document.createElement("style"); styleEl.id = "accentStyle"; document.head.appendChild(styleEl); }
     styleEl.innerHTML = css;
     document.querySelectorAll("#accentColors .sw").forEach(b => b.classList.toggle("on", b.dataset.c === name));
-    localStorage.setItem("platAccent", name);
+    try { localStorage.setItem("platAccent", name); } catch(e) {}
   }
 
   document.querySelectorAll("#accentColors .sw").forEach(b => {
     b.addEventListener("click", () => applyAccentColor(b.dataset.c));
   });
-  applyAccentColor(localStorage.getItem("platAccent") || "orange");
+  let savedAccent = "orange";
+  try { savedAccent = localStorage.getItem("platAccent") || "orange"; } catch(e) {}
+  applyAccentColor(savedAccent);
 
   function updateStatusBar() {
     const c = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
