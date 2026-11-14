@@ -1946,6 +1946,8 @@ if (name === "history") renderHistory();
         msgs.push("Nopol harus ada huruf & angka");
       } else if (/[^A-Z0-9\s]/.test(rawNomor)) {
         msgs.push("Karakter tidak valid di nopol");
+      } else if (!rawNomor.includes(" ")) {
+        msgs.push("Nopol harus pakai spasi (misal: B 1234 XYZ)");
       }
       const it = Object.assign({}, base, { nomor: rawNomor });
       let parsedMonth = null, parsedYear = null;
