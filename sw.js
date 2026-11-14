@@ -1,59 +1,90 @@
-const CACHE_NAME = 'plat-app-v3'; // Naikkan versi ini (v3, v4, dst) setiap kali kamu update file
-const ASSETS = [
+// ==========================================================================
+// Service Worker — Plat Nomor App
+// --------------------------------------------------------------------------
+// Aturan update:
+//   • Bump CACHE_VERSION setiap kali update: FE.ttf, icon-*.png,
+//     manifest.webmanifest, atau library CDN (xlsx, jszip, localforage).
+//   • File HTML (index.html, nopol-csv.html) TIDAK perlu bump —
+//     pakai strategi network-first, jadi update langsung kelihatan.
+// ==========================================================================
+
+const CACHE_VERSION = 'plat-app-v2';
+
+// Aset same-origin yang di-pre-cache saat install
+const PRECACHE = [
   './',
   './index.html',
-  './GL-Nummernschild-Mtl.ttf',
+  './nopol-csv.html',
   './manifest.webmanifest',
+  './FE.ttf',
   './icon-192.png',
   './icon-512.png'
 ];
 
-// 1. Install: Simpan aset dasar
+// ===== Install: pre-cache + langsung aktif =====
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); 
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_VERSION)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
-// 2. Activate: Hapus cache versi lama
+// ===== Activate: hapus cache versi lama + ambil alih tab =====
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// 3. Fetch: Strategi khusus
+// ===== Fetch: strategi per jenis request =====
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
+  const req = e.request;
+  if (req.method !== 'GET') return;
 
-  // KHUSUS HTML (index.html): Selalu ambil dari internet (Network-First)
-  if (e.request.mode === 'navigate' || e.request.url.includes('index.html')) {
+  const url = new URL(req.url);
+
+  // 1) HTML / navigasi → network-first, fallback cache
+  //    (update HTML langsung kelihatan; offline tetap bisa buka)
+  if (req.mode === 'navigate' ||
+      (url.origin === self.location.origin && url.pathname.endsWith('.html'))) {
     e.respondWith(
-      fetch(e.request)
-        .then((networkResponse) => {
-          // Simpan versi terbaru ke cache
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, responseClone));
-          return networkResponse;
+      fetch(req)
+        .then((res) => {
+          const clone = res.clone();
+          caches.open(CACHE_VERSION)
+            .then((c) => c.put(req, clone))
+            .catch(() => {});
+          return res;
         })
-        .catch(() => caches.match(e.request)) // Kalau offline, baru pakai cache lama
+        .catch(() =>
+          caches.match(req).then((r) => r || caches.match('./index.html'))
+        )
     );
     return;
   }
 
-  // ASET LAIN (font, ikon): Ambil dari cache dulu (Cache-First)
+  // 2) Semua aset lain (font, icon, JS, CSS, CDN, Google Fonts)
+  //    → cache-first, fallback network, lalu runtime-cache
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request);
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        // Cache response valid (200) + opaque (CDN no-cors)
+        if (res && (res.status === 200 || res.type === 'opaque')) {
+          const clone = res.clone();
+          caches.open(CACHE_VERSION)
+            .then((c) => c.put(req, clone))
+            .catch(() => {});
+        }
+        return res;
+      });
     })
   );
 });
