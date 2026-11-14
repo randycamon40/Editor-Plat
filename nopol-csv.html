@@ -238,11 +238,14 @@ function setTheme(t){
   var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#0d0b1c':'#5b4bff';
 }
 var th='light';
-try{th=localStorage.getItem('plat-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');}catch(e){}
+try{
+  var _saved=localStorage.getItem('platTheme');
+  th=(_saved==='dark'||_saved==='light')?_saved:(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+}catch(e){}
 setTheme(th);
 $('theme').addEventListener('click',function(){
   var n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-  setTheme(n);try{localStorage.setItem('plat-theme',n);}catch(e){}
+  setTheme(n);try{localStorage.setItem('platTheme',n);}catch(e){}
 });
 
 /* ===== PARSE BULAN / TAHUN ===== */
