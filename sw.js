@@ -8,7 +8,7 @@
 //     pakai strategi network-first, jadi update langsung kelihatan.
 // ==========================================================================
 
-const CACHE_VERSION = 'plat-app-v2';
+const CACHE_VERSION = 'plat-app-v3';
 
 // Aset same-origin yang di-pre-cache saat install
 const PRECACHE = [
@@ -18,7 +18,10 @@ const PRECACHE = [
   './manifest.webmanifest',
   './FE.ttf',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './xlsx.full.min.js',
+  './jszip.min.js',
+  './localforage.min.js'
 ];
 
 // ===== Install: pre-cache + langsung aktif =====
