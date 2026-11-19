@@ -139,6 +139,8 @@ button{cursor:pointer}
 .sw-custom{background:conic-gradient(#ff5a8a,#ffc61a,#2ecc71,#22c7ee,#6c4dff,#ff5a8a);overflow:hidden;display:inline-block}
 .sw-custom input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .color-name{font-size:13px;font-weight:700;color:var(--tx2);margin-left:auto}
+.color-box{width:100%;height:50px;border-radius:12px;border:2px solid var(--line);background-color:#fff;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:transform .1s}
+.color-box:active{transform:scale(.97)}
 .tcolor{display:flex;align-items:center;gap:8px}
 .tcolor input[type=color]{width:50px;height:38px;padding:3px;border-radius:11px;border:0;background:var(--s2);cursor:pointer}
 .tcolor input[type=color]::-webkit-color-swatch-wrapper{padding:0}
@@ -171,6 +173,9 @@ button{cursor:pointer}
 .stage-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}
 .stage-actions .hint{flex:1;min-width:0}
 .brand-tag{position:absolute;top:10px;left:10px;z-index:5;background:rgba(15,27,45,.85);color:#fff;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:700;backdrop-filter:blur(4px);max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.swap-btn-overlay{position:absolute;top:10px;right:10px;z-index:5;background:rgba(15,27,45,.85);color:#fff;padding:0;border-radius:8px;backdrop-filter:blur(4px);width:34px;height:34px;display:grid;place-items:center;border:0;cursor:pointer;transition:transform .1s}
+.swap-btn-overlay:active{transform:scale(.92)}
+.swap-btn-overlay .i{width:18px;height:18px}
 
 /* ============ Plat (DOM) - jangan diubah: harus identik dengan render canvas ============ */
   .plate{
@@ -208,6 +213,7 @@ button{cursor:pointer}
     cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;z-index:3;
   }
   .plate-overlay:active{cursor:grabbing}
+.plate-logo{position:absolute;bottom:4px;left:8px;width:16px;height:18px;z-index:2;pointer-events:none;opacity:0.85;display:none;object-fit:contain;mix-blend-mode:multiply;}
 /* ============ akhir blok plat ============ */
 
 .plate-hero{padding:22px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center}
@@ -272,6 +278,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .empty .i{width:30px;height:30px;color:var(--ac)}
 .empty b{font-family:var(--f-d);font-size:19px;color:var(--tx);letter-spacing:.01em}
 .badge{min-width:17px;height:17px;border-radius:9px;background:var(--lane);color:#111;font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;padding:0 4px}
+.save-flash{position:fixed;top:16px;right:16px;background:var(--ok);color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;z-index:200;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(-10px);transition:all .2s;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.save-flash.show{opacity:1;transform:translateY(0)}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
 .strip figure{margin:0;flex:0 0 auto;width:84px}
 .strip img{width:84px;height:58px;object-fit:cover;border-radius:10px;display:block;background:var(--stage)}
@@ -311,8 +319,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 @media (min-width:980px){.toast{bottom:24px}}
 
 /* ---- Sheet ---- */
-.sheet{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;background:rgba(6,9,16,.62)}
+.sheet{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;background:rgba(6,9,16,.65)}
 .sheet.open{display:flex}
+body.modal-open{overflow:hidden}
 .sheet-panel{width:100%;max-width:820px;max-height:92vh;max-height:92dvh;overflow-y:auto;background:var(--s1);color:var(--tx);border-radius:22px 22px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));animation:sheetUp .22s ease-out;transition:transform .25s ease-out}
 .sheet-panel.dragging{transition:none !important;animation:none !important}
 .drag-handle{width:100%;height:36px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;margin-top:-10px;margin-bottom:4px}
@@ -359,17 +368,20 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
     <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11 3.5 12.9 9l5.5 1.9-5.5 1.9L11 18.3 9.1 12.8 3.6 10.9 9.1 9z"/><path d="M19 3v4M17 5h4M18.5 15.5v4M16.5 17.5h4"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
     <symbol id="i-replace" viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 14-2.5L20 9M20 4v5h-5M20 15a8 8 0 0 1-14 2.5L4 15M4 20v-5h5"/></symbol>
     <symbol id="i-list-plus" viewBox="0 0 24 24"><path d="M4 6h11M4 12h7M4 18h7M17 13v6M14 16h6"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></symbol>
     <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5"/><path d="M12 8v4l3 2"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.7-4.7"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.8 4.8l1.4 1.4M17.8 17.8l1.4 1.4M2.5 12h2M19.5 12h2M4.8 19.2l1.4-1.4M17.8 6.2l1.4-1.4"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.5A8.5 8.5 0 1 1 10.5 3.5a6.8 6.8 0 0 0 10 10z"/></symbol>
     <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2.5"/><path d="M9 20h6M12 16v4"/></symbol>
     <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-csv" viewBox="0 0 24 24"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3v4.5A1.5 1.5 0 0 0 15.5 9H20"/><path d="M7.5 13h9M7.5 16.5h9"/></symbol>
   </defs>
 </svg>
 
@@ -380,7 +392,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
       <div class="brand-txt"><h1>Plat Nomor</h1><p>Editor plat &amp; bulk export</p></div>
     </div>
     <span class="chip" id="templateChip"><i></i><b>Belum terkunci</b></span>
-    <a class="icon-btn" href="./nopol-csv.html" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-arrow-right"/></svg></a>
+    <a class="icon-btn" href="./nopol-csv.html" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
   </div>
 </header>
 
@@ -437,9 +449,11 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
             <div class="image-wrap" id="imageWrap" hidden>
               <img id="preview" class="preview" alt="Preview mobil">
               <span class="brand-tag" id="carBrandText" hidden></span>
+              <button type="button" class="swap-btn-overlay" id="swapImgBtn" title="Tukar posisi gambar" aria-label="Tukar posisi gambar"><svg class="i"><use href="#i-swap"/></svg></button>
               <div class="plate plate-overlay" id="platePreview">
                 <span class="plate-text" id="plateText">S 3 LVI</span>
                 <span class="plate-year" id="plateYear">11•03</span>
+                <img class="plate-logo" src="./logo_samsat.png" alt="">
               </div>
             </div>
           </div>
@@ -452,6 +466,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
             <button type="button" class="btn btn-soft btn-sm" id="replaceBtn"><svg class="i"><use href="#i-replace"/></svg>Ganti</button>
             <button type="button" class="icon-btn danger" id="removeImgBtn" title="Hapus gambar" aria-label="Hapus gambar"><svg class="i"><use href="#i-trash"/></svg></button>
           </div>
+
 
           <div class="btn-row mt-s" id="aiActionBtns" hidden>
             <button type="button" id="btnRunAi" class="btn btn-dark"><svg class="i"><use href="#i-sparkles"/></svg><span>Deteksi 1 sisi</span></button>
@@ -484,12 +499,14 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
             <h2>Atur plat &amp; template</h2>
             <p>Isi data plat, lalu kunci template.</p>
           </div>
+          <button type="button" id="btnRandomPlate" class="icon-btn" title="Acak Plat" aria-label="Acak Plat"><svg class="i"><use href="#i-shuffle"/></svg></button>
         </div>
 
         <div class="plate-hero" id="plateHero">
           <div class="plate" id="miniPlate">
             <span class="plate-text" id="miniText">S 3 LVI</span>
             <span class="plate-year" id="miniYear">11•03</span>
+            <img class="plate-logo" src="./logo_samsat.png" alt="">
           </div>
         </div>
 
@@ -513,37 +530,33 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
           </div>
         </div>
 
-        <div class="field">
-          <span class="lbl">Warna plat</span>
-          <div class="color-row">
-            <div id="swatches" class="color-row" style="gap:10px"></div>
-            <label class="sw sw-custom" title="Warna kustom" aria-label="Warna plat kustom">
-              <input type="color" id="warna" value="#ffffff">
-            </label>
-            <span class="color-name" id="colorName">Putih</span>
+        <div class="f-row" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom:14px;">
+          <div class="field">
+            <span class="lbl">Warna plat</span>
+            <button type="button" class="color-box" id="btnColorPlat" aria-label="Pilih warna plat" style="background-color: #ffffff;"></button>
+            <input type="color" id="warna" value="#ffffff" hidden>
           </div>
-          <select id="warnaPreset" hidden aria-hidden="true">
-            <option value="#ffffff">Putih</option>
-            <option value="#111111">Hitam</option>
-            <option value="#f5c518">Kuning</option>
-            <option value="#e63946">Merah</option>
-            <option value="#2ecc71">Hijau</option>
-            <option value="#3498db">Biru</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="warnaTeks">Warna teks plat</label>
-          <div class="tcolor">
-            <input type="color" id="warnaTeks" value="#000000">
-            <button type="button" class="btn btn-soft btn-sm" data-tcolor="#000000">Hitam</button>
-            <button type="button" class="btn btn-soft btn-sm" data-tcolor="#ffffff">Putih</button>
+          <div class="field">
+            <span class="lbl">Warna teks plat</span>
+            <button type="button" class="color-box" id="btnColorTeks" aria-label="Pilih warna teks plat" style="background-color: #000000;"></button>
+            <input type="color" id="warnaTeks" value="#000000" hidden>
+          </div>
+          <div class="field">
+            <span class="lbl">Warna Shadow</span>
+            <button type="button" class="color-box" id="btnColorShadow" aria-label="Pilih warna shadow teks" style="background-color: #000000;"></button>
+            <input type="color" id="warnaShadow" value="#000000" hidden>
           </div>
         </div>
 
         <label class="switch-row flat">
           <span>Auto fit ke lebar plat</span>
           <input type="checkbox" id="autofitChk" checked>
+          <i class="switch"></i>
+        </label>
+
+        <label class="switch-row flat" style="margin-top: 8px;">
+          <span>Tampilkan Logo Samsat</span>
+          <input type="checkbox" id="showLogoChk">
           <i class="switch"></i>
         </label>
 
@@ -606,7 +619,8 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
         <div class="list mt" id="bulkList"></div>
 
         <div class="btn-row mt">
-          <button class="btn btn-soft btn-sm" id="clearBulkBtn"><svg class="i"><use href="#i-trash"/></svg>Kosongkan antrean</button>
+          <button class="btn btn-soft btn-sm" id="clearBulkBtn"><svg class="i"><use href="#i-trash"/></svg>Kosongkan</button>
+          <button class="btn btn-soft btn-sm" id="dedupeBulkBtn"><svg class="i"><use href="#i-copy"/></svg>Cek Duplikat</button>
         </div>
         <button id="unlockTemplateBtn" class="btn btn-danger btn-block mt-s" hidden><svg class="i"><use href="#i-unlock"/></svg>Hapus template &amp; ganti mobil</button>
       </section>
@@ -622,6 +636,10 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
             <p>Antrean yang sudah kamu simpan.</p>
           </div>
           <button class="btn btn-danger btn-sm" id="clearBtn">Hapus semua</button>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><b id="vaultStatNopol">0</b><span>Total Nopol</span></div>
+          <div class="stat"><b id="vaultStatPhotos">0</b><span>Total Foto</span></div>
         </div>
         <div class="list" id="list"></div>
         <button class="btn btn-primary btn-block mt" id="btnExportAllVault" hidden><svg class="i"><use href="#i-package"/></svg><span>Export semua Vault</span></button>
@@ -732,6 +750,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="save-flash" id="saveFlash"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg> Tersimpan</div>
 
 <!-- ============ Modal Preview ============ -->
 <div class="sheet" id="previewModal" data-sheet>
@@ -866,6 +885,38 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
   <div id="expOverlayPct" style="font-size:24px;font-weight:bold">0%</div>
 </div>
 
+<!-- ============ Modal Tukar Posisi ============ -->
+<div class="sheet" id="swapSheet" data-sheet>
+  <div class="sheet-panel small">
+    <div class="sheet-head">
+      <h2>Tukar Posisi</h2>
+      <button id="closeSwapBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="sheet-text" style="margin-bottom:12px">Pilih sudut tujuan untuk menukar gambar dari <b id="swapCurrentViewLabel"></b>.</p>
+    <div class="btn-row" style="flex-direction:column; gap:8px;" id="swapTargetBtns">
+      <!-- Diisi oleh JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal Warna ============ -->
+<div class="sheet" id="colorPickerSheet" data-sheet>
+  <div class="sheet-panel small">
+    <div class="sheet-head">
+      <h2 id="colorPickerTitle">Pilih Warna</h2>
+      <button id="closeColorPickerBtn" class="icon-btn" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="field">
+      <span class="lbl">Pilihan Cepat</span>
+      <div class="color-row" id="colorPickerPresets" style="gap:12px; flex-wrap:wrap; margin-bottom:8px;"></div>
+    </div>
+    <div class="field">
+      <label for="customColorPicker">Warna Kustom</label>
+      <input type="color" id="customColorPicker" style="width:100%; height:50px; padding:4px; border-radius:12px; border:2px solid var(--line); background:var(--s2); cursor:pointer;">
+    </div>
+  </div>
+</div>
+
 <!-- ============ Modal Konfirmasi ============ -->
 <div class="sheet" id="confirmModal" data-sheet>
   <div class="sheet-panel small">
@@ -925,7 +976,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];     // per sudut
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit"]; // berlaku semua sudut
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo"]; // berlaku semua sudut
   const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
   const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
@@ -982,6 +1033,15 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
   function nameFor(hex) {
     const p = PRESETS.find(x => x.v.toLowerCase() === String(hex).toLowerCase());
     return p ? p.n : "Kustom";
+  }
+
+  let flashTimer = null;
+  function flashSave() {
+    const el = $("saveFlash");
+    if (!el) return;
+    el.classList.add("show");
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => el.classList.remove("show"), 1500);
   }
 
   let toastTimer = null;
@@ -1049,11 +1109,15 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
   function openSheet(id) { 
     document.body.appendChild($(id)); // Pindahkan ke urutan DOM paling akhir agar tampil di atas
     $(id).classList.add("open"); 
+    document.body.classList.add("modal-open");
     history.pushState({ modal: id }, "");
   }
 
   function closeSheet(id, fromHistory = false) {
     $(id).classList.remove("open");
+    if (document.querySelectorAll(".sheet.open").length === 0) {
+      document.body.classList.remove("modal-open");
+    }
     $(id).querySelectorAll(".sheet-panel").forEach(p => p.style.transform = "");
     if (id === "previewModal") {
       previewToken++;
@@ -1202,7 +1266,7 @@ if (name === "history") renderHistory();
   /* ================= State ================= */
   function defaultState() {
     return { img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 20, blur: 0, radius: 7, borderThickness: 3,
-             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, hidden: false };
+             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
   function freshState(old, img) {
@@ -1302,18 +1366,35 @@ if (name === "history") renderHistory();
     if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
     if (await lsSet(HISTORY_KEY, historyBatches)) {
       await lsSet("platActiveVaultIndex", activeVaultIndex);
+      flashSave();
       return true;
     }
     showToast("Penyimpanan penuh. Hapus beberapa data lama.", true);
     return false;
   }
+
+  function updateVaultStats() {
+    let totalNopol = 0, totalPhotos = 0;
+    historyBatches.forEach(b => {
+      const plates = Array.isArray(b.plates) ? b.plates :
+                     Array.isArray(b.items) ? b.items :
+                     (Array.isArray(b) ? b : []);
+      totalNopol += plates.length;
+      const tpl = b.template || templateData;
+      const nv = tpl ? VIEWS.filter(v => tpl[v] && tpl[v].img).length : 0;
+      totalPhotos += plates.length * nv;
+    });
+    const elN = $("vaultStatNopol"), elP = $("vaultStatPhotos");
+    if (elN) elN.textContent = totalNopol;
+    if (elP) elP.textContent = totalPhotos;
+  }
   async function saveBulkData() {
-    if (await lsSet(BULK_STORAGE_KEY, bulkItems)) return true;
+    if (await lsSet(BULK_STORAGE_KEY, bulkItems)) { flashSave(); return true; }
     showToast("Gagal simpan Bulk", true);
     return false;
   }
   async function saveTemplate() {
-    if (await lsSet(TEMPLATE_STORAGE_KEY, templateData)) return true;
+    if (await lsSet(TEMPLATE_STORAGE_KEY, templateData)) { flashSave(); return true; }
     showToast("Penyimpanan penuh, template gagal disimpan", true);
     return false;
   }
@@ -1336,9 +1417,13 @@ if (name === "history") renderHistory();
   const miniPlate = $("miniPlate"), miniText = $("miniText"), miniYear = $("miniYear");
   const manualTools = $("manualTools"), toggleEditorBtn = $("toggleEditorBtn");
   const nomorEl = $("nomor"), bulanEl = $("bulan"), tahunEl = $("tahun");
-  const warnaEl = $("warna"), warnaPreset = $("warnaPreset"), warnaTeksEl = $("warnaTeks");
+  const warnaEl = $("warna"), warnaTeksEl = $("warnaTeks"), warnaShadowEl = $("warnaShadow");
   const hidePlateChk = $("hidePlateChk"), viewSelect = $("viewSelect");
   const bulkListEl = $("bulkList"), listEl = $("list");
+  if (listEl && window.MutationObserver) {
+    new MutationObserver(() => updateVaultStats()).observe(listEl, { childList: true, subtree: true });
+  }
+  updateVaultStats();
 
   /* ================= Plat: gaya DOM ================= */
   function getPlate() {
@@ -1347,7 +1432,8 @@ if (name === "history") renderHistory();
       bulan: bulanEl.value.trim() || "11",
       tahun: tahunEl.value.trim() || "03",
       warna: warnaEl.value,
-      warnaTeks: warnaTeksEl.value
+      warnaTeks: warnaTeksEl.value,
+      warnaShadow: warnaShadowEl.value
     };
   }
   function stylePlate(plEl, tEl, yEl, st, p) {
@@ -1359,6 +1445,8 @@ if (name === "history") renderHistory();
     plEl.style.setProperty("--plate-border", p.warnaTeks); // Border luar mengikuti warna teks
     plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 15) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
+    const logoEl = plEl.querySelector('.plate-logo');
+    if (logoEl) logoEl.style.display = st.showLogo ? 'block' : 'none';
     setNomorDOM(tEl, p.nomor, st.autofit);
     yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
@@ -1371,14 +1459,13 @@ if (name === "history") renderHistory();
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
     /* ===== Efek timbul (emboss) ===== */
+    const shColor = p.warnaShadow || "#000000";
     if (!isDark(txtColor)) {
-      // Teks terang: shadow gelap lebih tipis
-      tEl.style.textShadow = "1px 1px 1px rgba(0,0,0,0.6), -0.5px -0.5px 0px rgba(0,0,0,0.3)";
-      yEl.style.textShadow = "0.5px 0.5px 0.5px rgba(0,0,0,0.6), -0.5px -0.5px 0px rgba(0,0,0,0.3)";
+      tEl.style.textShadow = `1px 1px 1px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
+      yEl.style.textShadow = `0.5px 0.5px 0.5px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
     } else {
-      // Teks gelap: emboss dibuat lebih tipis dan halus
-      tEl.style.textShadow = "1px 1px 0px rgba(0,0,0,0.3), -0.5px -0.5px 0px rgba(255,255,255,0.2)";
-      yEl.style.textShadow = "0.5px 0.5px 0px rgba(0,0,0,0.3), -0.5px -0.5px 0px rgba(255,255,255,0.2)";
+      tEl.style.textShadow = `1px 1px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
+      yEl.style.textShadow = `0.5px 0.5px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
     }
   }
 
@@ -1498,6 +1585,7 @@ if (name === "history") renderHistory();
       paintSlider(k);
     });
     $("autofitChk").checked = st.autofit !== false;
+    $("showLogoChk").checked = st.showLogo === true;
   }
   // pengaturan teks berlaku untuk semua sudut (dan template yang sudah terkunci)
   function setTextSetting(key, val) {
@@ -1514,6 +1602,12 @@ if (name === "history") renderHistory();
   buildSliders($("textSliders"), TEXT_GROUPS);
   $("autofitChk").addEventListener("change", () => {
     setTextSetting("autofit", $("autofitChk").checked);
+    applyPlate();
+    queueMini();
+  });
+
+  $("showLogoChk").addEventListener("change", () => {
+    setTextSetting("showLogo", $("showLogoChk").checked);
     applyPlate();
     queueMini();
   });
@@ -1693,6 +1787,39 @@ if (name === "history") renderHistory();
   drop.addEventListener("click", () => fileInput.click());
   drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
   $("replaceBtn").addEventListener("click", () => fileInput.click());
+  $("swapImgBtn").addEventListener("click", () => {
+    if (!viewData[currentView].img) return showToast("Belum ada gambar di sudut ini", true);
+    $("swapCurrentViewLabel").textContent = VIEW_LABEL[currentView];
+    $("swapTargetBtns").innerHTML = VIEWS.filter(v => v !== currentView).map(v => 
+      `<button type="button" class="btn btn-soft" data-target="${v}">${VIEW_LABEL[v]} ${viewData[v].img ? '• (Ada gambar)' : '• (Kosong)'}</button>`
+    ).join("");
+    openSheet("swapSheet");
+  });
+
+  $("swapTargetBtns").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-target]");
+    if (!btn) return;
+    const targetView = btn.dataset.target;
+    
+    // Tukar data gambar & posisi plat antar sudut
+    const temp = viewData[currentView];
+    viewData[currentView] = viewData[targetView];
+    viewData[targetView] = temp;
+
+    // Jika template sedang diedit, sinkronkan juga
+    if (templateData && templateData[currentView] && templateData[targetView]) {
+      const tempTpl = templateData[currentView];
+      templateData[currentView] = templateData[targetView];
+      templateData[targetView] = tempTpl;
+      await saveTemplate();
+    }
+
+    closeSheet("swapSheet");
+    loadViewState();
+    showToast("Posisi gambar berhasil ditukar ✓");
+  });
+
+  $("closeSwapBtn").addEventListener("click", () => closeSheet("swapSheet"));
   $("removeImgBtn").addEventListener("click", async () => {
     const ok = await askConfirm("Hapus gambar?", "Gambar pada sudut ini akan dihapus dari editor.", "Hapus");
     if (!ok) return;
@@ -1748,13 +1875,12 @@ if (name === "history") renderHistory();
 
   /* ================= Form plat ================= */
   function renderSwatches() {
-    const cur = warnaEl.value.toLowerCase();
-    $("swatches").innerHTML = PRESETS.map(p =>
-      `<button type="button" class="sw${cur === p.v ? " on" : ""}" data-color="${p.v}" style="--c:${p.v}" title="${p.n}" aria-label="Plat ${p.n}"></button>`
-    ).join("");
-    $("colorName").textContent = plateColorName;
-    const idx = PRESETS.findIndex(p => p.v === cur);
-    warnaPreset.selectedIndex = idx;
+    const btnPlat = $("btnColorPlat");
+    if (btnPlat) btnPlat.style.backgroundColor = warnaEl.value;
+    const btnTeks = $("btnColorTeks");
+    if (btnTeks) btnTeks.style.backgroundColor = warnaTeksEl.value;
+    const btnShadow = $("btnColorShadow");
+    if (btnShadow) btnShadow.style.backgroundColor = warnaShadowEl.value;
   }
   function setPlateColor(hex, name, autoText) {
     warnaEl.value = hex;
@@ -1763,21 +1889,99 @@ if (name === "history") renderHistory();
     renderSwatches();
     applyPlate();
   }
-  $("swatches").addEventListener("click", e => {
+  warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
+  warnaTeksEl.addEventListener("input", () => {
+    applyPlate();
+    renderSwatches();
+  });
+  warnaShadowEl.addEventListener("input", () => {
+    applyPlate();
+    renderSwatches();
+  });
+
+  // Color Picker Sheet Logic
+  let activeColorTarget = 'plat';
+  const extraPresets = [
+    { n: "Putih", v: "#ffffff" }, { n: "Hitam", v: "#111111" }, { n: "Kuning", v: "#f5c518" },
+    { n: "Merah", v: "#e63946" }, { n: "Hijau", v: "#2ecc71" }, { n: "Biru", v: "#3498db" },
+    { n: "Oranye", v: "#f39c12" }, { n: "Ungu", v: "#9b59b6" }, { n: "Abu", v: "#95a5a6" },
+    { n: "Pink", v: "#fd79a8" }, { n: "Coklat", v: "#8e44ad" }, { n: "Cyan", v: "#00cec9" }
+  ];
+
+  function openColorPicker(target) {
+    activeColorTarget = target;
+    if (target === 'plat') $("colorPickerTitle").textContent = "Warna Plat";
+    else if (target === 'teks') $("colorPickerTitle").textContent = "Warna Teks Plat";
+    else $("colorPickerTitle").textContent = "Warna Shadow Teks";
+    
+    const currentHex = target === 'plat' ? warnaEl.value : (target === 'teks' ? warnaTeksEl.value : warnaShadowEl.value);
+    $("customColorPicker").value = currentHex;
+    
+    $("colorPickerPresets").innerHTML = extraPresets.map(p => 
+      `<button type="button" class="sw${p.v === currentHex ? ' on' : ''}" data-color="${p.v}" style="--c:${p.v}; width:44px; height:44px; border-radius:50%; flex-shrink:0;" aria-label="${p.n}"></button>`
+    ).join("");
+    
+    openSheet("colorPickerSheet");
+  }
+
+  $("btnColorPlat").addEventListener("click", () => openColorPicker('plat'));
+  $("btnColorTeks").addEventListener("click", () => openColorPicker('teks'));
+  $("btnColorShadow").addEventListener("click", () => openColorPicker('shadow'));
+
+  $("colorPickerPresets").addEventListener("click", e => {
     const b = e.target.closest(".sw");
     if (!b) return;
-    const p = PRESETS.find(x => x.v === b.dataset.color);
-    setPlateColor(b.dataset.color, p ? p.n : "Kustom", true);
+    $("colorPickerPresets").querySelectorAll(".sw").forEach(s => s.classList.remove("on"));
+    b.classList.add("on");
+    $("customColorPicker").value = b.dataset.color;
+    
+    const color = b.dataset.color;
+    if (activeColorTarget === 'plat') {
+      setPlateColor(color, nameFor(color), true);
+    } else if (activeColorTarget === 'teks') {
+      warnaTeksEl.value = color;
+      applyPlate();
+      renderSwatches();
+    } else {
+      warnaShadowEl.value = color;
+      applyPlate();
+      renderSwatches();
+    }
   });
-  warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
-  warnaPreset.addEventListener("change", () => {
-    if (warnaPreset.selectedIndex < 0) return;
-    setPlateColor(warnaPreset.value, warnaPreset.options[warnaPreset.selectedIndex].textContent, true);
+
+  $("customColorPicker").addEventListener("input", () => {
+    $("colorPickerPresets").querySelectorAll(".sw").forEach(s => s.classList.remove("on"));
+    
+    const color = $("customColorPicker").value;
+    if (activeColorTarget === 'plat') {
+      setPlateColor(color, nameFor(color), true);
+    } else if (activeColorTarget === 'teks') {
+      warnaTeksEl.value = color;
+      applyPlate();
+      renderSwatches();
+    } else {
+      warnaShadowEl.value = color;
+      applyPlate();
+      renderSwatches();
+    }
   });
-  warnaTeksEl.addEventListener("input", applyPlate);
-  document.querySelectorAll("[data-tcolor]").forEach(b => b.addEventListener("click", () => {
-    warnaTeksEl.value = b.dataset.tcolor; applyPlate();
-  }));
+
+
+  
+  $("closeColorPickerBtn").addEventListener("click", () => closeSheet("colorPickerSheet"));
+
+  $("btnRandomPlate").addEventListener("click", () => {
+    const regions = ["A", "B", "D", "F", "L", "N", "P", "S", "W", "Z", "AB", "AD", "BE", "DK", "KT", "KB", "PA", "PB", "BG", "BL", "BM", "BP", "BB", "BK"];
+    const letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
+    const reg = regions[Math.floor(Math.random() * regions.length)];
+    const num = Math.floor(Math.random() * 9999) + 1;
+    const suf = Array.from({length: 3}, () => letters[Math.floor(Math.random() * letters.length)]).join("");
+    nomorEl.value = `${reg} ${num} ${suf}`;
+    bulanEl.value = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
+    tahunEl.value = String(Math.floor(Math.random() * 30) + 1).padStart(2, "0");
+    applyPlate();
+    showToast("Plat acak dibuat ✓");
+  });
 
   nomorEl.addEventListener("input", (e) => {
     const start = e.target.selectionStart;
@@ -1914,9 +2118,11 @@ if (name === "history") renderHistory();
                data-bulan="${esc(it.bulan || '')}" 
                data-tahun="${esc(it.tahun || '')}" 
                data-warna="${esc(it.warna)}" 
-               data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}">
+               data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}"
+               data-warnashadow="${esc(it.warnaShadow || '#000000')}">
             <span class="plate-text"></span>
             <span class="plate-year"></span>
+            <img class="plate-logo" src="./logo_samsat.png" alt="">
           </div>
         </div>`;
     }
@@ -1935,7 +2141,8 @@ if (name === "history") renderHistory();
         bulan: el.dataset.bulan,
         tahun: el.dataset.tahun,
         warna: el.dataset.warna,
-        warnaTeks: el.dataset.warnateks
+        warnaTeks: el.dataset.warnateks,
+        warnaShadow: el.dataset.warnashadow
       };
       stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
     });
@@ -2023,6 +2230,27 @@ if (name === "history") renderHistory();
     } else if (act === "preview") {
       openPreview(it, it.nomor);
     }
+  });
+
+  $("dedupeBulkBtn").addEventListener("click", async () => {
+    const unique = [];
+    const seen = new Set();
+    let removedCount = 0;
+    bulkItems.forEach(it => {
+      const key = (it.nomor || "").toUpperCase().replace(/\s+/g, "");
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(it);
+      } else {
+        removedCount++;
+      }
+    });
+
+    if (removedCount === 0) return showToast("Tidak ada nopol duplikat ✓");
+    bulkItems = unique;
+    await saveBulkData();
+    renderBulk();
+    showToast(removedCount + " nopol duplikat dihapus ✓");
   });
 
   $("clearBulkBtn").addEventListener("click", async () => {
