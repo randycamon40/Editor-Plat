@@ -993,12 +993,12 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
       { key: "tahunSize", label: "Ukuran Teks Tahun (maks)", min: 4, max: 30, step: 1, unit: "px" },
       { key: "tinggi", label: "Tinggi Teks Nopol", min: 50, max: 150, step: 1, unit: "%" },
       { key: "tahunTinggi", label: "Tinggi Teks Tahun", min: 50, max: 150, step: 1, unit: "%" },
-      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
+      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }, { key: "logoOpacity", label: "Opasitas Logo Samsat", min: 0, max: 100, step: 1, unit: "%" }
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];     // per sudut
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo"]; // berlaku semua sudut
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "logoOpacity"]; // berlaku semua sudut
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "logoOpacity"];
   const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -1318,7 +1318,7 @@ if (name === "history") renderHistory();
   /* ================= State ================= */
   function defaultState() {
     return { img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 20, blur: 0, radius: 7, borderThickness: 3,
-             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, hidden: false };
+             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, logoOpacity: 85, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
   function freshState(old, img) {
@@ -1510,6 +1510,7 @@ if (name === "history") renderHistory();
     if (logoEl) {
       logoEl.style.display = st.showLogo !== false ? 'block' : 'none';
       logoEl.style.backgroundColor = txtColor;
+logoEl.style.opacity = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 100);
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
@@ -1674,7 +1675,7 @@ if (name === "history") renderHistory();
   });
 
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true };
+    const defs = { logoOpacity: 85, nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true };
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     syncSliders(viewData[currentView]);
     applyPlate();
@@ -3236,39 +3237,16 @@ if (name === "history") renderHistory();
     const key = String(color || '#000000').toLowerCase();
     if (samsatTintCache.has(key)) return samsatTintCache.get(key);
     try {
-      const nw = samsatLogoImg.naturalWidth || samsatLogoImg.width;
-      const nh = samsatLogoImg.naturalHeight || samsatLogoImg.height;
-      if (!nw || !nh) return null;
-      // Render tint di resolusi tinggi (maks 4x, dibatasi 512px) biar tidak pecah saat diperbesar di export.
-      // Sebelumnya tint dibuat seukuran file asli lalu ditarik ke 16x18 -> detail sayap / garis hilang.
-      const hiScale = Math.max(1, Math.min(4, 512 / Math.max(nw, nh)));
-      const w = Math.round(nw * hiScale), h = Math.round(nh * hiScale);
       const c = document.createElement('canvas');
-      c.width = w; c.height = h;
+      c.width = samsatLogoImg.naturalWidth || samsatLogoImg.width;
+      c.height = samsatLogoImg.naturalHeight || samsatLogoImg.height;
+      if (!c.width || !c.height) return null;
       const x = c.getContext('2d');
-      x.clearRect(0, 0, w, h);
-      x.imageSmoothingEnabled = true;
-      x.imageSmoothingQuality = 'high';
-      x.drawImage(samsatLogoImg, 0, 0, w, h);
-      // Jika PNG tidak punya transparansi (misal logo hitam di background putih),
-      // alpha semua 255 -> 'source-in' akan jadi kotak penuh. Samakan dengan CSS mask:
-      // pakai luminance sebagai alpha (putih = transparan, hitam = opaque).
-      try {
-        const imgData = x.getImageData(0, 0, w, h);
-        const d = imgData.data;
-        let hasTrans = false;
-        for (let i = 3; i < d.length; i += 4) { if (d[i] < 255) { hasTrans = true; break; } }
-        if (!hasTrans) {
-          for (let i = 0; i < d.length; i += 4) {
-            const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-            d[i + 3] = 255 - lum;
-          }
-          x.putImageData(imgData, 0, 0);
-        }
-      } catch (e) {}
+      x.clearRect(0, 0, c.width, c.height);
+      x.drawImage(samsatLogoImg, 0, 0);
       x.globalCompositeOperation = 'source-in';
       x.fillStyle = color;
-      x.fillRect(0, 0, w, h);
+      x.fillRect(0, 0, c.width, c.height);
       x.globalCompositeOperation = 'source-over';
       samsatTintCache.set(key, c);
       return c;
@@ -3363,36 +3341,15 @@ if (name === "history") renderHistory();
     yx += dW + gapY;
     drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
 
-    // Logo Samsat — samakan persis dengan .plate-logo di CSS:
-    // .plate-logo: bottom:4px, left:8px, 16x18px, mask-size:contain, opacity 0.85
-    // Catatan: di DOM, bottom/left dihitung dari DALAM bingkai (padding-box),
-    // jadi dari tepi luar plat: left = border + 8, bottom = border + 4.
-    // Sebelumnya canvas pakai tepi luar (left 8, bottom 4) -> logo geser 3px ke kiri & bawah, nempel bingkai.
-    // Dan drawImage(...,16,18) memaksa stretch -> aspek rasio rusak. Sekarang pakai contain + center.
+    // Logo Samsat — posisi & ukuran sama persis dengan .plate-logo di CSS:
+    // bottom:4px, left:8px, 16x18px, opacity 0.85, warna = warna teks
     if (st.showLogo !== false) {
       try {
         const tinted = getSamsatTinted(txtC);
         if (tinted) {
           ctx.save();
-          // Logo jangan kena blur / shadow plat, biar tetap tajam seperti di editor
-          ctx.filter = 'none';
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          ctx.globalAlpha = 0.85;
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          const border = (st.borderThickness !== undefined && st.borderThickness !== null ? st.borderThickness : 3);
-          const boxX = -hw + border + 8;
-          const boxY = hh - border - 4 - 18;
-          const boxW = 16, boxH = 18;
-          const srcW = tinted.width, srcH = tinted.height;
-          const fit = Math.min(boxW / srcW, boxH / srcH);
-          const dw = srcW * fit, dh = srcH * fit;
-          const dx = boxX + (boxW - dw) / 2;
-          const dy = boxY + (boxH - dh) / 2;
-          ctx.drawImage(tinted, dx, dy, dw, dh);
+          ctx.globalAlpha = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 100);
+          ctx.drawImage(tinted, -hw + 8, hh - 4 - 18, 16, 18);
           ctx.restore();
         }
       } catch (e) { /* logo opsional, jangan gagalkan render */ }
@@ -3428,6 +3385,7 @@ if (name === "history") renderHistory();
     st.blur = Number(st.blur) || 0;
     st.radius = Number(st.radius) || 0;
     st.thickness = Number(st.thickness) || 0;
+st.logoOpacity = Number.isFinite(Number(st.logoOpacity)) ? Number(st.logoOpacity) : 85;
     const pX = (parseFloat(st.left) / 100) * canvas.width;
     const pY = (parseFloat(st.top) / 100) * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
