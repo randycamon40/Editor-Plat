@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#eceff3">
@@ -213,7 +234,7 @@ button{cursor:pointer}
     cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;z-index:3;
   }
   .plate-overlay:active{cursor:grabbing}
-.plate-logo{position:absolute;bottom:4px;left:8px;width:16px;height:18px;z-index:2;pointer-events:none;opacity:0.85;display:none;object-fit:contain;mix-blend-mode:multiply;}
+.plate-logo{position:absolute;bottom:4px;left:8px;width:16px;height:18px;z-index:2;pointer-events:none;opacity:0.85;display:none;-webkit-mask-image:url('./logo_samsat.png');mask-image:url('./logo_samsat.png');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;}
 /* ============ akhir blok plat ============ */
 
 .plate-hero{padding:22px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center}
@@ -453,7 +474,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
               <div class="plate plate-overlay" id="platePreview">
                 <span class="plate-text" id="plateText">S 3 LVI</span>
                 <span class="plate-year" id="plateYear">11•03</span>
-                <img class="plate-logo" src="./logo_samsat.png" alt="">
+                <div class="plate-logo"></div>
               </div>
             </div>
           </div>
@@ -506,7 +527,7 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
           <div class="plate" id="miniPlate">
             <span class="plate-text" id="miniText">S 3 LVI</span>
             <span class="plate-year" id="miniYear">11•03</span>
-            <img class="plate-logo" src="./logo_samsat.png" alt="">
+            <div class="plate-logo"></div>
           </div>
         </div>
 
@@ -543,8 +564,8 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
           </div>
           <div class="field">
             <span class="lbl">Warna Shadow</span>
-            <button type="button" class="color-box" id="btnColorShadow" aria-label="Pilih warna shadow teks" style="background-color: #000000;"></button>
-            <input type="color" id="warnaShadow" value="#000000" hidden>
+            <button type="button" class="color-box" id="btnColorShadow" aria-label="Pilih warna shadow teks" style="background-color: #808080;"></button>
+            <input type="color" id="warnaShadow" value="#808080" hidden>
           </div>
         </div>
 
@@ -1035,6 +1056,37 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
     return p ? p.n : "Kustom";
   }
 
+  /* ===== Default shadow per warna plat =====
+     Putih -> abu-abu, Hitam -> abu-abu,
+     Kuning -> putih, Merah -> hitam,
+     Hijau -> putih, Biru -> hitam */
+  const SHADOW_BY_PLATE = {
+    "Putih": "#808080",
+    "Hitam": "#808080",
+    "Kuning": "#ffffff",
+    "Merah": "#000000",
+    "Hijau": "#ffffff",
+    "Biru": "#000000"
+  };
+  function defaultShadowForPlate(hex, name) {
+    const n = name || nameFor(hex);
+    if (SHADOW_BY_PLATE[n]) return SHADOW_BY_PLATE[n];
+    try {
+      const h = String(hex || "#ffffff").replace("#", "").toLowerCase();
+      if (h.length !== 6) return "#808080";
+      const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+      let best = null, bestD = Infinity;
+      PRESETS.forEach(p => {
+        const ph = p.v.replace("#", "");
+        const pr = parseInt(ph.slice(0, 2), 16), pg = parseInt(ph.slice(2, 4), 16), pb = parseInt(ph.slice(4, 6), 16);
+        const d = (r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb);
+        if (d < bestD) { bestD = d; best = p; }
+      });
+      if (best && SHADOW_BY_PLATE[best.n]) return SHADOW_BY_PLATE[best.n];
+    } catch (e) {}
+    return "#808080";
+  }
+
   let flashTimer = null;
   function flashSave() {
     const el = $("saveFlash");
@@ -1266,7 +1318,7 @@ if (name === "history") renderHistory();
   /* ================= State ================= */
   function defaultState() {
     return { img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 20, blur: 0, radius: 7, borderThickness: 3,
-             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false };
+             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
   function freshState(old, img) {
@@ -1445,8 +1497,6 @@ if (name === "history") renderHistory();
     plEl.style.setProperty("--plate-border", p.warnaTeks); // Border luar mengikuti warna teks
     plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 15) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
-    const logoEl = plEl.querySelector('.plate-logo');
-    if (logoEl) logoEl.style.display = st.showLogo ? 'block' : 'none';
     setNomorDOM(tEl, p.nomor, st.autofit);
     yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
@@ -1456,10 +1506,15 @@ if (name === "history") renderHistory();
     yEl.style.transform = "scaleY(" + ((st.tahunTinggi || 100) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor; yEl.style.color = txtColor;
+    const logoEl = plEl.querySelector('.plate-logo');
+    if (logoEl) {
+      logoEl.style.display = st.showLogo !== false ? 'block' : 'none';
+      logoEl.style.backgroundColor = txtColor;
+    }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
     /* ===== Efek timbul (emboss) ===== */
-    const shColor = p.warnaShadow || "#000000";
+    const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
     if (!isDark(txtColor)) {
       tEl.style.textShadow = `1px 1px 1px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
       yEl.style.textShadow = `0.5px 0.5px 0.5px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
@@ -1585,7 +1640,7 @@ if (name === "history") renderHistory();
       paintSlider(k);
     });
     $("autofitChk").checked = st.autofit !== false;
-    $("showLogoChk").checked = st.showLogo === true;
+    $("showLogoChk").checked = st.showLogo !== false;
   }
   // pengaturan teks berlaku untuk semua sudut (dan template yang sudah terkunci)
   function setTextSetting(key, val) {
@@ -1882,10 +1937,16 @@ if (name === "history") renderHistory();
     const btnShadow = $("btnColorShadow");
     if (btnShadow) btnShadow.style.backgroundColor = warnaShadowEl.value;
   }
-  function setPlateColor(hex, name, autoText) {
+  function setPlateColor(hex, name, autoText, shadowOverride) {
     warnaEl.value = hex;
     if (autoText) warnaTeksEl.value = isDark(hex) ? "#ffffff" : "#000000";
-    plateColorName = name || nameFor(hex);
+    const resolvedName = name || nameFor(hex);
+    plateColorName = resolvedName;
+    if (shadowOverride !== undefined && shadowOverride !== null && shadowOverride !== "") {
+      warnaShadowEl.value = shadowOverride;
+    } else if (autoText) {
+      warnaShadowEl.value = defaultShadowForPlate(hex, resolvedName);
+    }
     renderSwatches();
     applyPlate();
   }
@@ -2119,10 +2180,10 @@ if (name === "history") renderHistory();
                data-tahun="${esc(it.tahun || '')}" 
                data-warna="${esc(it.warna)}" 
                data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}"
-               data-warnashadow="${esc(it.warnaShadow || '#000000')}">
+               data-warnashadow="${esc(it.warnaShadow || defaultShadowForPlate(it.warna))}">
             <span class="plate-text"></span>
             <span class="plate-year"></span>
-            <img class="plate-logo" src="./logo_samsat.png" alt="">
+            <div class="plate-logo"></div>
           </div>
         </div>`;
     }
@@ -2279,6 +2340,7 @@ if (name === "history") renderHistory();
       tahun: tahunEl.value.trim() || "03",
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
+      warnaShadow: warnaShadowEl.value,
       warnaName: plateColorName || nameFor(warnaEl.value)
     };
   }
@@ -2288,7 +2350,8 @@ if (name === "history") renderHistory();
     bulanEl.value = it.bulan || "";
     tahunEl.value = it.tahun || "";
     warnaTeksEl.value = it.warnaTeks || (isDark(it.warna || "#fff") ? "#ffffff" : "#000000");
-    setPlateColor(it.warna || "#ffffff", it.warnaName || nameFor(it.warna));
+    warnaShadowEl.value = it.warnaShadow || defaultShadowForPlate(it.warna || "#ffffff", it.warnaName || nameFor(it.warna));
+    setPlateColor(it.warna || "#ffffff", it.warnaName || nameFor(it.warna), false, warnaShadowEl.value);
   }
 
   function startEdit(i) {
@@ -2487,6 +2550,7 @@ if (name === "history") renderHistory();
             it.warna = c.hex;
             it.warnaName = c.name;
             it.warnaTeks = isDark(c.hex) ? "#ffffff" : "#000000";
+            it.warnaShadow = defaultShadowForPlate(c.hex, c.name);
           } else {
             msgs.push("'" + t + "' bukan bulan/warna valid");
           }
@@ -2658,7 +2722,8 @@ if (name === "history") renderHistory();
           bulanEl.value = fd.bulan || "";
           tahunEl.value = fd.tahun || "";
           warnaTeksEl.value = fd.warnaTeks || (isDark(fd.warna || "#fff") ? "#ffffff" : "#000000");
-          setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+          warnaShadowEl.value = fd.warnaShadow || defaultShadowForPlate(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+          setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna), false, warnaShadowEl.value);
         }
       } else {
         templateData = null;
@@ -2791,6 +2856,7 @@ if (name === "history") renderHistory();
     p.tahun = $("editVTahun").value.replace(/\D/g, "").slice(0, 2) || "03";
     p.warna = hex;
     p.warnaTeks = isDark(hex) ? "#ffffff" : "#000000";
+    p.warnaShadow = defaultShadowForPlate(hex, nameFor(hex));
     p.warnaName = nameFor(hex);
 
     if (await saveHistoryBatches()) {
@@ -3112,7 +3178,7 @@ if (name === "history") renderHistory();
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0) {
+  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0, shadowColor) {
     ctx.save();
     ctx.translate(0, cy);
     ctx.scale(1, sy);
@@ -3126,6 +3192,18 @@ if (name === "history") renderHistory();
     const chars = Array.from(str);
     const adv = chars.map((c, i) => ctx.measureText(c).width + (i < chars.length - 1 ? ls : 0) + (c === " " ? ws : 0));
     let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
+    if (shadowColor) {
+      ctx.save();
+      ctx.fillStyle = shadowColor;
+      ctx.strokeStyle = shadowColor;
+      let sx = x;
+      chars.forEach((c, i) => {
+        if (strokeW > 0) ctx.strokeText(c, sx + 1, 1);
+        ctx.fillText(c, sx + 1, 1);
+        sx += adv[i];
+      });
+      ctx.restore();
+    }
     chars.forEach((c, i) => {
       if (strokeW > 0) ctx.strokeText(c, x, 0);
       ctx.fillText(c, x, 0);
@@ -3134,12 +3212,56 @@ if (name === "history") renderHistory();
     ctx.restore();
   }
 
+  /* ================= Logo Samsat (DOM + canvas) ================= */
+  // DOM pakai CSS mask di .plate-logo, canvas pakai versi tint di bawah ini
+  // agar Preview (openPreview) & Export (doExport) yang lewat renderPlateToCanvas
+  // ikut menampilkan logo dengan warna yang sama dengan warna teks.
+  let samsatLogoImg = null;
+  let samsatLogoPromise = null;
+  const samsatTintCache = new Map();
+  function loadSamsatLogo() {
+    if (samsatLogoImg) return Promise.resolve(samsatLogoImg);
+    if (!samsatLogoPromise) {
+      samsatLogoPromise = new Promise((res) => {
+        const im = new Image();
+        im.onload = () => { samsatLogoImg = im; res(im); };
+        im.onerror = () => res(null);
+        im.src = './logo_samsat.png';
+      });
+    }
+    return samsatLogoPromise;
+  }
+  function getSamsatTinted(color) {
+    if (!samsatLogoImg) return null;
+    const key = String(color || '#000000').toLowerCase();
+    if (samsatTintCache.has(key)) return samsatTintCache.get(key);
+    try {
+      const c = document.createElement('canvas');
+      c.width = samsatLogoImg.naturalWidth || samsatLogoImg.width;
+      c.height = samsatLogoImg.naturalHeight || samsatLogoImg.height;
+      if (!c.width || !c.height) return null;
+      const x = c.getContext('2d');
+      x.clearRect(0, 0, c.width, c.height);
+      x.drawImage(samsatLogoImg, 0, 0);
+      x.globalCompositeOperation = 'source-in';
+      x.fillStyle = color;
+      x.fillRect(0, 0, c.width, c.height);
+      x.globalCompositeOperation = 'source-over';
+      samsatTintCache.set(key, c);
+      return c;
+    } catch (e) { return null; }
+  }
+  // Preload supaya preview/export pertama tidak telat
+  loadSamsatLogo();
+
   // Menggambar plat dalam satuan lokal 230x75 (sama persis dengan CSS), lalu diskalakan oleh k.
-  function drawPlate(ctx, cx, cy, k, rot, st, plate) {
+  async function drawPlate(ctx, cx, cy, k, rot, st, plate) {
     const hw = PLATE_W / 2, hh = PLATE_H / 2;
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
+    const shC = plate.warnaShadow || defaultShadowForPlate(bg);
     const borderC = txtC; // Border luar di canvas mengikuti warna teks
+    if (st.showLogo !== false) await loadSamsatLogo();
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -3199,9 +3321,9 @@ if (name === "history") renderHistory();
       xs[last] = half - w[last];
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
-        drawSpaced(ctx, pt, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i]));
+        drawSpaced(ctx, pt, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i], shC));
     } else {
-      drawSpaced(ctx, plate.nomor, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC);
+      drawSpaced(ctx, plate.nomor, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, undefined, shC);
     }
     const yearCY = top + n + 2 + y / 2 + 3;
     const gapY = 2;
@@ -3212,11 +3334,25 @@ if (name === "history") renderHistory();
     const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
-    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
     yx += bW + gapY;
-    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx, shC);
     yx += dW + gapY;
-    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx);
+    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
+
+    // Logo Samsat — posisi & ukuran sama persis dengan .plate-logo di CSS:
+    // bottom:4px, left:8px, 16x18px, opacity 0.85, warna = warna teks
+    if (st.showLogo !== false) {
+      try {
+        const tinted = getSamsatTinted(txtC);
+        if (tinted) {
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(tinted, -hw + 8, hh - 4 - 18, 16, 18);
+          ctx.restore();
+        }
+      } catch (e) { /* logo opsional, jangan gagalkan render */ }
+    }
 
     ctx.restore();
     ctx.restore();
@@ -3251,7 +3387,7 @@ if (name === "history") renderHistory();
     const pX = (parseFloat(st.left) / 100) * canvas.width;
     const pY = (parseFloat(st.top) / 100) * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
-    drawPlate(ctx, pX, pY, k, (st.rotate * Math.PI) / 180, st, plate);
+    await drawPlate(ctx, pX, pY, k, (st.rotate * Math.PI) / 180, st, plate);
   }
 
   /* ---------- Preview ---------- */
@@ -3562,7 +3698,8 @@ if (name === "history") renderHistory();
         bulanEl.value = fd.bulan || "";
         tahunEl.value = fd.tahun || "";
         warnaTeksEl.value = fd.warnaTeks || (isDark(fd.warna || "#fff") ? "#ffffff" : "#000000");
-        setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+        warnaShadowEl.value = fd.warnaShadow || defaultShadowForPlate(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna));
+        setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna), false, warnaShadowEl.value);
       }
     }
   }
@@ -3575,6 +3712,24 @@ if (name === "history") renderHistory();
     if (isNaN(activeVaultIndex)) activeVaultIndex = -1;
     historyBatches = await loadHistoryBatches();
     await loadBulkData();
+
+    // Migrasi sekali: template lama tersimpan showLogo=false karena default lama (false).
+    // Sesuai permintaan logo ditampilkan, ubah ke true agar preview & export langsung menampilkan logo.
+    // User tetap bisa mematikan lagi lewat toggle "Tampilkan Logo Samsat".
+    try {
+      if (!localStorage.getItem('platLogoMigrated')) {
+        const fixTpl = (tpl) => {
+          if (!tpl) return;
+          VIEWS.forEach(v => { if (tpl[v] && tpl[v].showLogo === false) tpl[v].showLogo = true; });
+        };
+        fixTpl(templateData);
+        VIEWS.forEach(v => { if (viewData[v]) viewData[v].showLogo = true; });
+        (historyBatches || []).forEach(b => fixTpl(b.template));
+        localStorage.setItem('platLogoMigrated', '1');
+        if (templateData) lsSet(TEMPLATE_STORAGE_KEY, templateData).catch(() => {});
+        if (historyBatches && historyBatches.length) saveHistoryBatches().catch(() => {});
+      }
+    } catch (e) {}
     
     renderSwatches();
     loadViewState();
@@ -3762,5 +3917,5 @@ if (name === "history") renderHistory();
   applyTheme(savedTheme);
 })();
 </script>
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
