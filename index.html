@@ -993,12 +993,12 @@ body.kb-open .sheet-panel{padding-bottom:calc(12px + env(safe-area-inset-bottom)
       { key: "tahunSize", label: "Ukuran Teks Tahun (maks)", min: 4, max: 30, step: 1, unit: "px" },
       { key: "tinggi", label: "Tinggi Teks Nopol", min: 50, max: 150, step: 1, unit: "%" },
       { key: "tahunTinggi", label: "Tinggi Teks Tahun", min: 50, max: 150, step: 1, unit: "%" },
-      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }, { key: "logoOpacity", label: "Opasitas Logo Samsat", min: 0, max: 100, step: 1, unit: "%" }
+      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];     // per sudut
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "logoOpacity"]; // berlaku semua sudut
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "logoOpacity"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo"]; // berlaku semua sudut
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
   const FIT_PAD = 8;                                                              // jarak aman kiri/kanan di dalam plat
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -1318,7 +1318,7 @@ if (name === "history") renderHistory();
   /* ================= State ================= */
   function defaultState() {
     return { img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0, noise: 20, blur: 0, radius: 7, borderThickness: 3,
-             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, logoOpacity: 85, hidden: false };
+             nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, hidden: false };
   }
   // state baru untuk gambar baru, pengaturan teks lama tetap dipertahankan
   function freshState(old, img) {
@@ -1510,7 +1510,6 @@ if (name === "history") renderHistory();
     if (logoEl) {
       logoEl.style.display = st.showLogo !== false ? 'block' : 'none';
       logoEl.style.backgroundColor = txtColor;
-logoEl.style.opacity = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 100);
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
@@ -1675,7 +1674,7 @@ logoEl.style.opacity = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 1
   });
 
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { logoOpacity: 85, nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true };
+    const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true };
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     syncSliders(viewData[currentView]);
     applyPlate();
@@ -3348,7 +3347,7 @@ logoEl.style.opacity = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 1
         const tinted = getSamsatTinted(txtC);
         if (tinted) {
           ctx.save();
-          ctx.globalAlpha = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 100);
+          ctx.globalAlpha = 0.85;
           ctx.drawImage(tinted, -hw + 8, hh - 4 - 18, 16, 18);
           ctx.restore();
         }
@@ -3385,7 +3384,6 @@ logoEl.style.opacity = ((st.logoOpacity !== undefined ? st.logoOpacity : 85) / 1
     st.blur = Number(st.blur) || 0;
     st.radius = Number(st.radius) || 0;
     st.thickness = Number(st.thickness) || 0;
-st.logoOpacity = Number.isFinite(Number(st.logoOpacity)) ? Number(st.logoOpacity) : 85;
     const pX = (parseFloat(st.left) / 100) * canvas.width;
     const pY = (parseFloat(st.top) / 100) * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
