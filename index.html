@@ -4229,11 +4229,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         }
         if (!window._logoTintCache) window._logoTintCache = {};
         if (!window._logoTintCache[txtC]) {
-          const tw = 128, th = 144;
+          const _iw = window._samsatLogoImg.naturalWidth || 128;
+          const _ih = window._samsatLogoImg.naturalHeight || 144;
+          const _sc = Math.max(1, 512 / Math.max(_iw, _ih));
+          const tw = Math.round(_iw * _sc), th = Math.round(_ih * _sc);
           const tc = document.createElement("canvas");
           tc.width = tw; tc.height = th;
           const tx = tc.getContext("2d");
           tx.imageSmoothingEnabled = true;
+          tx.imageSmoothingQuality = 'high';
           tx.drawImage(window._samsatLogoImg, 0, 0, tw, th);
           tx.globalCompositeOperation = "source-in";
           tx.fillStyle = txtC;
@@ -4244,7 +4248,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (tinted) {
           ctx.save();
           ctx.globalAlpha = 0.85;
-          ctx.drawImage(tinted, -hw + 8, hh - 4 - 18, 16, 18);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          const _ar = tinted.width / tinted.height;
+          let _dw = 16, _dh = 16 / _ar;
+          if (_dh > 18) { _dh = 18; _dw = 18 * _ar; }
+          ctx.drawImage(tinted, -hw + 8 + (16 - _dw) / 2, hh - 4 - 18 + (18 - _dh) / 2, _dw, _dh);
           ctx.restore();
         }
       } catch (e) {}
