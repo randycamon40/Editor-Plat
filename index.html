@@ -2940,7 +2940,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     showToast("Preset TNKB " + pill.dataset.name + " diterapkan ✓");
   });
 
-  $("btnAuto5Yr").addEventListener("click", () => {
+  if($("btnAuto5Yr")) $("btnAuto5Yr").addEventListener("click", () => {
     const now = new Date();
     bulanEl.value = String(now.getMonth() + 1).padStart(2, "0");
     tahunEl.value = String((now.getFullYear() + 5) % 100).padStart(2, "0");
