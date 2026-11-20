@@ -1528,8 +1528,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <label for="tahun">Thn</label>
             <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
-          <!-- Fitur Baru: Otomatis +5 Tahun -->
-          <button type="button" class="btn-5yr" id="btnAuto5Yr" title="Isi masa berlaku 5 tahun ke depan">+5<br>Thn</button>
+
         </div>
 
         <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom:12px;">
@@ -2293,7 +2292,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 20, blur: 0, radius: 7, borderThickness: 3, nopolSize: 33, tahunSize: 15,
-      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: true, hidden: false
+      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false
     };
   }
   function freshState(old, img) {
@@ -4223,7 +4222,25 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
     if (st.showLogo !== false) {
       try {
-        const tinted = getSamsatTinted(txtC);
+        if (!window._samsatLogoImg) {
+          window._samsatLogoImg = new Image();
+          window._samsatLogoImg.src = "./logo_samsat.png";
+          await new Promise(r => { window._samsatLogoImg.onload = r; window._samsatLogoImg.onerror = r; });
+        }
+        if (!window._logoTintCache) window._logoTintCache = {};
+        if (!window._logoTintCache[txtC]) {
+          const tw = 128, th = 144;
+          const tc = document.createElement("canvas");
+          tc.width = tw; tc.height = th;
+          const tx = tc.getContext("2d");
+          tx.imageSmoothingEnabled = true;
+          tx.drawImage(window._samsatLogoImg, 0, 0, tw, th);
+          tx.globalCompositeOperation = "source-in";
+          tx.fillStyle = txtC;
+          tx.fillRect(0, 0, tw, th);
+          window._logoTintCache[txtC] = tc;
+        }
+        const tinted = window._logoTintCache[txtC];
         if (tinted) {
           ctx.save();
           ctx.globalAlpha = 0.85;
@@ -4550,18 +4567,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     await loadBulkData();
 
     try {
-      if (!localStorage.getItem('platLogoMigrated')) {
-        const fixTpl = (tpl) => {
-          if (!tpl) return;
-          VIEWS.forEach(v => { if (tpl[v] && tpl[v].showLogo === false) tpl[v].showLogo = true; });
-        };
-        fixTpl(templateData);
-        VIEWS.forEach(v => { if (viewData[v]) viewData[v].showLogo = true; });
-        (historyBatches || []).forEach(b => fixTpl(b.template));
-        localStorage.setItem('platLogoMigrated', '1');
-        if (templateData) lsSet(TEMPLATE_STORAGE_KEY, templateData).catch(() => {});
-        if (historyBatches && historyBatches.length) saveHistoryBatches().catch(() => {});
-      }
+      // Migrasi logo dibatalkan agar settingan user tidak tertimpa
     } catch (e) {}
 
     renderSwatches();
