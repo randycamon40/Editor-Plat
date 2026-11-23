@@ -2316,7 +2316,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
       tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -7.5, showDot: false, lebarNopol: 85, hidden: false
 
---- BLOK 2 ---
+
     };
   }
   function freshState(old, img) {
@@ -2504,7 +2504,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
     if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
 
---- BLOK 3 ---
+
     yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -7.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
@@ -2624,7 +2624,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         input.addEventListener("input", () => {
           if (_isScroll) { input.value = _sv; paintSlider(s.key); if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } applyPlate(); queueMini(); return; }
 
---- BLOK 4 ---
+
           const v = parseFloat(input.value);
           if (TEXT_KEYS.includes(s.key)) {
             setTextSetting(s.key, v);
@@ -2706,7 +2706,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   $("resetTextBtn").addEventListener("click", () => {
     const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -7.5, showDot: false, lebarNopol: 85 };
 
---- BLOK 5 ---
+
     defs.nopolSize = 50;
     defs.tahunSize = 25;
     defs.tinggi = 100;
@@ -2723,7 +2723,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setTextSetting("nopolSqueeze", 85);
     setTextSetting("gepeng", 85);
 
---- BLOK 6 ---
+
     setTextSetting("nopolY", 4);
     setTextSetting("nopolTop", 4);
     setTextSetting("tahunY", -7.5);
@@ -4308,7 +4308,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const syNopol = (st.tinggi || 100) / 100;
     const sxNopol = (st.lebarNopol || 85) / 100;
 
---- BLOK 7 ---
+
     const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100;
     const th = st.thickness || 0;
     const parts = nomorParts(plate.nomor);
