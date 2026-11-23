@@ -823,6 +823,15 @@ button { cursor: pointer; }
   align-items: center;
   justify-content: center;
 }
+.plate-preview-card {
+  position: sticky;
+  top: calc(68px + env(safe-area-inset-top));
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.plate-preview-card .plate-stage-hero {
+  margin-bottom: 0;
+}
 .plate-stage-hero .plate {
   transform: scale(var(--fit, 1));
   transform-origin: center;
@@ -1483,7 +1492,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
     <!-- ===== PANEL 2: EDITOR PLAT ===== -->
     <section class="panel" id="panel-plat" data-panel="plat">
-      <section class="box" id="templateCard">
+      <section class="box plate-preview-card" id="platePreviewCard">
         <div class="box-head">
           <span class="step-tag">02</span>
           <div class="grow">
@@ -1500,6 +1509,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <div class="plate-logo"></div>
           </div>
         </div>
+
+      </section>
+
+      <section class="box" id="templateCard">
 
         <div class="edit-strip" id="editBanner" hidden>
           <span id="editBannerText">Mengedit item</span>
@@ -1566,7 +1579,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
-            <span>Titik Tengah (Bulan • Tahun)</span>
+            <span>Titik Pemisah Bulan • Tahun</span>
             <input type="checkbox" id="showDotChk" checked>
             <i class="toggle-pill"></i>
           </label>
@@ -1993,15 +2006,16 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       { key: "nopolSize", label: "Ukuran Teks Nopol (Maks)", min: 8, max: 70, step: 1, unit: "px" },
       { key: "tahunSize", label: "Ukuran Teks Tahun (Maks)", min: 4, max: 30, step: 1, unit: "px" },
       { key: "tinggi", label: "Tinggi Teks Nopol", min: 50, max: 150, step: 1, unit: "%" },
+      { key: "lebarNopol", label: "Gepeng Nopol Kiri / Kanan", min: 50, max: 150, step: 1, unit: "%" },
       { key: "tahunTinggi", label: "Tinggi Teks Tahun", min: 50, max: 150, step: 1, unit: "%" },
-      { key: "nopolY", label: "Geser Nopol (Y)", min: -30, max: 30, step: 1, unit: "px" },
-      { key: "tahunY", label: "Geser Tahun (Y)", min: -30, max: 30, step: 1, unit: "px" },
-      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
+      { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" },
+      { key: "nopolY", label: "Posisi Nopol Naik / Turun", min: -12, max: 12, step: 0.5, unit: "px" },
+      { key: "tahunY", label: "Posisi Bulan-Tahun Naik / Turun", min: -12, max: 12, step: 0.5, unit: "px" }
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "nopolY", "tahunY", "thickness", "autofit", "showLogo"];
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "lebarNopol"];
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -2299,8 +2313,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 20, blur: 0, radius: 7, borderThickness: 3, nopolSize: 33, tahunSize: 15,
-      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false,
-      nopolY: 0, tahunY: 0, showDot: true
+      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100, hidden: false
     };
   }
   function freshState(old, img) {
@@ -2467,8 +2480,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
       warnaShadow: warnaShadowEl.value,
-      shadowOn: $("shadowChk") ? $("shadowChk").checked : true,
-      showDot: $("showDotChk") ? $("showDotChk").checked : true
+      shadowOn: $("shadowChk") ? $("shadowChk").checked : true
     };
   }
 
@@ -2482,12 +2494,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 15) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
     setNomorDOM(tEl, p.nomor, st.autofit);
-            const dotHtml = p.showDot !== false ? '<span class="dot">•</span>' : '<span class="dot" style="visibility:hidden">•</span>';
-        yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span>' + dotHtml + '<span class="num">' + esc(p.tahun) + '</span>';
+    yEl.innerHTML = st.showDot === false ? '<span class="num">' + esc(p.bulan) + '</span><span class="dot" style="visibility:hidden">•</span><span class="num">' + esc(p.tahun) + '</span>' : '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    tEl.style.transform = "translateY(" + (st.nopolY || 0) + "px) scaleY(" + ((st.tinggi || 110) / 100) + ")";
+    tEl.style.transform = "translateY(" + (st.nopolY || 0) + "px) scaleX(" + ((st.lebarNopol || 100) / 100) + ") scaleY(" + ((st.tinggi || 110) / 100) + ")";
+    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 100) / 100)) + "px"; else tEl.style.width = "";
     yEl.style.transform = "translateY(" + (st.tahunY || 0) + "px) scaleY(" + ((st.tahunTinggi || 100) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
@@ -2500,7 +2512,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
 
-    const shadowOn = p.shadowOn !== false;
+    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false);
     const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
     if (!shadowOn) {
       tEl.style.textShadow = "none";
@@ -2628,6 +2640,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     });
     $("autofitChk").checked = st.autofit !== false;
     $("showLogoChk").checked = st.showLogo !== false;
+    $("showDotChk").checked = st.showDot !== false;
   }
 
   function setTextSetting(key, val) {
@@ -2649,19 +2662,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     applyPlate();
     queueMini();
   });
-
-  ["shadowChk", "showLogoChk", "showDotChk"].forEach(id => {
-    const el = $(id);
-    if (el) {
-      el.addEventListener("change", () => {
-        applyPlate();
-        queueMini();
-        if (typeof saveTemplate === "function") saveTemplate();
-      });
-    }
-  });
   $("showLogoChk").addEventListener("change", () => {
     setTextSetting("showLogo", $("showLogoChk").checked);
+    applyPlate();
+    queueMini();
+  });
+  $("showDotChk").addEventListener("change", () => {
+    setTextSetting("showDot", $("showDotChk").checked);
     applyPlate();
     queueMini();
   });
@@ -2671,7 +2678,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true };
+    const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100 };
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     syncSliders(viewData[currentView]);
     applyPlate();
@@ -2972,7 +2979,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
-  $("shadowChk").addEventListener("change", () => { applyPlate(); renderSwatches(); });
+  $("shadowChk").addEventListener("change", () => { applyPlate(); renderSwatches(); queueMini(); });
 
   let activeColorTarget = 'plat';
   const extraPresets = [
@@ -3040,7 +3047,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   });
   const handleNumericInput = (e) => {
     const start = e.target.selectionStart, end = e.target.selectionEnd;
-    const val = e.target.value.replace(/\D/g, "").slice(0, 2);
+    let val = e.target.value.replace(/\D/g, "").slice(0, 2);
+    if (e.target.id === "bulan" && val.length === 2) {
+      const n = parseInt(val, 10);
+      if (n < 1) val = "01";
+      else if (n > 12) val = "12";
+    }
     e.target.value = val;
     e.target.setSelectionRange(Math.min(start, val.length), Math.min(end, val.length));
     applyPlate();
@@ -3282,7 +3294,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!bulkItems.length) return showToast("Antrean kosong", true);
     const lines = ["Nomor,Bulan,Tahun,Warna"];
     bulkItems.forEach(it => {
-      lines.push(`"${it.nomor}","${it.bulan || ""}","${it.tahun || ""}","${it.warnaName || nameFor(it.warna)}"`);
+      const csvEsc = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+      lines.push([it.nomor, it.bulan || "", it.tahun || "", it.warnaName || nameFor(it.warna)].map(csvEsc).join(","));
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -3381,6 +3394,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (bulkItems.length >= 500 && editIndex < 0) return showToast("Maksimal 500 nopol per antrean!", true);
     const it = currentFormItem();
     if (!it.nomor) { showToast("Nomor plat belum diisi", true); nomorEl.focus(); return; }
+    const dupKey = it.nomor.toUpperCase().replace(/\s+/g, "");
+    const isDup = bulkItems.some((b, bi) => bi !== editIndex && (b.nomor || "").toUpperCase().replace(/\s+/g, "") === dupKey);
+    if (isDup) { showToast("Nopol " + it.nomor + " sudah ada di antrean", true); nomorEl.focus(); return; }
 
     if (editIndex >= 0) {
       const prev = bulkItems[editIndex];
@@ -3605,11 +3621,20 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       if (!ok) return;
     }
     const before = bulkItems.length;
-    bulkItems = bulkItems.concat(list);
+    const seenPaste = new Set(bulkItems.map(b => (b.nomor || "").toUpperCase().replace(/\s+/g, "")));
+    const filteredList = list.filter(it => {
+      const k = (it.nomor || "").toUpperCase().replace(/\s+/g, "");
+      if (seenPaste.has(k)) return false;
+      seenPaste.add(k);
+      return true;
+    });
+    const skippedDup = list.length - filteredList.length;
+    if (!filteredList.length) return showToast(skippedDup ? "Semua nopol sudah ada di antrean" : "Belum ada nopol untuk ditambahkan", true);
+    bulkItems = bulkItems.concat(filteredList);
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
     updateTemplateUI();
     closeSheet("pasteModal");
-    showToast(list.length + " nopol ditambahkan ✓");
+    showToast(filteredList.length + " nopol ditambahkan" + (skippedDup ? " • " + skippedDup + " duplikat dilewati" : "") + " ✓");
     setTab("bulk");
   });
 
@@ -4050,7 +4075,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         label.textContent = `Proses (${i + 1}/${availableViews.length})...`;
         const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
         const m = String(text).match(/\{[\s\S]*\}/);
-        if (m && applyAiBox(JSON.parse(m[0]), v)) successCount++;
+        try {
+          if (m && applyAiBox(JSON.parse(m[0]), v)) successCount++;
+        } catch (err) { console.warn("AI skip sisi " + v, err); }
         await sleep(1000);
       }
       if (templateData) await saveTemplate();
@@ -4091,10 +4118,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0, shadowColor) {
+  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0, shadowColor, sx) {
     ctx.save();
     ctx.translate(0, cy);
-    ctx.scale(1, sy);
+    ctx.scale(sx || 1, sy);
     ctx.font = size + "px " + family;
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
@@ -4165,7 +4192,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const hw = PLATE_W / 2, hh = PLATE_H / 2;
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
-    const shC = plate.shadowOn === false ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
+    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
+    const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
     const borderC = txtC;
     if (st.showLogo !== false) await loadSamsatLogo();
 
@@ -4209,35 +4237,37 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
     const syNopol = (st.tinggi || 100) / 100;
+    const sxNopol = (st.lebarNopol || 100) / 100;
     const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100;
     const th = st.thickness || 0;
     const parts = nomorParts(plate.nomor);
 
     if (st.autofit !== false && parts.length >= 2) {
       const half = (PLATE_W - 8 - FIT_PAD * 2) / 2;
-      const w = parts.map(x => partW(x, n));
+      const w = parts.map(x => partW(x, n) * sxNopol);
       const xs = [-half];
       const last = parts.length - 1;
       xs[last] = half - w[last];
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
-        drawSpaced(ctx, pt, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i], shC));
+        drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i] / sxNopol, shC, sxNopol));
     } else {
-      drawSpaced(ctx, plate.nomor, top + n / 2, n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, undefined, shC);
+      drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, undefined, shC, sxNopol);
     }
 
-    const yearCY = top + n + 2 + y / 2 + 3;
+    const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0);
     const gapY = 2;
     ctx.font = y + "px " + FONT_Y;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
     const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yB.length - 1);
     const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yT.length - 1);
+    const showDot = st.showDot !== false;
     const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
     drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
     yx += bW + gapY;
-    drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx, shC);
+    if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx, shC);
     yx += dW + gapY;
     drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
 
@@ -4310,6 +4340,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.blur = Number(st.blur) || 0;
     st.radius = Number(st.radius) || 0;
     st.thickness = Number(st.thickness) || 0;
+    st.nopolY = Number(st.nopolY) || 0;
+    st.tahunY = Number(st.tahunY) || 0;
+    st.lebarNopol = Number(st.lebarNopol) || 100;
     const pX = (parseFloat(st.left) / 100) * canvas.width;
     const pY = (parseFloat(st.top) / 100) * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
