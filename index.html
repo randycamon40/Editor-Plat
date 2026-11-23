@@ -2320,7 +2320,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 92, hidden: false
 
 
     };
@@ -2387,7 +2387,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
   }
   function fitSizes(st, p) {
-    const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
+    const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92) / 100;
     const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit);
     const nFit = st.autofit === false ? baseN : Math.min(st.nopolSize, Math.max(4, Math.round(baseN / Math.max(0.5, sxFit) * 10) / 10));
     return {
@@ -2511,8 +2511,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
-    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
+    tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
+    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 92) / 100)) + "px"; else tEl.style.width = "";
 
 
     yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
@@ -2715,12 +2715,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85 };
+    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 92 };
 
 
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     setTextSetting("showLogo", false);
-    setTextSetting("lebarNopol", 85);
+    setTextSetting("lebarNopol", 92);
 
 
     setTextSetting("nopolY", 4);
@@ -4311,7 +4311,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
     const syNopol = (st.tinggi || 100) / 100;
-    const sxNopol = (st.lebarNopol || 85) / 100;
+    const sxNopol = (st.lebarNopol || 92) / 100;
 
 
     const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 80) / 100;
@@ -4417,7 +4417,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.thickness = Number(st.thickness) || 0;
     st.nopolY = Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4;
     st.tahunY = Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5;
-    st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85;
+    st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92;
     const pX = (Number.isFinite(parseFloat(st.left)) ? parseFloat(st.left) : 50) / 100 * canvas.width;
     const pY = (Number.isFinite(parseFloat(st.top)) ? parseFloat(st.top) : 80) / 100 * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
