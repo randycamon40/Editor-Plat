@@ -2044,7 +2044,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }[c]));
   }
   function isDark(hex) {
-    const h = String(hex).replace("#", "");
+    let h = String(hex).replace("#", "");
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
     if (h.length !== 6) return false;
     const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
     return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
@@ -2073,7 +2074,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
 
   function nameFor(hex) {
-    const p = PRESETS.find(x => x.v.toLowerCase() === String(hex).toLowerCase());
+    let h = String(hex || "").toLowerCase();
+    if (/^#[0-9a-f]{3}$/.test(h)) h = "#" + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+    const p = PRESETS.find(x => x.v.toLowerCase() === h);
     return p ? p.n : "Kustom";
   }
 
@@ -2085,7 +2088,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const n = name || nameFor(hex);
     if (SHADOW_BY_PLATE[n]) return SHADOW_BY_PLATE[n];
     try {
-      const h = String(hex || "#ffffff").replace("#", "").toLowerCase();
+      let h = String(hex || "#ffffff").replace("#", "").toLowerCase();
+      if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
       if (h.length !== 6) return "#808080";
       const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
       let best = null, bestD = Infinity;
@@ -2180,7 +2184,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       previewToken++;
       const oldToken = previewToken;
       setTimeout(() => {
-        if (previewToken === oldToken) $(id).querySelector("#previewContainer").innerHTML = "";
+        if (previewToken === oldToken && !$(id).classList.contains("open")) $(id).querySelector("#previewContainer").innerHTML = "";
       }, 300);
     }
     if (id === "confirmModal" && pendingConfirm) {
@@ -2239,7 +2243,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     });
   });
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") document.querySelectorAll(".sheet.open").forEach(s => closeSheet(s.id));
+    if (e.key === "Escape") { const _open = document.querySelectorAll(".sheet.open"); if (_open.length) closeSheet(_open[_open.length - 1].id); }
   });
   document.addEventListener("focusin", (e) => {
     if (e.target.tagName === "TEXTAREA" || (e.target.tagName === "INPUT" && !["file","color","range","checkbox"].includes(e.target.type))) {
@@ -2255,13 +2259,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
   function askConfirm(title, text, okLabel) {
     return new Promise(res => {
-      if (pendingConfirm) pendingConfirm(false);
+      if (pendingConfirm) { const _old = pendingConfirm; pendingConfirm = null; _old(false); }
       $("confirmTitle").textContent = title;
       $("confirmText").textContent = text;
       $("confirmOk").textContent = okLabel || "Ya, Lanjutkan";
+      let _settled = false;
       const done = (v, fromHist = false) => {
-        if (pendingConfirm !== done) return;
-        pendingConfirm = null;
+        if (_settled) return;
+        _settled = true;
+        if (pendingConfirm === done) pendingConfirm = null;
         closeSheet("confirmModal", fromHist);
         res(v);
       };
@@ -2314,7 +2320,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -7.5, showDot: false, lebarNopol: 85, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85, hidden: false
 
 
     };
@@ -2322,6 +2328,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function freshState(old, img) {
     const n = defaultState();
     if (old) TEXT_KEYS.forEach(k => { if (old[k] !== undefined) n[k] = old[k]; });
+    if (old && old.img) ["left", "top", "scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "hidden", "brand"].forEach(k => { if (old[k] !== undefined) n[k] = old[k]; });
     n.img = img || null;
     return n;
   }
@@ -2380,8 +2387,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
   }
   function fitSizes(st, p) {
+    const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
+    const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit);
+    const nFit = st.autofit === false ? baseN : Math.min(st.nopolSize, Math.max(4, Math.round(baseN / Math.max(0.5, sxFit) * 10) / 10));
     return {
-      n: fitNomor(p.nomor, st.nopolSize, st.autofit),
+      n: nFit,
       y: calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, FONT_Y, st.autofit)
     };
   }
@@ -2428,7 +2438,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     historyBatches.forEach(b => {
       const plates = Array.isArray(b.plates) ? b.plates : Array.isArray(b.items) ? b.items : (Array.isArray(b) ? b : []);
       totalNopol += plates.length;
-      const tpl = b.template || templateData;
+      const tpl = b.template;
       const nv = tpl ? VIEWS.filter(v => tpl[v] && tpl[v].img).length : 0;
       totalPhotos += plates.length * nv;
     });
@@ -2497,7 +2507,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 30) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
     setNomorDOM(tEl, p.nomor, st.autofit);
-    yEl.innerHTML = st.showDot === false ? '<span class="num">' + esc(p.bulan) + '</span><span class="dot" style="visibility:hidden">•</span><span class="num">' + esc(p.tahun) + '</span>' : '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
+    yEl.innerHTML = !st.showDot ? '<span class="num">' + esc(p.bulan) + '</span><span class="dot" style="visibility:hidden">•</span><span class="num">' + esc(p.tahun) + '</span>' : '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
@@ -2505,13 +2515,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
 
 
-    yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -7.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
+    yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
     yEl.style.color = txtColor;
     const logoEl = plEl.querySelector('.plate-logo');
     if (logoEl) {
-      logoEl.style.display = st.showLogo !== false ? 'block' : 'none';
+      logoEl.style.display = st.showLogo === true ? 'block' : 'none';
       logoEl.style.backgroundColor = txtColor;
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
@@ -2618,9 +2628,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           const t = e.touches[0];
           const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy);
           if (!_decided && (dx > 8 || dy > 8)) { _decided = true; _isScroll = dy > dx; }
-          if (_isScroll) { if (Number(input.value) !== _sv) { input.value = _sv; paintSlider(s.key); } if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } applyPlate(); queueMini(); }
-        }, { passive: true });
-        input.addEventListener("touchend", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
+          if (_isScroll) { e.preventDefault(); if (Number(input.value) !== _sv) input.value = _sv; }
+        }, { passive: false });
+        input.addEventListener("touchend", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) { templateData[currentView][s.key] = _sv; scheduleTemplateSave(); } } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
+        input.addEventListener("touchcancel", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) { templateData[currentView][s.key] = _sv; scheduleTemplateSave(); } } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
         input.addEventListener("input", () => {
           if (_isScroll) { input.value = _sv; paintSlider(s.key); if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } applyPlate(); queueMini(); return; }
 
@@ -2665,8 +2676,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       paintSlider(k);
     });
     $("autofitChk").checked = st.autofit !== false;
-    $("showLogoChk").checked = st.showLogo !== false;
-    $("showDotChk").checked = st.showDot !== false;
+    $("showLogoChk").checked = st.showLogo === true;
+    $("showDotChk").checked = st.showDot === true;
   }
 
   function setTextSetting(key, val) {
@@ -2704,34 +2715,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -7.5, showDot: false, lebarNopol: 85 };
+    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85 };
 
 
-    defs.nopolSize = 50;
-    defs.tahunSize = 25;
-    defs.tinggi = 100;
-    defs.tahunTinggi = 80;
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
-    setTextSetting("nopolSize", 50);
-    setTextSetting("tahunSize", 25);
-    setTextSetting("tinggi", 100);
-    setTextSetting("tahunTinggi", 80);
-    setTextSetting("thickness", 0);
-    setTextSetting("autofit", true);
     setTextSetting("showLogo", false);
-    setTextSetting("squeeze", 85);
-    setTextSetting("nopolSqueeze", 85);
-    setTextSetting("gepeng", 85);
+    setTextSetting("lebarNopol", 85);
 
 
     setTextSetting("nopolY", 4);
-    setTextSetting("nopolTop", 4);
-    setTextSetting("tahunY", -7.5);
-    setTextSetting("tahunTop", -7.5);
-    setTextSetting("yearY", -7.5);
-    setTextSetting("yearTop", -7.5);
+    setTextSetting("tahunY", -8.5);
     setTextSetting("showDot", false);
-    setTextSetting("dotOn", false);
     VIEWS.forEach(v => {
       viewData[v].noise = 30;
       viewData[v].radius = 7;
@@ -2745,8 +2739,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       }
     });
     if (templateData) scheduleTemplateSave();
-    if ($("shadowChk")) $("shadowChk").checked = false;
-    if ($("dotChk")) $("dotChk").checked = false;
+    if ($("shadowChk")) { $("shadowChk").checked = false; try { localStorage.setItem("platShadow", "0"); } catch (e) {} }
+    if ($("showLogoChk")) $("showLogoChk").checked = false;
     if ($("showDotChk")) $("showDotChk").checked = false;
     syncSliders(viewData[currentView]);
     applyPlate();
@@ -2874,10 +2868,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           const canvas = document.createElement("canvas");
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, w, h);
+          ctx.clearRect(0, 0, w, h);
+          if (file.type !== "image/png") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h); }
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL("image/jpeg", 0.82));
+          if (file.type === "image/png") resolve(canvas.toDataURL("image/png"));
+          else resolve(canvas.toDataURL("image/jpeg", 0.82));
         };
         img.onerror = () => resolve(null);
         img.src = ev.target.result;
@@ -2906,16 +2901,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const results = await Promise.all(fileList.map(f => readImageFile(f)));
 
     let successCount = 0;
-    const startIndex = VIEWS.indexOf(currentView);
+    const emptyViews = VIEWS.filter(v => !viewData[v].img);
+    const targetViews = emptyViews.length ? emptyViews : VIEWS;
     results.forEach((data, i) => {
       if (data) {
-        const view = VIEWS[(startIndex + i) % VIEWS.length];
+        const view = targetViews[i % targetViews.length];
         viewData[view] = freshState(viewData[view], data);
         successCount++;
       }
     });
 
-    currentView = VIEWS[0];
+    // Tetap di view aktif, jangan pindah otomatis setelah import
     loadViewState();
     showToast(successCount > 0 ? successCount + " foto berhasil diimport!" : "Gagal mengimport foto", successCount === 0);
   }
@@ -2941,14 +2937,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const btn = e.target.closest("button[data-target]");
     if (!btn) return;
     const targetView = btn.dataset.target;
-    const temp = viewData[currentView];
-    viewData[currentView] = viewData[targetView];
-    viewData[targetView] = temp;
+    const SWAP_KEYS = ["img", "brand", "left", "top", "scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "hidden"];
+    const tmp = {};
+    SWAP_KEYS.forEach(k => tmp[k] = viewData[currentView][k]);
+    SWAP_KEYS.forEach(k => viewData[currentView][k] = viewData[targetView][k]);
+    SWAP_KEYS.forEach(k => viewData[targetView][k] = tmp[k]);
 
     if (templateData && templateData[currentView] && templateData[targetView]) {
-      const tempTpl = templateData[currentView];
-      templateData[currentView] = templateData[targetView];
-      templateData[targetView] = tempTpl;
+      const SWAP_T = ["img", "brand", "left", "top", "scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "hidden"];
+      const tmpT = {};
+      SWAP_T.forEach(k => tmpT[k] = templateData[currentView][k]);
+      SWAP_T.forEach(k => templateData[currentView][k] = templateData[targetView][k]);
+      SWAP_T.forEach(k => templateData[targetView][k] = tmpT[k]);
       await saveTemplate();
     }
     closeSheet("swapSheet");
@@ -3047,14 +3047,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
-  $("shadowChk").addEventListener("change", () => { applyPlate(); renderSwatches(); queueMini(); });
+  $("shadowChk").addEventListener("change", () => { try { localStorage.setItem("platShadow", $("shadowChk").checked ? "1" : "0"); } catch (e) {} applyPlate(); renderSwatches(); queueMini(); });
 
   let activeColorTarget = 'plat';
   const extraPresets = [
     { n: "Putih", v: "#ffffff" }, { n: "Hitam", v: "#111111" }, { n: "Kuning", v: "#f5c518" },
     { n: "Merah", v: "#e63946" }, { n: "Hijau", v: "#2ecc71" }, { n: "Biru", v: "#3498db" },
     { n: "Oranye", v: "#f39c12" }, { n: "Ungu", v: "#9b59b6" }, { n: "Abu", v: "#95a5a6" },
-    { n: "Pink", v: "#fd79a8" }, { n: "Coklat", v: "#8e44ad" }, { n: "Cyan", v: "#00cec9" }
+    { n: "Pink", v: "#fd79a8" }, { n: "Coklat", v: "#8b4513" }, { n: "Cyan", v: "#00cec9" }
   ];
 
   function openColorPicker(target) {
@@ -3197,7 +3197,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     templateData = null;
     bulkItems = [];
     editIndex = -1;
+    bulkStartNumber = 1;
     editorOpen = false;
+    await lsSet("platBulkStartNum", 1);
     await lsRemove(TEMPLATE_STORAGE_KEY);
     await lsRemove(BULK_STORAGE_KEY);
     VIEWS.forEach(v => viewData[v] = defaultState());
@@ -3258,7 +3260,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
   function paintMiniPlates(container) {
     if (!container) return;
-    const st = viewData[currentView];
+    const st = (templateData && VIEWS.map(v => templateData[v]).find(s => s && s.img)) || viewData[currentView];
     container.querySelectorAll('.plate-mini').forEach((el) => {
       const p = {
         nomor: el.dataset.nomor,
@@ -3286,7 +3288,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     bulkListEl.innerHTML = bulkItems.map((it, i) => !bulkMatch(it) ? "" : `
       <div class="q-item${i === editIndex ? " editing" : ""}">
         <div class="row-num-wrap">
-          ${i === 0 && !bulkQ
+          ${i === bulkItems.findIndex(x => bulkMatch(x))
             ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">`
             : `<span class="row-num-span" data-i="${i}">${bulkStartNumber + i}</span>`}
         </div>
@@ -3363,7 +3365,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const lines = ["Nomor,Bulan,Tahun,Warna"];
     bulkItems.forEach(it => {
       const csvEsc = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-      lines.push([it.nomor, it.bulan || "", it.tahun || "", it.warnaName || nameFor(it.warna)].map(csvEsc).join(","));
+      lines.push([it.nomor, it.bulan || "", it.tahun || "", (it.warnaName && it.warnaName !== "Kustom" ? it.warnaName : (it.warna || ""))].map(csvEsc).join(","));
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -3382,7 +3384,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const seen = new Set();
     let removedCount = 0;
     bulkItems.forEach(it => {
-      const key = (it.nomor || "").toUpperCase().replace(/\s+/g, "");
+      const key = ((it.nomor || "") + "|" + (it.bulan || "") + "|" + (it.tahun || "") + "|" + (it.warna || "")).toUpperCase().replace(/\s+/g, "");
       if (!seen.has(key)) { seen.add(key); unique.push(it); } else removedCount++;
     });
     if (removedCount === 0) return showToast("Tidak ada nopol duplikat ✓");
@@ -3462,8 +3464,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (bulkItems.length >= 500 && editIndex < 0) return showToast("Maksimal 500 nopol per antrean!", true);
     const it = currentFormItem();
     if (!it.nomor) { showToast("Nomor plat belum diisi", true); nomorEl.focus(); return; }
-    const dupKey = it.nomor.toUpperCase().replace(/\s+/g, "");
-    const isDup = bulkItems.some((b, bi) => bi !== editIndex && (b.nomor || "").toUpperCase().replace(/\s+/g, "") === dupKey);
+    const dupKey = (it.nomor + "|" + it.bulan + "|" + it.tahun + "|" + it.warna).toUpperCase().replace(/\s+/g, "");
+    const isDup = bulkItems.some((b, bi) => bi !== editIndex && ((b.nomor + "|" + b.bulan + "|" + b.tahun + "|" + b.warna) || "").toUpperCase().replace(/\s+/g, "") === dupKey);
     if (isDup) { showToast("Nopol " + it.nomor + " sudah ada di antrean", true); nomorEl.focus(); return; }
 
     if (editIndex >= 0) {
@@ -3504,7 +3506,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const items = [];
     const warnings = [];
     text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
-      const parts = line.split(/[,;\t|]+/).map(s => s.replace(/^"|"$/g, "").trim()).filter((s, i) => i === 0 || s);
+      const parts = line.split(/[,;\t|]+/).map(s => s.replace(/^"|"$/g, "").trim());
       let rawNomor = (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15);
       if (rawNomor === "NOMOR" || rawNomor === "NOPOL") return; // skip header CSV
 
@@ -3684,14 +3686,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       return showToast(warnings.length ? "Semua baris bermasalah. Perbaiki dulu." : "Belum ada nopol untuk ditambahkan", true);
     }
     if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
+    if (!templateData) return showToast("Kunci template terlebih dahulu!", true);
     if (warnings.length > 0) {
       const ok = await askConfirm("Ada Baris Bermasalah", warnings.length + " baris tidak valid akan dilewati. Lanjut tambahkan " + list.length + " nopol valid?", "Lanjutkan");
       if (!ok) return;
     }
     const before = bulkItems.length;
-    const seenPaste = new Set(bulkItems.map(b => (b.nomor || "").toUpperCase().replace(/\s+/g, "")));
+    const seenPaste = new Set(bulkItems.map(b => ((b.nomor || "") + "|" + (b.bulan || "") + "|" + (b.tahun || "") + "|" + (b.warna || "")).toUpperCase().replace(/\s+/g, "")));
     const filteredList = list.filter(it => {
-      const k = (it.nomor || "").toUpperCase().replace(/\s+/g, "");
+      const k = ((it.nomor || "") + "|" + (it.bulan || "") + "|" + (it.tahun || "") + "|" + (it.warna || "")).toUpperCase().replace(/\s+/g, "");
       if (seenPaste.has(k)) return false;
       seenPaste.add(k);
       return true;
@@ -3830,7 +3833,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function renderVaultDetailList(bIdx, batch) {
     $("historyPreviewGrid").innerHTML = (batch.plates || []).map((p, i) => `
       <div class="q-item">
-        <div class="row-num-wrap"><span class="row-num-span">${i + 1}</span></div>
+        <div class="row-num-wrap"><span class="row-num-span">${(Number(batch.startNumber) || 1) + i}</span></div>
         ${chipHtml(p, true)}
         <div class="q-actions">
           <button class="icon-act" data-vact="preview" data-b="${bIdx}" data-p="${i}" title="Preview" aria-label="Preview">${ico("eye")}</button>
@@ -4103,7 +4106,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
 
   btnRunAi.addEventListener("click", async () => {
-    const st = viewData[currentView];
+    const targetView = currentView;
+    const st = viewData[targetView];
     if (!st.img) return showToast("Import gambar dulu", true);
     const key = aiApiKey.value.trim();
     if (!key && aiProvider.value !== "ovh") return showToast("Isi API Key di menu Setelan dulu", true);
@@ -4115,7 +4119,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, st.img, false);
       const m = String(text).match(/\{[\s\S]*\}/);
       if (!m) throw new Error("Respons AI tidak valid");
-      const ok = applyAiBox(JSON.parse(m[0]), currentView);
+      const ok = applyAiBox(JSON.parse(m[0]), targetView);
       if (templateData) await saveTemplate();
       showToast(ok ? "Posisi plat disesuaikan AI ✓" : "AI: Plat tidak ditemukan di sisi ini.");
     } catch (err) {
@@ -4142,10 +4146,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const v = availableViews[i];
         if (!viewData[v] || !viewData[v].img) continue;
         label.textContent = `Proses (${i + 1}/${availableViews.length})...`;
-        const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
-        const m = String(text).match(/\{[\s\S]*\}/);
         try {
-          if (m && applyAiBox(JSON.parse(m[0]), v)) successCount++;
+          const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
+          const m = String(text).match(/\{[\s\S]*\}/);
+          if (m) { try { if (applyAiBox(JSON.parse(m[0]), v)) successCount++; } catch (err) { console.warn("AI JSON invalid sisi " + v, err); } }
         } catch (err) { console.warn("AI skip sisi " + v, err); }
         await sleep(1000);
       }
@@ -4264,7 +4268,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
     const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
     const borderC = txtC;
-    if (st.showLogo !== false) await loadSamsatLogo();
+    if (st.showLogo === true) await loadSamsatLogo();
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -4285,12 +4289,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ctx.fill();
     ctx.restore();
 
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, Math.max(0, r - 4));
+    const _bt = Number.isFinite(Number(st.borderThickness)) ? Number(st.borderThickness) : 3;
+    rr(ctx, -hw + _bt, -hh + _bt, PLATE_W - _bt * 2, PLATE_H - _bt * 2, Math.max(0, r - _bt));
     ctx.fillStyle = bg;
     ctx.fill();
 
     ctx.save();
-    rr(ctx, -hw + 4, -hh + 4, PLATE_W - 8, PLATE_H - 8, Math.max(0, r - 4));
+    rr(ctx, -hw + _bt, -hh + _bt, PLATE_W - _bt * 2, PLATE_H - _bt * 2, Math.max(0, r - _bt));
     ctx.clip();
 
     if (st.noise > 0 && noiseCanvas) {
@@ -4309,7 +4314,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const sxNopol = (st.lebarNopol || 85) / 100;
 
 
-    const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 100) / 100;
+    const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 80) / 100;
     const th = st.thickness || 0;
     const parts = nomorParts(plate.nomor);
 
@@ -4332,7 +4337,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
     const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yB.length - 1);
     const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yT.length - 1);
-    const showDot = st.showDot !== false;
+    const showDot = st.showDot === true;
     const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
@@ -4342,12 +4347,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     yx += dW + gapY;
     drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
 
-    if (st.showLogo !== false) {
+    if (st.showLogo === true) {
       try {
         if (!window._samsatLogoImg) {
           window._samsatLogoImg = new Image();
-          window._samsatLogoImg.src = "./logo_samsat.png";
-          await new Promise(r => { window._samsatLogoImg.onload = r; window._samsatLogoImg.onerror = r; });
+          await new Promise(r => { window._samsatLogoImg.onload = r; window._samsatLogoImg.onerror = r; window._samsatLogoImg.src = "./logo_samsat.png"; });
         }
         if (!window._logoTintCache) window._logoTintCache = {};
         if (!window._logoTintCache[txtC]) {
@@ -4412,7 +4416,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.radius = Number.isFinite(Number(st.radius)) ? Number(st.radius) : 7;
     st.thickness = Number(st.thickness) || 0;
     st.nopolY = Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4;
-    st.tahunY = Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -7.5;
+    st.tahunY = Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5;
     st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85;
     const pX = (Number.isFinite(parseFloat(st.left)) ? parseFloat(st.left) : 50) / 100 * canvas.width;
     const pY = (Number.isFinite(parseFloat(st.top)) ? parseFloat(st.top) : 80) / 100 * canvas.height;
@@ -4704,6 +4708,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       // Migrasi logo dibatalkan agar settingan user tidak tertimpa
     } catch (e) {}
 
+    try { if (localStorage.getItem("platShadow") === "1") $("shadowChk").checked = true; if (localStorage.getItem("platShadow") === "0") $("shadowChk").checked = false; } catch (e) {}
     renderSwatches();
     loadViewState();
     updateTemplateUI();
