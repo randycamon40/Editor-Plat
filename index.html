@@ -889,6 +889,7 @@ input[type=range] {
   appearance: none;
   width: 100%;
   height: 26px;
+  touch-action: pan-y;
   background: transparent;
   margin: 0;
   padding: 0;
@@ -2313,7 +2314,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100, hidden: false
     };
   }
   function freshState(old, img) {
@@ -2603,6 +2604,19 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         target.appendChild(row);
         const input = row.querySelector("input"), out = row.querySelector("output");
         sliderEls[s.key] = { input, out, cfg: s };
+        let _sx = 0, _sy = 0, _sv = 0, _decided = false, _isScroll = false;
+        input.addEventListener("touchstart", e => {
+          const t = e.touches[0];
+          _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value);
+          _decided = false; _isScroll = false;
+        }, { passive: true });
+        input.addEventListener("touchmove", e => {
+          const t = e.touches[0];
+          const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy);
+          if (!_decided && (dx > 8 || dy > 8)) { _decided = true; _isScroll = dy > dx; }
+          if (_isScroll && Number(input.value) !== _sv) { input.value = _sv; paintSlider(s.key); }
+        }, { passive: true });
+        input.addEventListener("touchend", () => { _isScroll = false; _decided = false; }, { passive: true });
         input.addEventListener("input", () => {
           const v = parseFloat(input.value);
           if (TEXT_KEYS.includes(s.key)) {
@@ -2624,9 +2638,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
 
   function paintSlider(key) {
-    const { input, out, cfg } = sliderEls[key];
+    const _s = sliderEls[key];
+    if (!_s) return;
+    const { input, out, cfg } = _s;
     let v = parseFloat(input.value);
-    if (isNaN(v)) v = cfg.min;
+    if (isNaN(v)) { v = cfg.min; input.value = v; }
     out.textContent = v + cfg.unit;
     input.style.setProperty("--p", ((v - cfg.min) / (cfg.max - cfg.min) * 100) + "%");
   }
@@ -2634,8 +2650,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function syncSliders(st) {
     const defs = defaultState();
     ALL_SLIDER_KEYS.forEach(k => {
-      const val = st[k] !== undefined ? st[k] : defs[k];
-      sliderEls[k].input.value = val;
+      const _el = sliderEls[k];
+      if (!_el) return;
+      let val = st[k] !== undefined ? st[k] : defs[k];
+      if (val === undefined || val === null || Number.isNaN(Number(val))) val = _el.cfg.min;
+      _el.input.value = val;
       paintSlider(k);
     });
     $("autofitChk").checked = st.autofit !== false;
@@ -2681,11 +2700,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100 };
     defs.nopolSize = 50;
     defs.tahunSize = 25;
+    defs.tinggi = 100;
+    defs.tahunTinggi = 80;
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     setTextSetting("nopolSize", 50);
     setTextSetting("tahunSize", 25);
-    setTextSetting("tinggi", 110);
-    setTextSetting("tahunTinggi", 85);
+    setTextSetting("tinggi", 100);
+    setTextSetting("tahunTinggi", 80);
     setTextSetting("thickness", 0);
     setTextSetting("autofit", true);
     setTextSetting("showLogo", false);
@@ -3683,7 +3704,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       return;
     }
     listEl.innerHTML = historyBatches.map((batch, idx) => {
-      const count = batch.plates ? batch.plates.length : 0;
+      const _pl = Array.isArray(batch.plates) ? batch.plates : (Array.isArray(batch.items) ? batch.items : (Array.isArray(batch) ? batch : []));
+      const count = _pl.length;
       return `
         <div class="q-item vault-card">
           <span class="vault-badge">${ico("vault")}</span>
@@ -3733,7 +3755,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       cancelEditUI();
 
       if (batch.startNumber !== undefined) {
-        bulkStartNumber = batch.startNumber;
+        bulkStartNumber = Number.isFinite(Number(batch.startNumber)) ? Number(batch.startNumber) : 1;
         await lsSet("platBulkStartNum", bulkStartNumber);
       }
 
@@ -4364,10 +4386,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
     if (state.hidden) return;
     const st = Object.assign(defaultState(), state);
-    st.nopolSize = Number(st.nopolSize) || 33;
-    st.tahunSize = Number(st.tahunSize) || 16;
-    st.tinggi = Number(st.tinggi) || 110;
-    st.tahunTinggi = Number(st.tahunTinggi) || 90;
+    st.nopolSize = Number(st.nopolSize) || 50;
+    st.tahunSize = Number(st.tahunSize) || 25;
+    st.tinggi = Number(st.tinggi) || 100;
+    st.tahunTinggi = Number(st.tahunTinggi) || 80;
     st.scale = Number(st.scale) || 100;
     st.rotate = Number(st.rotate) || 0;
     st.skewX = Number(st.skewX) || 0;
@@ -4379,8 +4401,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.nopolY = Number(st.nopolY) || 0;
     st.tahunY = Number(st.tahunY) || 0;
     st.lebarNopol = Number(st.lebarNopol) || 100;
-    const pX = (parseFloat(st.left) / 100) * canvas.width;
-    const pY = (parseFloat(st.top) / 100) * canvas.height;
+    const pX = (Number.isFinite(parseFloat(st.left)) ? parseFloat(st.left) : 50) / 100 * canvas.width;
+    const pY = (Number.isFinite(parseFloat(st.top)) ? parseFloat(st.top) : 80) / 100 * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
     await drawPlate(ctx, pX, pY, k, (st.rotate * Math.PI) / 180, st, plate);
   }
