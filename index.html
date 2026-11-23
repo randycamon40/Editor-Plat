@@ -2614,10 +2614,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           const t = e.touches[0];
           const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy);
           if (!_decided && (dx > 8 || dy > 8)) { _decided = true; _isScroll = dy > dx; }
-          if (_isScroll && Number(input.value) !== _sv) { input.value = _sv; paintSlider(s.key); }
+          if (_isScroll) { if (Number(input.value) !== _sv) { input.value = _sv; paintSlider(s.key); } if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } applyPlate(); queueMini(); }
         }, { passive: true });
-        input.addEventListener("touchend", () => { _isScroll = false; _decided = false; }, { passive: true });
+        input.addEventListener("touchend", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) templateData[currentView][s.key] = _sv; } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
         input.addEventListener("input", () => {
+          if (_isScroll) { input.value = _sv; paintSlider(s.key); return; }
           const v = parseFloat(input.value);
           if (TEXT_KEYS.includes(s.key)) {
             setTextSetting(s.key, v);
