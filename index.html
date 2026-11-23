@@ -1565,6 +1565,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <input type="checkbox" id="shadowChk" checked>
             <i class="toggle-pill"></i>
           </label>
+          <label class="toggle-tile">
+            <span>Titik Tengah (Bulan • Tahun)</span>
+            <input type="checkbox" id="showDotChk" checked>
+            <i class="toggle-pill"></i>
+          </label>
         </div>
 
         <div class="accordion-box">
@@ -1989,11 +1994,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       { key: "tahunSize", label: "Ukuran Teks Tahun (Maks)", min: 4, max: 30, step: 1, unit: "px" },
       { key: "tinggi", label: "Tinggi Teks Nopol", min: 50, max: 150, step: 1, unit: "%" },
       { key: "tahunTinggi", label: "Tinggi Teks Tahun", min: 50, max: 150, step: 1, unit: "%" },
+      { key: "nopolY", label: "Geser Nopol (Y)", min: -30, max: 30, step: 1, unit: "px" },
+      { key: "tahunY", label: "Geser Tahun (Y)", min: -30, max: 30, step: 1, unit: "px" },
       { key: "thickness", label: "Ketebalan Teks", min: 0, max: 4, step: 0.5, unit: "px" }
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "nopolY", "tahunY", "thickness", "autofit", "showLogo"];
   const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
@@ -2292,7 +2299,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 20, blur: 0, radius: 7, borderThickness: 3, nopolSize: 33, tahunSize: 15,
-      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false
+      tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, hidden: false,
+      nopolY: 0, tahunY: 0, showDot: true
     };
   }
   function freshState(old, img) {
@@ -2459,7 +2467,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
       warnaShadow: warnaShadowEl.value,
-      shadowOn: $("shadowChk") ? $("shadowChk").checked : true
+      shadowOn: $("shadowChk") ? $("shadowChk").checked : true,
+      showDot: $("showDotChk") ? $("showDotChk").checked : true
     };
   }
 
@@ -2473,12 +2482,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     plEl.style.setProperty("--noise-opacity", (st.noise !== undefined ? st.noise : 15) / 100);
     plEl.style.filter = st.blur > 0 ? "blur(" + st.blur + "px)" : "none";
     setNomorDOM(tEl, p.nomor, st.autofit);
-    yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
+            const dotHtml = p.showDot !== false ? '<span class="dot">•</span>' : '<span class="dot" style="visibility:hidden">•</span>';
+        yEl.innerHTML = '<span class="num">' + esc(p.bulan) + '</span>' + dotHtml + '<span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    tEl.style.transform = "scaleY(" + ((st.tinggi || 110) / 100) + ")";
-    yEl.style.transform = "scaleY(" + ((st.tahunTinggi || 100) / 100) + ")";
+    tEl.style.transform = "translateY(" + (st.nopolY || 0) + "px) scaleY(" + ((st.tinggi || 110) / 100) + ")";
+    yEl.style.transform = "translateY(" + (st.tahunY || 0) + "px) scaleY(" + ((st.tahunTinggi || 100) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
     yEl.style.color = txtColor;
@@ -2638,6 +2648,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setTextSetting("autofit", $("autofitChk").checked);
     applyPlate();
     queueMini();
+  });
+
+  ["shadowChk", "showLogoChk", "showDotChk"].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener("change", () => {
+        applyPlate();
+        queueMini();
+        if (typeof saveTemplate === "function") saveTemplate();
+      });
+    }
   });
   $("showLogoChk").addEventListener("change", () => {
     setTextSetting("showLogo", $("showLogoChk").checked);
