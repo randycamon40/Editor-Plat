@@ -1575,7 +1575,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           </label>
           <label class="toggle-tile">
             <span>Efek Timbul (Shadow Teks)</span>
-            <input type="checkbox" id="shadowChk" checked>
+            <input type="checkbox" id="shadowChk">
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
@@ -2312,7 +2312,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function defaultState() {
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
-      noise: 20, blur: 0, radius: 7, borderThickness: 3, nopolSize: 33, tahunSize: 15,
+      noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
       tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, showLogo: false, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100, hidden: false
     };
   }
@@ -2679,7 +2679,43 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   });
   $("resetTextBtn").addEventListener("click", () => {
     const defs = { nopolSize: 33, tahunSize: 15, tinggi: 110, tahunTinggi: 85, thickness: 0, autofit: true, nopolY: 0, tahunY: 0, showDot: true, lebarNopol: 100 };
+    defs.nopolSize = 50;
+    defs.tahunSize = 25;
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
+    setTextSetting("nopolSize", 50);
+    setTextSetting("tahunSize", 25);
+    setTextSetting("tinggi", 110);
+    setTextSetting("tahunTinggi", 85);
+    setTextSetting("thickness", 0);
+    setTextSetting("autofit", true);
+    setTextSetting("showLogo", false);
+    setTextSetting("squeeze", 90);
+    setTextSetting("nopolSqueeze", 90);
+    setTextSetting("gepeng", 90);
+    setTextSetting("nopolY", 4);
+    setTextSetting("nopolTop", 4);
+    setTextSetting("tahunY", -7.5);
+    setTextSetting("tahunTop", -7.5);
+    setTextSetting("yearY", -7.5);
+    setTextSetting("yearTop", -7.5);
+    setTextSetting("showDot", false);
+    setTextSetting("dotOn", false);
+    VIEWS.forEach(v => {
+      viewData[v].noise = 30;
+      viewData[v].radius = 7;
+      viewData[v].borderThickness = 3;
+      viewData[v].blur = 0;
+      if (templateData && templateData[v]) {
+        templateData[v].noise = 30;
+        templateData[v].radius = 7;
+        templateData[v].borderThickness = 3;
+        templateData[v].blur = 0;
+      }
+    });
+    if (templateData) scheduleTemplateSave();
+    if ($("shadowChk")) $("shadowChk").checked = false;
+    if ($("dotChk")) $("dotChk").checked = false;
+    if ($("showDotChk")) $("showDotChk").checked = false;
     syncSliders(viewData[currentView]);
     applyPlate();
     queueMini();
