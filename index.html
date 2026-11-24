@@ -728,8 +728,10 @@ button { cursor: pointer; }
   font-weight: 900;
   line-height: 1;
   border: 0;
-  /* Hanya drop-shadow. Outline putih 1px dihapus — itulah putih-putih di ujung plat. */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  /* Kotak putih itu box-shadow kotak + sisa putih PNG. Ganti ke drop-shadow
+     biar bayangan ngikutin bentuk PNG plat, bukan kotak. */
+  box-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
   /* Transparan: jangan pakai warna plat di balik PNG, karena sudut PNG
      yang membulat itu transparan — warna di baliknya bakal ngintip. */
   background-color: transparent;
@@ -812,10 +814,10 @@ button { cursor: pointer; }
 .plate-overlay:active { cursor: grabbing; }
 .plate-logo {
   position: absolute;
-  bottom: 4px;
-  left: 8px;
-  width: 16px;
-  height: 18px;
+  bottom: 7px;
+  left: 11px;
+  width: 13px;
+  height: 14px;
   z-index: 2;
   pointer-events: none;
   opacity: 0.95;
@@ -1974,6 +1976,45 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       return out;
     } catch (e) { return null; }
   }
+  /* Plat: potong padding transparan + kotak putih di luar bingkai hitam.
+     Logo JANGAN pakai ini, logo putih bakal kehapus. Plat putih aman karena
+     scan berhenti di baris/kolom yang ada piksel hitam bingkai. */
+  function trimPlatePng(img) {
+    try {
+      const base = trimTransparent(img, 0, 0);
+      if (!base) return null;
+      const w = base.width, h = base.height;
+      const bctx = base.getContext("2d");
+      const data = bctx.getImageData(0, 0, w, h).data;
+      const isWhite = (x, y) => {
+        const i = (y * w + x) * 4;
+        const a = data[i + 3];
+        if (a <= 10) return true;
+        return data[i] >= 242 && data[i + 1] >= 242 && data[i + 2] >= 242;
+      };
+      const rowWhite = (y, x0, x1) => {
+        let white = 0, total = 0;
+        for (let x = x0; x <= x1; x++) { total++; if (isWhite(x, y)) white++; }
+        return total > 0 && white / total >= 0.97;
+      };
+      const colWhite = (x, y0, y1) => {
+        let white = 0, total = 0;
+        for (let y = y0; y <= y1; y++) { total++; if (isWhite(x, y)) white++; }
+        return total > 0 && white / total >= 0.97;
+      };
+      let minX = 0, minY = 0, maxX = w - 1, maxY = h - 1;
+      while (minY < maxY && rowWhite(minY, minX, maxX)) minY++;
+      while (maxY > minY && rowWhite(maxY, minX, maxX)) maxY--;
+      while (minX < maxX && colWhite(minX, minY, maxY)) minX++;
+      while (maxX > minX && colWhite(maxX, minY, maxY)) maxX--;
+      if ((maxX - minX + 1) < w * 0.5 || (maxY - minY + 1) < h * 0.5) return base;
+      if (minX === 0 && minY === 0 && maxX === w - 1 && maxY === h - 1) return base;
+      const out = document.createElement("canvas");
+      out.width = maxX - minX + 1; out.height = maxY - minY + 1;
+      out.getContext("2d").drawImage(base, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+      return out;
+    } catch (e) { return null; }
+  }
   async function preloadTrimmedAssets() {
     const plateUrls = new Set(Object.values(PLATE_ASSETS));
     const urls = [...new Set([...Object.values(PLATE_ASSETS), ...Object.values(LOGO_ASSETS)])];
@@ -1982,9 +2023,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const img = await loadPlatePng(url);
         if (!img) continue;
         const isPlate = plateUrls.has(url);
-        /* Tanpa inset: pakai PNG mentah apa adanya (rim putih + bingkai hitam
-           + sudut bulatnya utuh, kayak gambar 2). Inset bikin sudut jadi kotak. */
-        const trimmed = trimTransparent(img, 0, 0);
+        /* Plat: potong kotak putih di luar bingkai. Logo: tetap trim transparan aja. */
+        const trimmed = isPlate ? (trimPlatePng(img) || trimTransparent(img, 0, 0)) : trimTransparent(img, 0, 0);
         if (trimmed) trimmedUrlCache[url] = trimmed.toDataURL("image/png");
       } catch (e) {}
     }
@@ -2812,7 +2852,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           if (file.type !== "image/png") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h); }
           ctx.drawImage(img, 0, 0, w, h);
           if (file.type === "image/png") resolve(canvas.toDataURL("image/png"));
-          else resolve(canvas.toDataURL("image/jpeg", 0.82));
+          else resolve(canvas.toDataURL("image/jpeg", 0.95));
         };
         img.onerror = () => resolve(null);
         img.src = ev.target.result;
@@ -4088,15 +4128,16 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       ctx.transform(1, Math.tan((st.skewY || 0) * Math.PI / 180), Math.tan((st.skewX || 0) * Math.PI / 180), 1, 0, 0);
     }
     ctx.scale(k, k);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     if (st.blur > 0 && "filter" in ctx) ctx.filter = "blur(" + (st.blur * k) + "px)";
     /* Latar plat = PNG sesuai warna (bingkai + tekstur sudah di PNG). */
     const asset = plateAssetFor(plate.warna, plate.warnaName, plate.warnaTeks);
     const plateImg = await loadPlatePng(asset.plateUrl);
     if (plateImg) {
-      /* PNG transparan: buang padding transparan saja, tanpa inset.
-         Gambar dengan contain (jaga aspek PNG mentah, kayak gambar 2),
-         bukan di-stretch ke 230x75. */
-      const _trimmed = trimTransparent(plateImg, 0, 0) || plateImg;
+      /* Export juga potong kotak putih di luar bingkai, biar hasil JPG
+         sama kayak preview DOM: tanpa kotak putih. */
+      const _trimmed = trimPlatePng(plateImg) || trimTransparent(plateImg, 0, 0) || plateImg;
       const _tw = _trimmed.width || PLATE_W, _th = _trimmed.height || PLATE_H;
       const _sc = Math.min(PLATE_W / _tw, PLATE_H / _th);
       const _dw = _tw * _sc, _dh = _th * _sc;
@@ -4122,6 +4163,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       rr(ctx, -hw, -hh, PLATE_W, PLATE_H, r);
       ctx.fill();
     }
+    ctx.filter = "none";
     /* Klip ke bentuk plat agar noise/teks tidak keluar. PNG persegi panjang,
        jadi klip persegi panjang penuh sudah cukup. */
     ctx.save();
@@ -4173,13 +4215,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           ctx.imageSmoothingQuality = 'high';
           const _tl = trimTransparent(logoImg, 0, 0) || logoImg;
           const ar = (_tl.width || logoImg.naturalWidth) / (_tl.height || logoImg.naturalHeight);
-          let dw = 16, dh = 16 / ar;
-          if (dh > 18) { dh = 18; dw = 18 * ar; }
+          let dw = 13, dh = 13 / ar;
+          if (dh > 14) { dh = 14; dw = 14 * ar; }
           /* PNG transparan: buang padding transparan saja, jangan inset. */
           const _trimmedLogo = trimTransparent(logoImg, 0, 0) || logoImg;
           const _lw = _trimmedLogo.width || logoImg.naturalWidth || logoImg.width;
           const _lh = _trimmedLogo.height || logoImg.naturalHeight || logoImg.height;
-          ctx.drawImage(_trimmedLogo, -hw + 8 + (16 - dw) / 2, hh - 4 - 18 + (18 - dh) / 2, dw, dh);
+          ctx.drawImage(_trimmedLogo, -hw + 11 + (13 - dw) / 2, hh - 7 - 14 + (14 - dh) / 2, dw, dh);
           ctx.restore();
         }
       } catch (e) {}
@@ -4191,7 +4233,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     await ensureFont();
     let img = imgCache && imgCache[imgSrc];
     if (!img) { img = await loadImg(imgSrc); if (imgCache) imgCache[imgSrc] = img; }
-    const sc = Math.min(1, 1200 / img.width, 1200 / img.height);
+    const sc = Math.min(1, 2400 / img.width, 2400 / img.height);
     canvas.width = Math.round(img.width * sc);
     canvas.height = Math.round(img.height * sc);
     const ctx = canvas.getContext("2d");
