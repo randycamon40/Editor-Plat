@@ -4740,16 +4740,115 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   initApp();
 
   if ("serviceWorker" in navigator && !window.AndroidBridge) {
-      // Hanya untuk PWA di browser. Di APK jangan pakai SW, karena SW nyimpen HTML lama
-      // dan bikin font / update baru tidak muncul sampai Force Update.
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch(() => {});
-      });
-    } else if ("serviceWorker" in navigator && window.AndroidBridge) {
-      // Di APK: bersihkan SW + Cache lama sekali saja, supaya update APK langsung kepakai
-      navigator.serviceWorker.getRegistrations().then((regs) => { for (var r of regs) r.unregister(); }).catch(() => {});
-      if (window.caches) caches.keys().then((keys) => { for (var k of keys) caches.delete(k); }).catch(() => {});
+    // Hanya untuk PWA di browser. Di APK jangan pakai SW, karena SW nyimpen HTML lama
+    // dan bikin font / update baru tidak muncul sampai Force Update.
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  } else if ("serviceWorker" in navigator && window.AndroidBridge) {
+    // Di APK: bersihkan SW + Cache lama sekali saja, supaya update APK langsung kepakai
+    navigator.serviceWorker.getRegistrations().then((regs) => { for (var r of regs) r.unregister(); }).catch(() => {});
+    if (window.caches) caches.keys().then((keys) => { for (var k of keys) caches.delete(k); }).catch(() => {});
+  }
+
+  /* ================= SEARCH, VAULT SAVE & SETTINGS ================= */
+  $("bulkSearch").addEventListener("input", (e) => {
+    const start = e.target.selectionStart, end = e.target.selectionEnd;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(start, end);
+    bulkQ = normQ(e.target.value);
+    renderBulk();
+  });
+
+  $("closeHistoryPreviewBtn").addEventListener("click", () => closeSheet("historyPreviewModal"));
+  $("renameCancelBtn").addEventListener("click", () => closeSheet("renameModal"));
+  $("renameSaveBtn").addEventListener("click", async () => {
+    const newName = $("renameInput").value.trim();
+    if (!newName) return showToast("Nama tidak boleh kosong", true);
+    if (renameIndex >= 0) {
+      historyBatches[renameIndex].name = newName;
+      await saveHistoryBatches();
+      renderHistory();
+      closeSheet("renameModal");
+      showToast("Nama antrean diperbarui ✓");
     }
+  });
+  $("renameInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); $("renameSaveBtn").click(); }
+  });
+
+  $("btnSaveHistoryBulk").addEventListener("click", async () => {
+    if (!bulkItems.length) return showToast("Antrean masih kosong", true);
+    if (!historyBatches) historyBatches = [];
+
+    if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
+      const prevBatches = JSON.parse(JSON.stringify(historyBatches));
+      const prevIndex = activeVaultIndex;
+      historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
+      historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
+      historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+      historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
+
+      if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
+      else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
+    } else {
+      const newBatch = {
+        id: Date.now().toString(),
+        name: getDefaultBatchName() || undefined,
+        date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+        plates: JSON.parse(JSON.stringify(bulkItems)),
+        template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+        startNumber: bulkStartNumber
+      };
+      historyBatches.unshift(newBatch);
+      activeVaultIndex = 0;
+      await lsSet("platActiveVaultIndex", activeVaultIndex);
+      if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
+      if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
+      await lsSet("platActiveVaultIndex", activeVaultIndex);
+
+      if (await saveHistoryBatches()) { renderHistory(); showToast(bulkItems.length + " nopol disimpan ke Vault ✓"); }
+      else { historyBatches.shift(); activeVaultIndex = -1; renderHistory(); }
+    }
+  });
+
+  $("btnForceUpdate").addEventListener("click", async () => {
+    if (!await askConfirm("Force Update?", "Aplikasi akan memuat ulang dan mengambil versi terbaru.", "Update")) return;
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let reg of regs) await reg.unregister();
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        for (let key of keys) await caches.delete(key);
+      }
+    } catch (e) {}
+    location.reload();
+  });
+
+  $("btnFeedback").addEventListener("click", () => {
+    $("feedbackArea").value = "";
+    openSheet("feedbackModal");
+    setTimeout(() => $("feedbackArea").focus(), 80);
+  });
+  $("closeFeedbackBtn").addEventListener("click", () => closeSheet("feedbackModal"));
+  $("sendFeedbackBtn").addEventListener("click", () => {
+    const text = $("feedbackArea").value.trim();
+    if (!text) return showToast("Tulis masukan dulu", true);
+    window.location.href = `mailto:ravi.project170845@gmail.com?subject=${encodeURIComponent("Feedback Aplikasi Plat Nomor")}&body=${encodeURIComponent(text)}`;
+    closeSheet("feedbackModal");
+    showToast("Membuka aplikasi email...");
+  });
+
+  const ACCENT_COLORS = {
+    emerald: { s: "#10b981", d: "#34d399" },
+    blue:    { s: "#2f5bea", d: "#7c9bff" },
+    orange:  { s: "#e8590c", d: "#fb923c" },
+    pink:    { s: "#d6336c", d: "#f472b6" },
+    purple:  { s: "#7048e8", d: "#a78bfa" },
+    cyan:    { s: "#0e8fb0", d: "#22d3ee" }
+  };
   const hexRgb = h => { const n = parseInt(h.slice(1), 16); return (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255); };
 
   function applyAccentColor(name) {
