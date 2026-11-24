@@ -30,6 +30,7 @@
 <title>Nopol Studio Pro — Editor & Bulk Generator</title>
 <link rel="preload" href="./PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="./PlatNomor.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./wallpaper-depan.jpg" as="image">
 <link rel="preload" href="./wallpaper-kiri.jpg" as="image">
 <link rel="preload" href="./wallpaper-kanan.jpg" as="image">
@@ -68,6 +69,13 @@ try {
   font-family: 'FE-Schrift';
   src: url('./FE.ttf') format('truetype');
   font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PlatNomor';
+  src: url('./PlatNomor.ttf') format('truetype');
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
 }
@@ -2061,6 +2069,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
+  const FONT_N_BLACK = "'PlatNomor',Arial,Helvetica,sans-serif";
+  const FONT_Y_BLACK = "'PlatNomor',Arial,Helvetica,sans-serif";
+  function isBlackPlate(p) {
+    if (!p) return false;
+    if (p.warnaName === "Hitam") return true;
+    return plateAssetFor(p.warna, p.warnaName).name === "Hitam";
+  }
+  function fontNFor(p) { return isBlackPlate(p) ? FONT_N_BLACK : FONT_N; }
+  function fontYFor(p) { return isBlackPlate(p) ? FONT_Y_BLACK : FONT_Y; }
   const MIN_GAP = 10;
   const AI_MODELS = {
     gemini:    [["gemini-3.8-flash", "Gemini 3.8 Flash (Rekomendasi)"], ["gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite"], ["gemini-2.5-flash", "Gemini 2.5 Flash"]],
@@ -2387,16 +2404,16 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (t.length === 2) return [t[0], t[1]];
     return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
   }
-  function partW(str, size) {
-    mctx.font = size + "px " + FONT_N;
+  function partW(str, size, p) {
+    mctx.font = size + "px " + fontNFor(p);
     const ch = Array.from(str);
     return ch.reduce((a, c) => a + mctx.measureText(c).width, 0) + NOPOL_LS * Math.max(0, ch.length - 1);
   }
-  function fitNomor(nomor, size, on) {
+  function fitNomor(nomor, size, on, p) {
     if (on === false) return size;
     const parts = nomorParts(nomor);
-    if (parts.length < 2) return calcFit(nomor, size, NOPOL_LS, NOPOL_WS, FONT_N, true);
-    mctx.font = size + "px " + FONT_N;
+    if (parts.length < 2) return calcFit(nomor, size, NOPOL_LS, NOPOL_WS, fontNFor(p), true);
+    mctx.font = size + "px " + fontNFor(p);
     let gw = 0, sp = 0;
     parts.forEach(pt => {
       const ch = Array.from(pt);
@@ -2426,13 +2443,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       el.textContent = nomor;
     }
   }
+  const BLACK_N_SCALE = 0.97;
+  const BLACK_Y_SCALE = 0.97;
   function fitSizes(st, p) {
     const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
-    const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit);
+    const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit, p);
     const nFit = st.autofit === false ? baseN : Math.min(st.nopolSize, Math.max(4, Math.round(baseN / Math.max(0.5, sxFit) * 10) / 10));
+    const yFit = calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, fontYFor(p), st.autofit);
+    const black = isBlackPlate(p);
     return {
-      n: nFit,
-      y: calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, FONT_Y, st.autofit)
+      n: black ? Math.round(nFit * BLACK_N_SCALE * 10) / 10 : nFit,
+      y: black ? Math.round(yFit * BLACK_Y_SCALE * 10) / 10 : yFit
     };
   }
   let viewData = {};
@@ -2544,6 +2565,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setNomorDOM(tEl, p.nomor, st.autofit);
     yEl.innerHTML = !st.showDot ? '<span class="num">' + esc(p.bulan) + '</span><span class="dot" style="visibility:hidden">•</span><span class="num">' + esc(p.tahun) + '</span>' : '<span class="num">' + esc(p.bulan) + '</span><span class="dot">•</span><span class="num">' + esc(p.tahun) + '</span>';
     const fit = fitSizes(st, p);
+    tEl.style.fontFamily = fontNFor(p);
+    yEl.style.fontFamily = fontYFor(p);
+    tEl.style.fontWeight = isBlackPlate(p) ? "700" : "normal";
+    yEl.style.fontWeight = isBlackPlate(p) ? "700" : "normal";
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
     tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
@@ -4144,7 +4169,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function ensureFont() {
     if (!fontPromise) {
       fontPromise = (document.fonts && document.fonts.load)
-        ? Promise.all([document.fonts.load("38px 'FE-Schrift'"), document.fonts.load("16px 'FE-Schrift'")]).catch(() => {})
+        ? Promise.all([document.fonts.load("38px 'FE-Schrift'"), document.fonts.load("16px 'FE-Schrift'"), document.fonts.load("700 38px 'PlatNomor'"), document.fonts.load("700 16px 'PlatNomor'")]).catch(() => {})
         : Promise.resolve();
     }
     return fontPromise;
@@ -4228,6 +4253,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
     const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
     const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
+    const fontN = fontNFor(plate);
+    const fontY = fontYFor(plate);
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rot);
@@ -4300,20 +4327,20 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const parts = nomorParts(plate.nomor);
     if (st.autofit !== false && parts.length >= 2) {
       const half = (PLATE_W - 8 - FIT_PAD * 2) / 2;
-      const w = parts.map(x => partW(x, n) * sxNopol);
+      const w = parts.map(x => partW(x, n, plate) * sxNopol);
       const xs = [-half];
       const last = parts.length - 1;
       xs[last] = half - w[last];
       if (parts.length === 2) xs[1] = -w[1] / 2;
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
-        drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i] / sxNopol, shC, sxNopol));
+        drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, xs[i] / sxNopol, shC, sxNopol));
     } else {
-      drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, undefined, shC, sxNopol);
+      drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, undefined, shC, sxNopol);
     }
     const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0);
     const gapY = 2;
-    ctx.font = y + "px " + FONT_Y;
+    ctx.font = y + "px " + fontY;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
     const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yB.length - 1);
     const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yT.length - 1);
@@ -4321,11 +4348,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
-    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
+    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC);
     yx += bW + gapY;
-    if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx, shC);
+    if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, fontY, txtC, yx, shC);
     yx += dW + gapY;
-    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
+    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC);
     /* Logo sudah digambar sebelum klip, di atas PNG plat, di bawah teks. */
     ctx.restore();
     ctx.restore();
