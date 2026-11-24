@@ -3251,25 +3251,38 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const textColor = isDark(it.warna) ? "#ffffff" : "#111111";
     return `<span style="background:${esc(it.warna)};color:${textColor};border:2px solid ${textColor};padding:2px 8px;border-radius:6px;font-family:var(--plate-font)">${esc(it.nomor)}</span>`;
   }
+  let miniObserver = null;
+  function paintOneMini(el, st) {
+    if (!el || el.dataset.painted === "1") return;
+    const p = {
+      nomor: el.dataset.nomor,
+      bulan: el.dataset.bulan,
+      tahun: el.dataset.tahun,
+      warna: el.dataset.warna,
+      warnaTeks: el.dataset.warnateks,
+      warnaShadow: el.dataset.warnashadow,
+      warnaName: el.dataset.warnaname
+    };
+    stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
+    el.style.filter = "none";
+    const _t = el.querySelector('.plate-text'), _y = el.querySelector('.plate-year');
+    if (_t) _t.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
+    if (_y) _y.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
+    el.dataset.painted = "1";
+  }
   function paintMiniPlates(container) {
     if (!container) return;
     const st = (templateData && VIEWS.map(v => templateData[v]).find(s => s && s.img)) || viewData[currentView];
-    container.querySelectorAll('.plate-mini').forEach((el) => {
-      const p = {
-        nomor: el.dataset.nomor,
-        bulan: el.dataset.bulan,
-        tahun: el.dataset.tahun,
-        warna: el.dataset.warna,
-        warnaTeks: el.dataset.warnateks,
-        warnaShadow: el.dataset.warnashadow,
-        warnaName: el.dataset.warnaname
-      };
-      stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
-      el.style.filter = "none";
-      const _t = el.querySelector('.plate-text'), _y = el.querySelector('.plate-year');
-      if (_t) _t.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
-      if (_y) _y.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
-    });
+    const els = Array.from(container.querySelectorAll('.plate-mini'));
+    if (!els.length) return;
+    if (typeof IntersectionObserver === "undefined") { els.forEach(el => paintOneMini(el, st)); return; }
+    if (miniObserver) miniObserver.disconnect();
+    miniObserver = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (en.isIntersecting) { paintOneMini(en.target, st); miniObserver.unobserve(en.target); }
+      });
+    }, { rootMargin: "250px 0px", threshold: 0.01 });
+    els.forEach(el => { if (el.dataset.painted !== "1") miniObserver.observe(el); });
   }
   function renderBulk() {
     const nv = templateData ? VIEWS.filter(v => templateData[v] && templateData[v].img).length : 0;
