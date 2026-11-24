@@ -828,34 +828,7 @@ button { cursor: pointer; }
   align-items: center;
   justify-content: center;
 }
-#kanvasBox .kanvas-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-#kanvasBox .kanvas-chev {
-  transition: transform 0.2s ease;
-}
-#kanvasBox.collapsed .kanvas-chev {
-  transform: rotate(180deg);
-}
-#kanvasBox.collapsed .tabs-seg,
-#kanvasBox.collapsed #viewSelect,
-#kanvasBox.collapsed .stage,
-#kanvasBox.collapsed .stage-toolbar,
-#kanvasBox.collapsed .nudge-bar,
-#kanvasBox.collapsed #aiActionBtns {
-  display: none !important;
-}
+
 .plate-preview-card {
   position: sticky;
   top: calc(68px + env(safe-area-inset-top));
@@ -1402,7 +1375,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
               <h2>Kanvas Sudut Kendaraan</h2>
               <p>Pilih sisi mobil lalu import foto (maks. 4 foto sekaligus).</p>
             </div>
-            <button type="button" id="kanvasToggleBtn" class="kanvas-toggle" aria-expanded="true" aria-label="Ciutkan Kanvas"><span id="kanvasToggleLabel"[STRIPPED 26 bytes]"kanvas-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></button>
           </div>
           <div class="tabs-seg" id="viewTabs" role="tablist" aria-label="Sudut pandang mobil">
             <button type="button" role="tab" data-view="depan" class="on">Depan</button>
@@ -1516,6 +1488,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
         </div>
+        <button type="button" class="btn btn-muted btn-xs btn-full" id="btnAuto5Yr" style="margin-bottom:12px">Masa Berlaku +5 Tahun</button>
         <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:12px;">
           <div class="fld">
             <span class="fld-lbl">Plat</span>
@@ -2615,7 +2588,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let miniRaf = 0;
   function queueMini() {
     if (miniRaf) return;
-    miniRaf = requestAnimationFrame(() => { miniRaf = 0; paintMiniPlates(bulkListEl); });
+    miniRaf = requestAnimationFrame(() => { miniRaf = 0; bulkListEl.querySelectorAll(".plate-mini").forEach(el => el.removeAttribute("data-painted")); paintMiniPlates(bulkListEl); });
   }
   function fitHero() {
     const hero = $("plateHero");
@@ -2881,7 +2854,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   window.addEventListener("resize", applyPlate);
   function readImageFile(file) {
     return new Promise((resolve) => {
-      if (!file || !file.type || !file.type.startsWith("image/")) {
+      if (!file || (file.type && !file.type.startsWith("image/"))) {
         resolve(null);
         return;
       }
@@ -2929,10 +2902,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const results = await Promise.all(fileList.map(f => readImageFile(f)));
     let successCount = 0;
     const emptyViews = VIEWS.filter(v => !viewData[v].img);
-    const targetViews = emptyViews.length ? emptyViews : VIEWS;
+    const targetViews = [...emptyViews, ...VIEWS.filter(v => viewData[v].img)];
     results.forEach((data, i) => {
       if (data) {
-        const view = targetViews[i % targetViews.length];
+        const view = targetViews[i];
         viewData[view] = freshState(viewData[view], data);
         successCount++;
       }
@@ -3207,17 +3180,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     updateTemplateUI();
     if (editorOpen) loadViewState();
   });
-  const kanvasToggleBtn = $("kanvasToggleBtn");
-  if (kanvasToggleBtn) {
-    kanvasToggleBtn.addEventListener("click", () => {
-      const box = $("kanvasBox");
-      if (!box) return;
-      const collapsed = box.classList.toggle("collapsed");
-      kanvasToggleBtn.setAttribute("aria-expanded", String(!collapsed));
-      const lbl = $("kanvasToggleLabel");
-      if (lbl) lbl.textContent = collapsed ? "Buka" : "Ciutkan";
-    });
-  }
+
   $("updateTemplateBtn").addEventListener("click", async () => {
     if (!VIEWS.some(v => viewData[v].img)) return showToast("Template butuh minimal 1 foto", true);
     const prev = templateData;
@@ -3294,10 +3257,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       bulkListEl.innerHTML = `<div class="empty-state">${ico("layers")}<b>Antrean Masih Kosong</b><span>Tambahkan nomor plat di tab Plat atau gunakan fitur Tempel Banyak.</span></div>`;
       return;
     }
+    const firstMatch = bulkItems.findIndex(x => bulkMatch(x));
     bulkListEl.innerHTML = bulkItems.map((it, i) => !bulkMatch(it) ? "" : `
       <div class="q-item${i === editIndex ? " editing" : ""}">
         <div class="row-num-wrap">
-          ${i === bulkItems.findIndex(x => bulkMatch(x))
+          ${i === firstMatch
             ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">`
             : `<span class="row-num-span" data-i="${i}">${bulkStartNumber + i}</span>`}
         </div>
@@ -3662,7 +3626,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!list.length) {
       return showToast(warnings.length ? "Semua baris bermasalah. Perbaiki dulu." : "Belum ada nopol untuk ditambahkan", true);
     }
-    if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
     if (!templateData) return showToast("Kunci template terlebih dahulu!", true);
     if (warnings.length > 0) {
       const ok = await askConfirm("Ada Baris Bermasalah", warnings.length + " baris tidak valid akan dilewati. Lanjut tambahkan " + list.length + " nopol valid?", "Lanjutkan");
@@ -3677,6 +3640,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       return true;
     });
     const skippedDup = list.length - filteredList.length;
+    if (bulkItems.length + filteredList.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
     if (!filteredList.length) return showToast(skippedDup ? "Semua nopol sudah ada di antrean" : "Belum ada nopol untuk ditambahkan", true);
     bulkItems = bulkItems.concat(filteredList);
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
@@ -4298,7 +4262,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           ctx.globalAlpha = 0.95;
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          const _tl = trimTransparent(logoImg, 0, 0) || logoImg;
+          const _tl = logoImg._trimmed || (logoImg._trimmed = trimTransparent(logoImg, 0, 0) || logoImg);
           const ar = (_tl.width || logoImg.naturalWidth) / (_tl.height || logoImg.naturalHeight);
           let dw = 13, dh = 13 / ar;
           if (dh > 14) { dh = 14; dw = 14 * ar; }
