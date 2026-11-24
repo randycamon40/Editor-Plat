@@ -1555,17 +1555,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           </label>
           <label class="toggle-tile">
             <span>Logo Korlantas / Samsat</span>
-            <input type="checkbox" id="showLogoChk">
+            <input type="checkbox" id="showLogoChk" checked>
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
             <span>Efek Timbul (Shadow Teks)</span>
-            <input type="checkbox" id="shadowChk">
+            <input type="checkbox" id="shadowChk" checked>
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
             <span>Titik Pemisah Bulan • Tahun</span>
-            <input type="checkbox" id="showDotChk">
+            <input type="checkbox" id="showDotChk" checked>
             <i class="toggle-pill"></i>
           </label>
         </div>
@@ -2155,8 +2155,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return p ? p.n : "Kustom";
   }
   const SHADOW_BY_PLATE = {
-    "Putih": "#808080", "Hitam": "#808080", "Kuning": "#808080",
-    "Merah": "#000000", "Hijau": "#808080", "Biru": "#000000"
+    "Putih": "#808080", "Hitam": "#000000", "Kuning": "#808080",
+    "Merah": "#000000", "Hijau": "#000000", "Biru": "#000000"
   };
   function defaultShadowForPlate(hex, name) {
     const n = name || nameFor(hex);
@@ -2381,7 +2381,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, lebarNopol: 85, hidden: false
     };
   }
   function freshState(old, img) {
@@ -2591,6 +2591,27 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       yEl.style.textShadow = `0.5px 0.5px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
     }
   }
+  function applyEmboss(tEl, yEl, p) {
+    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false);
+    if (!shadowOn) { tEl.style.textShadow = "none"; yEl.style.textShadow = "none"; return; }
+    const txtC = p.warnaTeks || (isDark(p.warna) ? "#ffffff" : "#000000");
+    if (!isDark(txtC)) {
+      tEl.style.textShadow = `0 -0.5px 0 rgba(0,0,0,0.65), 0 0.5px 0 rgba(255,255,255,0.38), 0 1px 2px rgba(0,0,0,0.55)`;
+      yEl.style.textShadow = `0 -0.5px 0 rgba(0,0,0,0.6), 0 0.5px 0 rgba(255,255,255,0.32), 0 1px 1px rgba(0,0,0,0.5)`;
+      return;
+    }
+    const isWhitePlate = (p.warnaName === "Putih") || String(p.warna || "").toLowerCase() === "#ffffff";
+    if (!isWhitePlate) {
+      tEl.style.textShadow = `0 -0.5px 0 rgba(255,255,255,0.45), 0 0.5px 1px rgba(0,0,0,0.45)`;
+      yEl.style.textShadow = `0 -0.5px 0 rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)`;
+      return;
+    }
+    const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
+    const hi = "rgba(255,255,255,0.95)";
+    const hiSoft = "rgba(255,255,255,0.55)";
+    tEl.style.textShadow = `0 -1px 0 ${hi}, 0 1px 0 ${shColor}, 1px 1px 1px rgba(0,0,0,0.18), -1px -1px 0 ${hiSoft}`;
+    yEl.style.textShadow = `0 -0.5px 0 ${hi}, 0 0.5px 0 ${shColor}, 0 1px 1px rgba(0,0,0,0.15)`;
+  }
   function currentK(st) {
     const w = previewImg.clientWidth || REF_W;
     return (w / REF_W) * (st.scale / 100);
@@ -2605,6 +2626,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     platePreview.style.pointerEvents = st.hidden ? "none" : "";
     stylePlate(platePreview, plateText, plateYear, st, p);
     stylePlate(miniPlate, miniText, miniYear, st, p);
+    applyEmboss(plateText, plateYear, p);
+    applyEmboss(miniText, miniYear, p);
     fitHero();
   }
   let miniRaf = 0;
@@ -2750,13 +2773,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85 };
+    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: true, lebarNopol: 85 };
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
-    setTextSetting("showLogo", false);
+    setTextSetting("showLogo", true);
     setTextSetting("lebarNopol", 85);
     setTextSetting("nopolY", 4);
     setTextSetting("tahunY", -8.5);
-    setTextSetting("showDot", false);
+    setTextSetting("showDot", true);
     VIEWS.forEach(v => {
       viewData[v].noise = 30;
       viewData[v].radius = 7;
@@ -2770,9 +2793,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       }
     });
     if (templateData) scheduleTemplateSave();
-    if ($("shadowChk")) { $("shadowChk").checked = false; try { localStorage.setItem("platShadow", "0"); } catch (e) {} }
-    if ($("showLogoChk")) $("showLogoChk").checked = false;
-    if ($("showDotChk")) $("showDotChk").checked = false;
+    if ($("shadowChk")) { $("shadowChk").checked = true; try { localStorage.setItem("platShadow", "1"); } catch (e) {} }
+    if ($("showLogoChk")) $("showLogoChk").checked = true;
+    if ($("showDotChk")) $("showDotChk").checked = true;
     syncSliders(viewData[currentView]);
     applyPlate();
     queueMini();
@@ -3266,6 +3289,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         warnaName: el.dataset.warnaname
       };
       stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
+      applyEmboss(el.querySelector('.plate-text'), el.querySelector('.plate-year'), p);
     });
   }
   function renderBulk() {
@@ -4130,6 +4154,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const adv = chars.map((c, i) => ctx.measureText(c).width + (i < chars.length - 1 ? ls : 0) + (c === " " ? ws : 0));
     let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
     if (shadowColor) {
+      const hiC = String(shadowColor).indexOf("255,255,255") >= 0 ? "rgba(0,0,0,0.65)" : (String(shadowColor).indexOf("0.45") >= 0 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.9)");
+      ctx.save();
+      ctx.fillStyle = hiC;
+      ctx.strokeStyle = hiC;
+      let hx = x;
+      chars.forEach((c, i) => {
+        if (strokeW > 0) ctx.strokeText(c, hx - 1, -1);
+        ctx.fillText(c, hx - 1, -1);
+        hx += adv[i];
+      });
+      ctx.restore();
       ctx.save();
       ctx.fillStyle = shadowColor;
       ctx.strokeStyle = shadowColor;
@@ -4176,7 +4211,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
     const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
-    const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
+    const txtLight = !isDark(txtC);
+    const isWhitePlate = (plate.warnaName === "Putih") || String(plate.warna || "").toLowerCase() === "#ffffff";
+    const shC = !shadowOn ? "" : (txtLight ? "rgba(255,255,255,0.38)" : (!isWhitePlate ? "rgba(0,0,0,0.45)" : (plate.warnaShadow || defaultShadowForPlate(bg))));
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rot);
@@ -4567,6 +4604,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     await loadBulkData();
     try {
       // Migrasi logo dibatalkan agar settingan user tidak tertimpa
+    } catch (e) {}
+    try {
+      if (!localStorage.getItem("platDefaultsV2")) {
+        localStorage.setItem("platDefaultsV2", "1");
+        localStorage.setItem("platShadow", "1");
+        if ($("shadowChk")) $("shadowChk").checked = true;
+        VIEWS.forEach(v => {
+          if (viewData[v]) { viewData[v].autofit = true; viewData[v].showLogo = true; viewData[v].showDot = true; }
+          if (templateData && templateData[v]) { templateData[v].autofit = true; templateData[v].showLogo = true; templateData[v].showDot = true; }
+        });
+        if (templateData) scheduleTemplateSave();
+      }
     } catch (e) {}
     try { if (localStorage.getItem("platShadow") === "1") $("shadowChk").checked = true; if (localStorage.getItem("platShadow") === "0") $("shadowChk").checked = false; } catch (e) {}
     renderSwatches();
