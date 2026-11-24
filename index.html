@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#f4f6f9">
@@ -2320,7 +2341,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 92, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: false, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85, hidden: false
 
 
     };
@@ -2387,7 +2408,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
   }
   function fitSizes(st, p) {
-    const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92) / 100;
+    const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
     const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit);
     const nFit = st.autofit === false ? baseN : Math.min(st.nopolSize, Math.max(4, Math.round(baseN / Math.max(0.5, sxFit) * 10) / 10));
     return {
@@ -2511,8 +2532,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const fit = fitSizes(st, p);
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
-    tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
-    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 92) / 100)) + "px"; else tEl.style.width = "";
+    tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
+    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
 
 
     yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
@@ -2715,12 +2736,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("toggleTextSlidersBtn").setAttribute("aria-expanded", String(!panel.hidden));
   });
   $("resetTextBtn").addEventListener("click", () => {
-    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 92 };
+    const defs = { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, nopolY: 4, tahunY: -8.5, showDot: false, lebarNopol: 85 };
 
 
     Object.keys(defs).forEach(k => setTextSetting(k, defs[k]));
     setTextSetting("showLogo", false);
-    setTextSetting("lebarNopol", 92);
+    setTextSetting("lebarNopol", 85);
 
 
     setTextSetting("nopolY", 4);
@@ -4311,7 +4332,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
     const syNopol = (st.tinggi || 100) / 100;
-    const sxNopol = (st.lebarNopol || 92) / 100;
+    const sxNopol = (st.lebarNopol || 85) / 100;
 
 
     const syTahun = (st.tahunTinggi !== undefined ? st.tahunTinggi : 80) / 100;
@@ -4417,7 +4438,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.thickness = Number(st.thickness) || 0;
     st.nopolY = Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4;
     st.tahunY = Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5;
-    st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 92;
+    st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85;
     const pX = (Number.isFinite(parseFloat(st.left)) ? parseFloat(st.left) : 50) / 100 * canvas.width;
     const pY = (Number.isFinite(parseFloat(st.top)) ? parseFloat(st.top) : 80) / 100 * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
@@ -4718,110 +4739,17 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   initApp();
 
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    });
-  }
-
-  /* ================= SEARCH, VAULT SAVE & SETTINGS ================= */
-  $("bulkSearch").addEventListener("input", (e) => {
-    const start = e.target.selectionStart, end = e.target.selectionEnd;
-    e.target.value = e.target.value.toUpperCase();
-    e.target.setSelectionRange(start, end);
-    bulkQ = normQ(e.target.value);
-    renderBulk();
-  });
-
-  $("closeHistoryPreviewBtn").addEventListener("click", () => closeSheet("historyPreviewModal"));
-  $("renameCancelBtn").addEventListener("click", () => closeSheet("renameModal"));
-  $("renameSaveBtn").addEventListener("click", async () => {
-    const newName = $("renameInput").value.trim();
-    if (!newName) return showToast("Nama tidak boleh kosong", true);
-    if (renameIndex >= 0) {
-      historyBatches[renameIndex].name = newName;
-      await saveHistoryBatches();
-      renderHistory();
-      closeSheet("renameModal");
-      showToast("Nama antrean diperbarui ✓");
+  if ("serviceWorker" in navigator && !window.AndroidBridge) {
+      // Hanya untuk PWA di browser. Di APK jangan pakai SW, karena SW nyimpen HTML lama
+      // dan bikin font / update baru tidak muncul sampai Force Update.
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    } else if ("serviceWorker" in navigator && window.AndroidBridge) {
+      // Di APK: bersihkan SW + Cache lama sekali saja, supaya update APK langsung kepakai
+      navigator.serviceWorker.getRegistrations().then((regs) => { for (var r of regs) r.unregister(); }).catch(() => {});
+      if (window.caches) caches.keys().then((keys) => { for (var k of keys) caches.delete(k); }).catch(() => {});
     }
-  });
-  $("renameInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); $("renameSaveBtn").click(); }
-  });
-
-  $("btnSaveHistoryBulk").addEventListener("click", async () => {
-    if (!bulkItems.length) return showToast("Antrean masih kosong", true);
-    if (!historyBatches) historyBatches = [];
-
-    if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
-      const prevBatches = JSON.parse(JSON.stringify(historyBatches));
-      const prevIndex = activeVaultIndex;
-      historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
-      historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
-      historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-      historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
-
-      if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
-      else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
-    } else {
-      const newBatch = {
-        id: Date.now().toString(),
-        name: getDefaultBatchName() || undefined,
-        date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-        plates: JSON.parse(JSON.stringify(bulkItems)),
-        template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
-        startNumber: bulkStartNumber
-      };
-      historyBatches.unshift(newBatch);
-      activeVaultIndex = 0;
-      await lsSet("platActiveVaultIndex", activeVaultIndex);
-      if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
-      if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
-      await lsSet("platActiveVaultIndex", activeVaultIndex);
-
-      if (await saveHistoryBatches()) { renderHistory(); showToast(bulkItems.length + " nopol disimpan ke Vault ✓"); }
-      else { historyBatches.shift(); activeVaultIndex = -1; renderHistory(); }
-    }
-  });
-
-  $("btnForceUpdate").addEventListener("click", async () => {
-    if (!await askConfirm("Force Update?", "Aplikasi akan memuat ulang dan mengambil versi terbaru.", "Update")) return;
-    try {
-      if ("serviceWorker" in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (let reg of regs) await reg.unregister();
-      }
-      if (window.caches) {
-        const keys = await caches.keys();
-        for (let key of keys) await caches.delete(key);
-      }
-    } catch (e) {}
-    location.reload();
-  });
-
-  $("btnFeedback").addEventListener("click", () => {
-    $("feedbackArea").value = "";
-    openSheet("feedbackModal");
-    setTimeout(() => $("feedbackArea").focus(), 80);
-  });
-  $("closeFeedbackBtn").addEventListener("click", () => closeSheet("feedbackModal"));
-  $("sendFeedbackBtn").addEventListener("click", () => {
-    const text = $("feedbackArea").value.trim();
-    if (!text) return showToast("Tulis masukan dulu", true);
-    window.location.href = `mailto:ravi.project170845@gmail.com?subject=${encodeURIComponent("Feedback Aplikasi Plat Nomor")}&body=${encodeURIComponent(text)}`;
-    closeSheet("feedbackModal");
-    showToast("Membuka aplikasi email...");
-  });
-
-  const ACCENT_COLORS = {
-    emerald: { s: "#10b981", d: "#34d399" },
-    blue:    { s: "#2f5bea", d: "#7c9bff" },
-    orange:  { s: "#e8590c", d: "#fb923c" },
-    pink:    { s: "#d6336c", d: "#f472b6" },
-    purple:  { s: "#7048e8", d: "#a78bfa" },
-    cyan:    { s: "#0e8fb0", d: "#22d3ee" }
-  };
   const hexRgb = h => { const n = parseInt(h.slice(1), 16); return (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255); };
 
   function applyAccentColor(name) {
@@ -4859,5 +4787,5 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   applyTheme(savedTheme);
 })();
 </script>
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
