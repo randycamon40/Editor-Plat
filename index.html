@@ -435,7 +435,7 @@ button { cursor: pointer; }
 }
 .plate-grid-row {
   display: grid;
-  grid-template-columns: 1fr 48px 48px auto;
+  grid-template-columns: 1fr 48px 48px;
   gap: 6px;
   align-items: end;
   margin-bottom: 12px;
@@ -443,17 +443,7 @@ button { cursor: pointer; }
 .plate-grid-row .fld { margin: 0; }
 .plate-grid-row .inp { min-height: 52px; padding: 0; text-align: center; font-weight: 700; }
 .plate-grid-row .inp.plate-entry { padding: 0 12px; text-align: left; font-weight: normal; }
-.btn-5yr {
-  min-height: 52px;
-  padding: 0 10px;
-  border-radius: 11px;
-  background: rgba(var(--ac-rgb), 0.14);
-  color: var(--ac);
-  border: 1px solid rgba(var(--ac-rgb), 0.3);
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 1.15;
-}
+
 .tnkb-bar {
   display: flex;
   gap: 6px;
@@ -1027,8 +1017,8 @@ input[type=range]::-moz-range-thumb {
   place-items: center;
   flex-shrink: 0;
 }
-.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; }
-.plate-mini { transform: scale(0.5); transform-origin: top left; }
+.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; overflow: hidden; contain: content; }
+.plate-mini { transform: scale(0.5); transform-origin: top left; filter: none !important; }
 .row-num-wrap {
   width: 32px;
   flex-shrink: 0;
@@ -1525,27 +1515,19 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <label for="tahun">Thn</label>
             <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
-          <div class="fld">
-            <label>&nbsp;</label>
-            <button type="button" id="btnAuto5Yr" class="btn-5yr">+5<br>Tahun</button>
-          </div>
         </div>
-        <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom:12px;">
+        <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:12px;">
           <div class="fld">
             <span class="fld-lbl">Plat</span>
             <button type="button" class="color-swatch-btn" id="btnColorPlat" aria-label="Pilih warna plat" style="background-color: #ffffff;"></button>
             <input type="color" id="warna" value="#ffffff" hidden>
           </div>
           <div class="fld">
-            <span class="fld-lbl">Teks & Bingkai</span>
+            <span class="fld-lbl">Teks</span>
             <button type="button" class="color-swatch-btn" id="btnColorTeks" aria-label="Pilih warna teks plat" style="background-color: #000000;"></button>
             <input type="color" id="warnaTeks" value="#000000" hidden>
           </div>
-          <div class="fld">
-            <span class="fld-lbl">Emboss</span>
-            <button type="button" class="color-swatch-btn" id="btnColorShadow" aria-label="Pilih warna shadow teks" style="background-color: #808080;"></button>
-            <input type="color" id="warnaShadow" value="#808080" hidden>
-          </div>
+<input type="color" id="warnaShadow" value="#808080" hidden>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
           <label class="toggle-tile">
@@ -3067,13 +3049,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setPlateColor(pill.dataset.bg, pill.dataset.name, false, pill.dataset.sh);
     showToast("Preset TNKB " + pill.dataset.name + " diterapkan ✓");
   });
-  if($("btnAuto5Yr")) $("btnAuto5Yr").addEventListener("click", () => {
-    const now = new Date();
-    bulanEl.value = String(now.getMonth() + 1).padStart(2, "0");
-    tahunEl.value = String((now.getFullYear() + 5) % 100).padStart(2, "0");
-    applyPlate();
-    showToast("Masa berlaku +5 tahun diisi ✓");
-  });
+
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
@@ -3087,7 +3063,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   ];
   function openColorPicker(target) {
     activeColorTarget = target;
-    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : (target === 'teks' ? "Warna Teks & Bingkai" : "Warna Emboss Teks");
+    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : "Warna Teks";
     const currentHex = target === 'plat' ? warnaEl.value : (target === 'teks' ? warnaTeksEl.value : warnaShadowEl.value);
     $("customColorPicker").value = currentHex;
     $("colorPickerPresets").innerHTML = extraPresets.map(p =>
@@ -3097,7 +3073,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   $("btnColorPlat").addEventListener("click", () => openColorPicker('plat'));
   $("btnColorTeks").addEventListener("click", () => openColorPicker('teks'));
-  $("btnColorShadow").addEventListener("click", () => openColorPicker('shadow'));
+  if ($("btnColorShadow")) $("btnColorShadow").addEventListener("click", () => openColorPicker('shadow'));
   $("colorPickerPresets").addEventListener("click", e => {
     const b = e.target.closest(".sw");
     if (!b) return;
@@ -3289,7 +3265,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         warnaName: el.dataset.warnaname
       };
       stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
-      applyEmboss(el.querySelector('.plate-text'), el.querySelector('.plate-year'), p);
+      el.style.filter = "none";
+      const _t = el.querySelector('.plate-text'), _y = el.querySelector('.plate-year');
+      if (_t) _t.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
+      if (_y) _y.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
     });
   }
   function renderBulk() {
