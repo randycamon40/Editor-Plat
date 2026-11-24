@@ -28,9 +28,9 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Nopol Studio Pro — Editor & Bulk Generator</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<!-- Font lokal: jangan pakai Google Fonts lagi, biar tidak gagal di buka pertama di APK -->
+<link rel="preload" href="./PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="./SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <script src="./jszip.min.js"></script>
 <script src="./localforage.min.js"></script>
 <script>
@@ -42,6 +42,20 @@ try {
 } catch (e) {}
 </script>
 <style>
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('./PlusJakartaSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('./SpaceGrotesk-VariableFont_wght.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
 @font-face {
   font-family: 'FE-Schrift';
   src: url('./FE.ttf') format('truetype');
@@ -4735,6 +4749,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     updateTemplateUI();
     renderHistory();
     fitHero();
+    if (document.fonts && document.fonts.load) {
+      Promise.all([
+        document.fonts.load('700 16px "Plus Jakarta Sans"'),
+        document.fonts.load('700 16px "Space Grotesk"'),
+        document.fonts.load('400 16px "Plus Jakarta Sans"')
+      ]).catch(() => {}).then(() => { applyPlate(); });
+    }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { applyPlate(); });
   }
   initApp();
@@ -4743,7 +4764,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     // Hanya untuk PWA di browser. Di APK jangan pakai SW, karena SW nyimpen HTML lama
     // dan bikin font / update baru tidak muncul sampai Force Update.
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      navigator.serviceWorker.register("./sw.js?v=510").catch(() => {});
     });
   } else if ("serviceWorker" in navigator && window.AndroidBridge) {
     // Di APK: bersihkan SW + Cache lama sekali saja, supaya update APK langsung kepakai
