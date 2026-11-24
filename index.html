@@ -1928,21 +1928,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function plateAssetFor(hex, warnaName, warnaTeks) {
     const name = (warnaName && PLATE_ASSETS[warnaName]) ? warnaName : nearestPlateName(hex);
     const rawPlate = PLATE_ASSETS[name];
-    /* LOGO = WARNA TEKS, bukan warna plat. Plat putih (teks hitam) -> logo hitam,
-       plat hitam (teks putih) -> logo putih. Kalau dipetakan dari warna plat,
-       logo putih di atas plat putih jadi nggak kelihatan. */
-    let logoName;
-    if (warnaTeks) {
-      logoName = nearestPlateName(warnaTeks);
-    } else {
-      logoName = isDark(hex) ? "Putih" : "Hitam";
-    }
+    /* LOGO = WARNA PLAT (seperti sebelum perubahan terakhir).
+       Plat putih -> logo putih (samar / emboss), plat hitam -> logo hitam, dst. */
+    const logoName = name;
     const rawLogo = LOGO_ASSETS[logoName] || LOGO_ASSETS["Hitam"];
     return { name, logoName, plateUrl: trimmedUrlCache[rawPlate] || rawPlate, logoUrl: trimmedUrlCache[rawLogo] || rawLogo };
   }
   /* Potong padding transparan: cari bbox piksel dengan alpha > 10.
      Bekerja untuk plat & logo, warna apapun, framing apapun. */
-  function trimTransparent(img) {
+  /* insetXFrac / insetYFrac: potong ke dalam dari bbox transparan.
+     Untuk PLAT dipakai 0.012 / 0.032 — buang rim putih paling luar,
+     sisakan bingkai hitamnya di tepi. Untuk LOGO dipakai 0 / 0. */
+  function trimTransparent(img, insetXFrac, insetYFrac) {
     try {
       const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
       if (!w || !h) return null;
@@ -1966,6 +1963,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const pad = 0;
       minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
       maxX = Math.min(w - 1, maxX + pad); maxY = Math.min(h - 1, maxY + pad);
+      const ix = Math.round((maxX - minX + 1) * (insetXFrac || 0));
+      const iy = Math.round((maxY - minY + 1) * (insetYFrac || 0));
+      minX += ix; minY += iy; maxX -= ix; maxY -= iy;
       const out = document.createElement("canvas");
       out.width = maxX - minX + 1; out.height = maxY - minY + 1;
       out.getContext("2d").drawImage(c, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
@@ -1973,12 +1973,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } catch (e) { return null; }
   }
   async function preloadTrimmedAssets() {
+    const plateUrls = new Set(Object.values(PLATE_ASSETS));
     const urls = [...new Set([...Object.values(PLATE_ASSETS), ...Object.values(LOGO_ASSETS)])];
     for (const url of urls) {
       try {
         const img = await loadPlatePng(url);
         if (!img) continue;
-        const trimmed = trimTransparent(img);
+        const isPlate = plateUrls.has(url);
+        const trimmed = trimTransparent(img, isPlate ? 0.012 : 0, isPlate ? 0.032 : 0);
         if (trimmed) trimmedUrlCache[url] = trimmed.toDataURL("image/png");
       } catch (e) {}
     }
@@ -4087,8 +4089,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const asset = plateAssetFor(plate.warna, plate.warnaName, plate.warnaTeks);
     const plateImg = await loadPlatePng(asset.plateUrl);
     if (plateImg) {
-      /* PNG transparan: buang padding transparan, gambar hanya area plat. */
-      const _trimmed = trimTransparent(plateImg) || plateImg;
+      /* PNG transparan: buang padding transparan + rim putih luar, sisakan bingkai hitam. */
+      const _trimmed = trimTransparent(plateImg, 0.012, 0.032) || plateImg;
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.6)";
       ctx.shadowBlur = 12 * k;
@@ -4159,12 +4161,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           ctx.globalAlpha = 0.95;
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          const _tl = trimTransparent(logoImg) || logoImg;
+          const _tl = trimTransparent(logoImg, 0, 0) || logoImg;
           const ar = (_tl.width || logoImg.naturalWidth) / (_tl.height || logoImg.naturalHeight);
           let dw = 16, dh = 16 / ar;
           if (dh > 18) { dh = 18; dw = 18 * ar; }
-          /* PNG transparan: buang padding transparan, gambar hanya area logo. */
-          const _trimmedLogo = trimTransparent(logoImg) || logoImg;
+          /* PNG transparan: buang padding transparan saja, jangan inset. */
+          const _trimmedLogo = trimTransparent(logoImg, 0, 0) || logoImg;
           const _lw = _trimmedLogo.width || logoImg.naturalWidth || logoImg.width;
           const _lh = _trimmedLogo.height || logoImg.naturalHeight || logoImg.height;
           ctx.drawImage(_trimmedLogo, -hw + 8 + (16 - dw) / 2, hh - 4 - 18 + (18 - dh) / 2, dw, dh);
