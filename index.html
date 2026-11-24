@@ -21,27 +21,6 @@
 :where(code, pre, kbd, samp) {
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
-</style><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
 </style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
@@ -443,17 +422,7 @@ button { cursor: pointer; }
 .plate-grid-row .fld { margin: 0; }
 .plate-grid-row .inp { min-height: 52px; padding: 0; text-align: center; font-weight: 700; }
 .plate-grid-row .inp.plate-entry { padding: 0 12px; text-align: left; font-weight: normal; }
-.btn-5yr {
-  min-height: 52px;
-  padding: 0 10px;
-  border-radius: 11px;
-  background: rgba(var(--ac-rgb), 0.14);
-  color: var(--ac);
-  border: 1px solid rgba(var(--ac-rgb), 0.3);
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 1.15;
-}
+
 .tnkb-bar {
   display: flex;
   gap: 6px;
@@ -825,17 +794,17 @@ button { cursor: pointer; }
 .plate-overlay:active { cursor: grabbing; }
 .plate-logo {
   position: absolute;
-  bottom: 7px;
-  left: 11px;
-  width: 13px;
-  height: 14px;
-  z-index: 2;
+  left: var(--logo-x, -2%);
+  top: var(--logo-y, -30%);
+  width: var(--logo-w, 104%);
+  height: var(--logo-h, 150%);
+  z-index: 1;
   pointer-events: none;
-  opacity: 0.95;
+  opacity: 1;
   display: none;
   background-image: var(--logo-img, none);
-  /* PNG logo TRANSPARAN di luar logo. Yang dipakai sudah hasil auto-trim. */
-  background-size: contain;
+  /* Logo dipakai utuh apa adanya, tanpa crop / trim / tint. */
+  background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -1555,6 +1524,24 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <button type="button" class="btn btn-muted btn-full gap-ts" id="resetTextBtn">Reset Tipografi Default</button>
           </div>
         </div>
+        <!-- PANEL LOGO DIHAPUS - TERKUNCI X -2 / Y -30 / W 104 / H 150
+        <div class="accordion-box">
+          <button type="button" class="acc-toggle" id="toggleLogoBtn" aria-expanded="false" aria-controls="logoWrap">
+            <div class="grow"><h3 class="sub-title"[STRIPPED 54 bytes]"i chev"><use href="#i-chevron"/></svg>
+          </button>
+          <div id="logoWrap" hidden>
+            <p class="fit-hint">Atur sendiri pakai angka. X = kiri / kanan, Y = atas / bawah. Satuan % dari plat. Berlaku untuk preview, mini bulk, preview modal, dan export ZIP.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+              <div class="fld" style="margin:0"><label for="logoXInp">Logo X (%)</label><input id="logoXInp" class="inp" type="number" step="0.5" value="-2"></div>
+              <div class="fld" style="margin:0"><label for="logoYInp">Logo Y (%)</label><input id="logoYInp" class="inp" type="number" step="0.5" value="-8"></div>
+              <div class="fld" style="margin:0"><label for="logoWInp">Logo Lebar W (%)</label><input id="logoWInp" class="inp" type="number" step="0.5" value="104"></div>
+              <div class="fld" style="margin:0"><label for="logoHInp">Logo Tinggi H (%)</label><input id="logoHInp" class="inp" type="number" step="0.5" value="116"></div>
+            </div>
+            <label class="toggle-tile" style="margin-top:10px"><span>Kunci Rasio (W = H, biar nggak gepeng)</span><input type="checkbox" id="logoLockChk" checked><i class="toggle-pill"></i></label>
+            <button type="button" class="btn btn-muted btn-full gap-ts" id="resetLogoBtn">Reset Posisi Logo</button>
+          </div>
+        </div>
+        -->
         <div id="setupActions">
           <button class="btn btn-accent btn-full" id="lockTemplateBtn"><svg class="i"><use href="#i-lock"/></svg>Kunci Template & Masuk Bulk</button>
         </div>
@@ -1944,7 +1931,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
        Plat putih -> logo putih (samar / emboss), plat hitam -> logo hitam, dst. */
     const logoName = name;
     const rawLogo = LOGO_ASSETS[logoName] || LOGO_ASSETS["Hitam"];
-    return { name, logoName, plateUrl: trimmedUrlCache[rawPlate] || rawPlate, logoUrl: trimmedUrlCache[rawLogo] || rawLogo };
+    return { name, logoName, plateUrl: trimmedUrlCache[rawPlate] || rawPlate, logoUrl: rawLogo };
   }
   /* Potong padding transparan: cari bbox piksel dengan alpha > 10.
      Bekerja untuk plat & logo, warna apapun, framing apapun. */
@@ -1963,7 +1950,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       let minX = w, minY = h, maxX = -1, maxY = -1;
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
-          if (data[(y * w + x) * 4 + 3] > 10) {
+          if (data[(y * w + x) * 4 + 3] > 40) {
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
             if (y < minY) minY = y;
@@ -2031,15 +2018,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } catch (e) { return null; }
   }
   async function preloadTrimmedAssets() {
-    const plateUrls = new Set(Object.values(PLATE_ASSETS));
-    const urls = [...new Set([...Object.values(PLATE_ASSETS), ...Object.values(LOGO_ASSETS)])];
+    const urls = [...Object.values(PLATE_ASSETS)];
     for (const url of urls) {
       try {
         const img = await loadPlatePng(url);
         if (!img) continue;
-        const isPlate = plateUrls.has(url);
-        /* Plat: potong kotak putih di luar bingkai. Logo: tetap trim transparan aja. */
-        const trimmed = isPlate ? (trimPlatePng(img) || trimTransparent(img, 0, 0)) : trimTransparent(img, 0, 0);
+        const trimmed = trimPlatePng(img) || trimTransparent(img, 0, 0);
         if (trimmed) trimmedUrlCache[url] = trimmed.toDataURL("image/png");
       } catch (e) {}
     }
@@ -2072,7 +2056,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "lebarNopol"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "lebarNopol", "logoX", "logoY", "logoW", "logoH", "logoLock"];
   const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
@@ -2371,7 +2355,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, lebarNopol: 85, hidden: false
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, lebarNopol: 85, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
     };
   }
   function freshState(old, img) {
@@ -2400,7 +2384,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const t = String(nomor).trim().split(/\s+/).filter(Boolean);
     if (t.length === 0) return [];
     if (t.length === 1) return t;
-    if (t.length === 2) return [t[0], t[1], ""];
+    if (t.length === 2) return [t[0], t[1]];
     return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
   }
   function partW(str, size) {
@@ -2568,11 +2552,19 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
     yEl.style.color = txtColor;
+    tEl.style.opacity = "0.88";
+    yEl.style.opacity = "0.88";
     const logoEl = plEl.querySelector('.plate-logo');
     if (logoEl) {
       logoEl.style.display = st.showLogo === true ? 'block' : 'none';
       logoEl.style.setProperty("--logo-img", "url('" + asset.logoUrl + "')");
       logoEl.style.backgroundColor = "transparent";
+      logoEl.style.filter = "none";
+      logoEl.style.opacity = "1";
+      logoEl.style.left = "-2%";
+      logoEl.style.top = "-30%";
+      logoEl.style.width = "104%";
+      logoEl.style.height = "150%";
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
@@ -2594,25 +2586,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return (w / REF_W) * (st.scale / 100);
   }
   function applyEmboss(tEl, yEl, p) {
-    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false);
-    if (!shadowOn) { tEl.style.textShadow = "none"; yEl.style.textShadow = "none"; return; }
-    const txtC = p.warnaTeks || (isDark(p.warna) ? "#ffffff" : "#000000");
-    if (!isDark(txtC)) {
-      tEl.style.textShadow = `0 -0.5px 0 rgba(0,0,0,0.65), 0 0.5px 0 rgba(255,255,255,0.38), 0 1px 2px rgba(0,0,0,0.55)`;
-      yEl.style.textShadow = `0 -0.5px 0 rgba(0,0,0,0.6), 0 0.5px 0 rgba(255,255,255,0.32), 0 1px 1px rgba(0,0,0,0.5)`;
-      return;
-    }
-    const isWhitePlate = (p.warnaName === "Putih") || String(p.warna || "").toLowerCase() === "#ffffff";
-    if (!isWhitePlate) {
-      tEl.style.textShadow = `0 -0.5px 0 rgba(255,255,255,0.45), 0 0.5px 1px rgba(0,0,0,0.45)`;
-      yEl.style.textShadow = `0 -0.5px 0 rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.4)`;
-      return;
-    }
-    const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
-    const hi = "rgba(255,255,255,0.95)";
-    const hiSoft = "rgba(255,255,255,0.55)";
-    tEl.style.textShadow = `0 -1px 0 ${hi}, 0 1px 0 ${shColor}, 1px 1px 1px rgba(0,0,0,0.18), -1px -1px 0 ${hiSoft}`;
-    yEl.style.textShadow = `0 -0.5px 0 ${hi}, 0 0.5px 0 ${shColor}, 0 1px 1px rgba(0,0,0,0.15)`;
+    tEl.style.opacity = "0.88";
+    yEl.style.opacity = "0.88";
   }
   function applyPlate() {
     const st = viewData[currentView];
@@ -2743,6 +2718,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("autofitChk").checked = st.autofit !== false;
     $("showLogoChk").checked = st.showLogo === true;
     $("showDotChk").checked = st.showDot === true;
+    if ($("logoXInp")) $("logoXInp").value = Number.isFinite(Number(st.logoX)) ? Number(st.logoX) : -3.5;
+    if ($("logoYInp")) $("logoYInp").value = Number.isFinite(Number(st.logoY)) ? Number(st.logoY) : -3.5;
+    if ($("logoWInp")) $("logoWInp").value = Number.isFinite(Number(st.logoW)) ? Number(st.logoW) : 107;
+    if ($("logoHInp")) $("logoHInp").value = Number.isFinite(Number(st.logoH)) ? Number(st.logoH) : 107;
+    if ($("logoLockChk")) $("logoLockChk").checked = st.logoLock !== false;
   }
   function setTextSetting(key, val) {
     VIEWS.forEach(v => {
@@ -2770,6 +2750,52 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setTextSetting("showDot", $("showDotChk").checked);
     applyPlate();
     queueMini();
+  });
+  function syncLogoInputs(st) {
+    if ($("logoXInp")) $("logoXInp").value = Number.isFinite(Number(st.logoX)) ? Number(st.logoX) : -3.5;
+    if ($("logoYInp")) $("logoYInp").value = Number.isFinite(Number(st.logoY)) ? Number(st.logoY) : -3.5;
+    if ($("logoWInp")) $("logoWInp").value = Number.isFinite(Number(st.logoW)) ? Number(st.logoW) : 107;
+    if ($("logoHInp")) $("logoHInp").value = Number.isFinite(Number(st.logoH)) ? Number(st.logoH) : 107;
+    if ($("logoLockChk")) $("logoLockChk").checked = st.logoLock !== false;
+  }
+  function setLogoVal(key, val) {
+    setTextSetting(key, val);
+    if ($("logoLockChk") && $("logoLockChk").checked) {
+      if (key === "logoW") { setTextSetting("logoH", val); if ($("logoHInp")) $("logoHInp").value = val; }
+      if (key === "logoH") { setTextSetting("logoW", val); if ($("logoWInp")) $("logoWInp").value = val; }
+    }
+    applyPlate();
+    queueMini();
+  }
+  if ($("toggleLogoBtn")) $("toggleLogoBtn").addEventListener("click", () => {
+    const panel = $("logoWrap");
+    panel.hidden = !panel.hidden;
+    $("toggleLogoBtn").setAttribute("aria-expanded", String(!panel.hidden));
+  });
+  ["logoXInp", "logoYInp", "logoWInp", "logoHInp"].forEach(id => {
+    if (!$(id)) return;
+    $(id).addEventListener("input", () => {
+      const v = parseFloat($(id).value);
+      if (!Number.isFinite(v)) return;
+      const key = id === "logoXInp" ? "logoX" : id === "logoYInp" ? "logoY" : id === "logoWInp" ? "logoW" : "logoH";
+      setLogoVal(key, v);
+    });
+  });
+  if ($("logoLockChk")) $("logoLockChk").addEventListener("change", () => {
+    setTextSetting("logoLock", $("logoLockChk").checked);
+    applyPlate();
+    queueMini();
+  });
+  if ($("resetLogoBtn")) $("resetLogoBtn").addEventListener("click", () => {
+    setTextSetting("logoX", -2);
+    setTextSetting("logoY", -30);
+    setTextSetting("logoW", 104);
+    setTextSetting("logoH", 150);
+    setTextSetting("logoLock", true);
+    syncLogoInputs(viewData[currentView]);
+    applyPlate();
+    queueMini();
+    showToast("Posisi logo direset ✓");
   });
   $("toggleTextSlidersBtn").addEventListener("click", () => {
     const panel = $("textSlidersWrap");
@@ -3046,7 +3072,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function renderSwatches() {
     if ($("btnColorPlat")) $("btnColorPlat").style.backgroundColor = warnaEl.value;
     if ($("btnColorTeks")) $("btnColorTeks").style.backgroundColor = warnaTeksEl.value;
-    if ($("btnColorShadow")) $("btnColorShadow").style.backgroundColor = warnaShadowEl.value;
   }
   function setPlateColor(hex, name, autoText, shadowOverride) {
     warnaEl.value = hex;
@@ -3068,13 +3093,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setPlateColor(pill.dataset.bg, pill.dataset.name, false, pill.dataset.sh);
     showToast("Preset TNKB " + pill.dataset.name + " diterapkan ✓");
   });
-  if($("btnAuto5Yr")) $("btnAuto5Yr").addEventListener("click", () => {
-    const now = new Date();
-    bulanEl.value = String(now.getMonth() + 1).padStart(2, "0");
-    tahunEl.value = String((now.getFullYear() + 5) % 100).padStart(2, "0");
-    applyPlate();
-    showToast("Masa berlaku +5 tahun diisi ✓");
-  });
+
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
@@ -3088,8 +3107,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   ];
   function openColorPicker(target) {
     activeColorTarget = target;
-    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : (target === 'teks' ? "Warna Teks" : "Warna Emboss Teks");
-    const currentHex = target === 'plat' ? warnaEl.value : (target === 'teks' ? warnaTeksEl.value : warnaShadowEl.value);
+    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : "Warna Teks";
+    const currentHex = target === 'plat' ? warnaEl.value : warnaTeksEl.value;
     $("customColorPicker").value = currentHex;
     $("colorPickerPresets").innerHTML = extraPresets.map(p =>
       `<button type="button" class="sw${p.v === currentHex ? ' on' : ''}" data-color="${p.v}" style="--c:${p.v}; width:42px; height:42px;" aria-label="${p.n}"></button>`
@@ -3098,7 +3117,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   $("btnColorPlat").addEventListener("click", () => openColorPicker('plat'));
   $("btnColorTeks").addEventListener("click", () => openColorPicker('teks'));
-  if ($("btnColorShadow")) $("btnColorShadow").addEventListener("click", () => openColorPicker('shadow'));
   $("colorPickerPresets").addEventListener("click", e => {
     const b = e.target.closest(".sw");
     if (!b) return;
@@ -3107,15 +3125,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("customColorPicker").value = b.dataset.color;
     const color = b.dataset.color;
     if (activeColorTarget === 'plat') setPlateColor(color, nameFor(color), true);
-    else if (activeColorTarget === 'teks') { warnaTeksEl.value = color; applyPlate(); renderSwatches(); }
-    else { warnaShadowEl.value = color; applyPlate(); renderSwatches(); }
+    else { warnaTeksEl.value = color; applyPlate(); renderSwatches(); }
   });
   $("customColorPicker").addEventListener("input", () => {
     $("colorPickerPresets").querySelectorAll(".sw").forEach(s => s.classList.remove("on"));
     const color = $("customColorPicker").value;
     if (activeColorTarget === 'plat') setPlateColor(color, nameFor(color), true);
-    else if (activeColorTarget === 'teks') { warnaTeksEl.value = color; applyPlate(); renderSwatches(); }
-    else { warnaShadowEl.value = color; applyPlate(); renderSwatches(); }
+    else { warnaTeksEl.value = color; applyPlate(); renderSwatches(); }
   });
   $("closeColorPickerBtn").addEventListener("click", () => closeSheet("colorPickerSheet"));
   $("btnRandomPlate").addEventListener("click", () => {
@@ -3279,8 +3295,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
     el.style.filter = "none";
     const _t = el.querySelector('.plate-text'), _y = el.querySelector('.plate-year');
-    if (_t) _t.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
-    if (_y) _y.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
+    if (_t) { _t.style.opacity = "0.88"; }
+    if (_y) { _y.style.opacity = "0.88"; }
     el.dataset.painted = "1";
   }
   /* FIX: observer disimpan PER CONTAINER (container._miniObserver),
@@ -4253,11 +4269,27 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       rr(ctx, -hw, -hh, PLATE_W, PLATE_H, r);
       ctx.fill();
     }
+    ctx.filter = "none";
+    if (st.showLogo === true) {
+      try {
+        const logoImgEarly = await loadLogoPng(asset.logoUrl);
+        if (logoImgEarly) {
+          ctx.save();
+          ctx.globalAlpha = 1;
+          ctx.filter = "none";
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(logoImgEarly, -hw + PLATE_W * -2 / 100, -hh + PLATE_H * -30 / 100, PLATE_W * 104 / 100, PLATE_H * 150 / 100);
+          ctx.restore();
+        }
+      } catch (e) {}
+    }
     /* Klip ke bentuk plat agar noise/teks tidak keluar. PNG persegi panjang,
        jadi klip persegi panjang penuh sudah cukup. */
     ctx.save();
     rr(ctx, -hw, -hh, PLATE_W, PLATE_H, 0);
     ctx.clip();
+    ctx.globalAlpha = 0.88;
     const fit = fitSizes(st, plate);
     const n = fit.n, y = fit.y, H = n + 2 + y;
     const top = -hh + 6 + (63 - H) / 2;
@@ -4272,6 +4304,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const xs = [-half];
       const last = parts.length - 1;
       xs[last] = half - w[last];
+      if (parts.length === 2) xs[1] = -w[1] / 2;
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
         drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, FONT_N, txtC, xs[i] / sxNopol, shC, sxNopol));
@@ -4293,28 +4326,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, FONT_Y, txtC, yx, shC);
     yx += dW + gapY;
     drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, FONT_Y, txtC, yx, shC);
-    /* Logo = PNG logo_samsat_<warna>.png mentah (tanpa tint). */
-    if (st.showLogo === true) {
-      try {
-        const logoImg = await loadLogoPng(asset.logoUrl);
-        if (logoImg) {
-          ctx.save();
-          ctx.globalAlpha = 0.95;
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          /* FIX: trim 1x lalu cache di logoImg._trimmed. Versi lama trim 2x
-             per render per plat — export 500 nopol x 4 sisi jadi ribuan
-             getImageData yang sama. */
-          const _tl = logoImg._trimmed || (logoImg._trimmed = trimTransparent(logoImg, 0, 0) || logoImg);
-          const ar = (_tl.width || logoImg.naturalWidth) / (_tl.height || logoImg.naturalHeight);
-          let dw = 13, dh = 13 / ar;
-          if (dh > 14) { dh = 14; dw = 14 * ar; }
-          /* PNG transparan: buang padding transparan saja, jangan inset. */
-          ctx.drawImage(_tl, -hw + 11 + (13 - dw) / 2, hh - 7 - 14 + (14 - dh) / 2, dw, dh);
-          ctx.restore();
-        }
-      } catch (e) {}
-    }
+    /* Logo sudah digambar sebelum klip, di atas PNG plat, di bawah teks. */
     ctx.restore();
     ctx.restore();
   }
@@ -4601,6 +4613,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (isNaN(activeVaultIndex)) activeVaultIndex = -1;
     historyBatches = await loadHistoryBatches();
     await loadBulkData();
+    try {
+      if (!localStorage.getItem("platEmbossOffV1")) {
+        localStorage.setItem("platEmbossOffV1", "1");
+        localStorage.setItem("platShadow", "0");
+        if ($("shadowChk")) $("shadowChk").checked = false;
+      }
+    } catch (e) {}
     try {
       if (!localStorage.getItem("platDefaultsV3")) {
         localStorage.setItem("platDefaultsV3", "1");
