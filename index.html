@@ -1403,7 +1403,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       </div>
     </div>
     <span class="status-pill" id="templateChip"><i class="dot"></i><b>Draft Mode</b></span>
-    <a class="icon-act" href="./nopol-csv.html" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
+    <a class="icon-act" href="./nopol-csv.html" onclick="location.replace(this.href);return false;" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
   </div>
 </header>
 
@@ -1830,7 +1830,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, 05, 31, kuning <- lengkap" spellcheck="false" autocapitalize="characters"></textarea>
     <div class="btn-pair" style="margin-bottom:10px">
       <button type="button" class="btn btn-muted btn-xs" id="btnImportCsvFile"><svg class="i"><use href="#i-upload"/></svg>File CSV / TXT</button>
-      <a class="icon-act" href="./nopol-csv.html" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
+      <a class="icon-act" href="./nopol-csv.html" onclick="location.replace(this.href);return false;" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
       <button type="button" class="btn btn-muted btn-xs" id="btnPasteClipboard"><svg class="i"><use href="#i-copy"/></svg>Clipboard</button>
       <input type="file" id="pasteFileInput" accept=".csv, .txt, text/csv, text/plain, */*" hidden>
     </div>
