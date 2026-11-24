@@ -31,6 +31,10 @@
 <!-- Font lokal: jangan pakai Google Fonts lagi, biar tidak gagal di buka pertama di APK -->
 <link rel="preload" href="./PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="./background-depan.jpg" as="image">
+<link rel="preload" href="./background-kiri.jpg" as="image">
+<link rel="preload" href="./background-kanan.jpg" as="image">
+<link rel="preload" href="./background-belakang.jpg" as="image">
 <script src="./jszip.min.js"></script>
 <script src="./localforage.min.js"></script>
 <script>
@@ -155,12 +159,14 @@ body {
   font-size: 14.5px;
   line-height: 1.45;
   color: var(--text);
-  background: var(--bg);
+  background-color: var(--bg);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
   padding-bottom: calc(var(--nav-h) + 20px + env(safe-area-inset-bottom));
 }
+
+
 
 h1, h2, h3, p { margin: 0; }
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
@@ -864,6 +870,84 @@ button { cursor: pointer; }
   z-index: 20;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
 }
+.kanvas-lock-card {
+  position: sticky;
+  top: calc(68px + env(safe-area-inset-top));
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+.kanvas-lock-card .box-head {
+  align-items: flex-start;
+}
+.kanvas-lock-card .box-head p {
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.kanvas-lock-card.is-shrunk .box-head {
+  overflow: hidden;
+  max-height: 34px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+.kanvas-lock-card.is-shrunk .box-head p {
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
+  margin: 0;
+}
+.kanvas-lock-card .stage {
+  min-height: 210px;
+  transition: padding 0.3s ease;
+  overflow: hidden;
+}
+.kanvas-lock-card #kanvasToggleBtn svg {
+  transition: transform 0.3s ease;
+}
+.kanvas-lock-card.is-shrunk #kanvasToggleBtn svg {
+  transform: rotate(180deg);
+}
+.kanvas-lock-card .dropzone {
+  transition: min-height 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.kanvas-lock-card .image-wrap {
+  overflow: hidden;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.kanvas-lock-card .image-wrap .preview {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(62vh, 560px);
+  display: block;
+  object-fit: contain;
+}
+.kanvas-lock-card.is-shrunk .stage {
+  height: 132px;
+  min-height: 0;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.kanvas-lock-card.is-shrunk .image-wrap {
+  height: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kanvas-lock-card.is-shrunk .dropzone {
+  min-height: 110px;
+}
+.kanvas-lock-card.is-shrunk .image-wrap .preview {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 116px;
+  object-fit: contain;
+}
 .plate-preview-card .plate-stage-hero {
   margin-bottom: 0;
 }
@@ -970,6 +1054,13 @@ input[type=range]::-moz-range-thumb {
   border-top: 1px solid var(--border);
 }
 .ai-test-row { display: flex; gap: 8px; }
+.ai-bg-box { margin-top: 12px; padding: 12px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--border); }
+.ai-bg-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.ai-bg-head .grow { flex: 1; min-width: 0; }
+.ai-bg-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ai-bg-name { font-size: 12px; color: var(--text-2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#aiBgTargetThumb { width: 100%; max-height: 110px; object-fit: cover; border-radius: 10px; display: block; margin-bottom: 8px; border: 1px solid var(--border); }
+#aiBgResultImg { width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border); background: var(--stage-bg); }
 .ai-test-row .btn { flex: 1; }
 .ai-badge {
   flex: 1;
@@ -1441,13 +1532,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       </div>
 
       <div id="manualTools">
-        <section class="box">
+        <section class="box kanvas-lock-card" id="kanvasLockCard">
           <div class="box-head">
             <span class="step-tag">01</span>
             <div class="grow">
               <h2>Kanvas Sudut Kendaraan</h2>
               <p>Pilih sisi mobil lalu import foto (maks. 4 foto sekaligus).</p>
             </div>
+            <button type="button" class="icon-act" id="kanvasToggleBtn" title="Kecilkan / besarkan kanvas" aria-label="Kecilkan kanvas" aria-expanded="true"[STRIPPED 12 bytes]"i"><use href="#i-chevron"/></svg></button>
           </div>
 
           <div class="tabs-seg" id="viewTabs" role="tablist" aria-label="Sudut pandang mobil">
@@ -1456,7 +1548,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <button type="button" role="tab" data-view="kanan">Kanan</button>
             <button type="button" role="tab" data-view="belakang">Belakang</button>
           </div>
-          <select id="viewSelect" hidden aria-hidden="true">
+
+<select id="viewSelect" hidden aria-hidden="true">
             <option value="depan">Tampak Depan</option>
             <option value="kiri">Tampak Samping Kiri</option>
             <option value="kanan">Tampak Samping Kanan</option>
@@ -1481,7 +1574,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
               </div>
             </div>
           </div>
+        </section>
 
+        <section id="kanvasToolsBox" hidden style="margin-bottom:14px">
           <div class="stage-toolbar" id="stageActions" hidden>
             <label class="toggle-tile inline">
               <span>Sembunyikan plat di sisi ini</span>
@@ -1508,6 +1603,34 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <button type="button" id="btnRunAi" class="btn btn-contrast"><svg class="i"><use href="#i-sparkles"/></svg><span>AI 1 Sisi</span></button>
             <button type="button" id="btnRunAiAll" class="btn btn-accent"><svg class="i"><use href="#i-sparkles"/></svg><span>AI Semua Sisi</span></button>
           </div>
+          <div class="ai-bg-box" id="aiBgBox" hidden>
+            <div class="ai-bg-head">
+              <div class="grow">
+                <h3 class="sub-title">AI Ganti Background Foto</h3>
+                <p style="font-size:11.5px;color:var(--text-2)">Pakai Gemini Canvas, mobil di sisi ini dipindah ke background baru.</p>
+              </div>
+            </div>
+            <div class="ai-bg-row">
+              <button type="button" class="btn btn-muted btn-xs" id="btnAiBgPick">Pilih Foto Background</button>
+              <button type="button" class="btn btn-muted btn-xs" id="btnAiBgRepo">Pakai Background Repo</button>
+            </div>
+            <span id="aiBgTargetName" class="ai-bg-name">Belum ada background dipilih</span>
+            <img id="aiBgTargetThumb" hidden alt="Background target">
+            <p class="fit-hint" style="margin-top:10px">Prompt AI otomatis • sisi <b id="aiBgAutoView">Depan</b> • tidak perlu ketik prompt lagi.</p>
+            <textarea id="aiBgPrompt" class="txt" hidden>Pindahkan mobil dari foto pertama ke latar di foto kedua. Pertahankan bentuk, warna, plat nomor, dan sudut mobil persis sama. Sesuaikan perspektif, bayangan, dan cahaya supaya kelihatan seperti foto asli.</textarea>
+            <button type="button" class="btn btn-accent btn-full" id="btnAiBgRun"><span>AI Ganti Background Sisi Ini</span></button>
+            <button type="button" class="btn btn-contrast btn-full gap-ts" id="btnAiBgRunAll"><span>AI Ganti Background Semua Sisi (Repo)</span></button>
+            <div id="aiBgResultWrap" hidden>
+              <p class="fld-lbl" style="margin-top:12px">Hasil AI</p>
+              <img id="aiBgResultImg" alt="Hasil AI">
+              <div class="btn-pair gap-ts">
+                <button type="button" class="btn btn-contrast" id="btnAiBgApply">Pakai Hasil Ini</button>
+                <button type="button" class="btn btn-muted" id="btnAiBgDiscard">Buang</button>
+              </div>
+            </div>
+            <p class="fit-hint">Butuh internet + API Key Gemini di Setelan. Hasil AI itu gambar baru, cek platnya lagi sebelum export.</p>
+          </div>
+          <input type="file" accept="image/*" id="aiBgFileInput" hidden>
         </section>
 
         <section class="box" id="plateControls" hidden>
@@ -1577,7 +1700,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <label for="tahun">Thn</label>
             <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
-
+          <button type="button" class="btn-5yr" id="btnAuto5Yr">+5<br>Tahun</button>
         </div>
 
         <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom:12px;">
@@ -2198,6 +2321,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         lastBackPress = now;
         showToast("Tekan sekali lagi untuk keluar", false, null, "plate");
         history.pushState({ page: "app" }, "");
+      } else {
+        lastBackPress = 0;
+        history.back();
       }
     }
   });
@@ -2800,7 +2926,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
   /* ================= VIEW TABS & NUDGE ================= */
   function refreshViewTabs() {
-    document.querySelectorAll("#viewTabs button").forEach(b => {
+
+
+
+
+
+
+
+  document.querySelectorAll("#viewTabs button").forEach(b => {
       const v = b.dataset.view;
       b.classList.toggle("on", v === currentView);
       b.classList.toggle("has", !!viewData[v].img);
@@ -2810,6 +2943,21 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
 
   function loadViewState() {
+    syncAiBgAutoLabel();
+    if (aiBgTargetData) {
+      aiBgTargetData = null;
+      const _thumb = $("aiBgTargetThumb");
+      if (_thumb) { _thumb.removeAttribute("src"); _thumb.hidden = true; }
+      const _name = $("aiBgTargetName");
+      if (_name) _name.textContent = "Belum ada background dipilih";
+    }
+    if (aiBgResultData) {
+      aiBgResultData = null;
+      const _res = $("aiBgResultWrap");
+      if (_res) _res.hidden = true;
+      const _resImg = $("aiBgResultImg");
+      if (_resImg) _resImg.removeAttribute("src");
+    }
     const st = viewData[currentView];
     refreshViewTabs();
     if (st.img) {
@@ -2817,17 +2965,21 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       imageWrap.hidden = false;
       drop.hidden = true;
       stageActions.hidden = false;
+      if ($("kanvasToolsBox")) $("kanvasToolsBox").hidden = false;
       $("nudgePad").hidden = false;
       $("plateControls").hidden = false;
       $("aiActionBtns").hidden = false;
+      if ($("aiBgBox")) $("aiBgBox").hidden = false;
     } else {
       previewImg.removeAttribute("src");
       imageWrap.hidden = true;
       drop.hidden = false;
       stageActions.hidden = true;
+      if ($("kanvasToolsBox")) $("kanvasToolsBox").hidden = true;
       $("nudgePad").hidden = true;
       $("plateControls").hidden = true;
       $("aiActionBtns").hidden = true;
+      if ($("aiBgBox")) $("aiBgBox").hidden = true;
     }
     hidePlateChk.checked = !!st.hidden;
     if (st.brand && st.brand.trim() !== "" && st.brand.trim().toLowerCase() !== "tidak diketahui") {
@@ -2886,6 +3038,21 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   if (window.ResizeObserver) new ResizeObserver(() => applyPlate()).observe(previewImg);
   window.addEventListener("resize", applyPlate);
 
+  /* Kanvas: manual toggle saja, auto-shrink dimatikan biar tidak pulsing */
+  const kanvasLockCard = $("kanvasLockCard") || document.querySelector(".kanvas-lock-card");
+  const kanvasToggleBtn = $("kanvasToggleBtn");
+  if (kanvasToggleBtn && kanvasLockCard && !kanvasToggleBtn.dataset.bound) {
+    kanvasToggleBtn.dataset.bound = "1";
+    kanvasToggleBtn.addEventListener("click", () => {
+      const ciut = kanvasLockCard.classList.toggle("is-shrunk");
+      kanvasToggleBtn.setAttribute("aria-expanded", String(!ciut));
+      kanvasToggleBtn.setAttribute("aria-label", ciut ? "Besarkan kanvas" : "Kecilkan kanvas");
+      kanvasToggleBtn.setAttribute("title", ciut ? "Besarkan kanvas" : "Kecilkan kanvas");
+      requestAnimationFrame(() => applyPlate());
+      setTimeout(() => applyPlate(), 320);
+    });
+  }
+
   /* ================= IMPORT GAMBAR ================= */
   function readImageFile(file) {
     return new Promise((resolve) => {
@@ -2937,7 +3104,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
     let successCount = 0;
     const emptyViews = VIEWS.filter(v => !viewData[v].img);
-    const targetViews = emptyViews.length ? emptyViews : VIEWS;
+    const targetViews = emptyViews.concat(VIEWS.filter(v => !emptyViews.includes(v)));
     results.forEach((data, i) => {
       if (data) {
         const view = targetViews[i % targetViews.length];
@@ -4019,7 +4186,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   async function geminiCall(model, key, prompt, image, json) {
     for (let i = 0; i < 2; i++) {
       const parts = [{ text: prompt }];
-      if (image) parts.push({ inline_data: { mime_type: "image/jpeg", data: image.split(",")[1] } });
+      if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image.split(",")[1] } });
       const body = { contents: [{ parts }] };
       if (json) body.generationConfig = { responseMimeType: "application/json" };
       const { res, data } = await fetchJson(
@@ -4198,6 +4365,159 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       loadViewState();
     }
   });
+
+  /* ================= AI GANTI BACKGROUND - GEMINI CANVAS ================= */
+  function buildAiBgPrompt(viewArg) {
+    const v = viewArg || currentView;
+    const viewWord = { depan: "tampak depan", kiri: "tampak samping kiri", kanan: "tampak samping kanan", belakang: "tampak belakang" }[v] || "tampak depan";
+    return "Pindahkan mobil dari foto pertama ke latar di foto kedua. Mobil tetap " + viewWord + ", pertahankan bentuk, warna, plat nomor, kaca, velg, dan sudut mobil persis sama, jangan ubah atau ganti mobilnya. Sesuaikan perspektif, skala, bayangan di tanah, refleksi, dan cahaya supaya kelihatan seperti foto asli yang diambil di lokasi background. Jangan tambah teks, jangan tambah watermark, jangan ubah plat.";
+  }
+  function syncAiBgAutoLabel() {
+    const el = $("aiBgAutoView");
+    if (el) el.textContent = VIEW_LABEL[currentView] || currentView;
+  }
+  let aiBgTargetData = null;
+  let aiBgResultData = null;
+
+  async function callGeminiImageEdit(carImg, bgImg, promptText, apiKey) {
+    const model = "gemini-2.5-flash-image";
+    const parts = [{ text: promptText }];
+    if (carImg) parts.push({ inlineData: { mimeType: carImg.includes("image/png") ? "image/png" : "image/jpeg", data: carImg.split(",")[1] } });
+    if (bgImg) parts.push({ inlineData: { mimeType: bgImg.includes("image/png") ? "image/png" : "image/jpeg", data: bgImg.split(",")[1] } });
+    const body = { contents: [{ parts }] };
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(apiKey), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok || data.error) throw new Error((data.error && data.error.message) || ("HTTP " + res.status));
+    const cands = (data.candidates || [])[0];
+    const cparts = (cands && cands.content && cands.content.parts) || [];
+    for (const p of cparts) {
+      if (p.inlineData && p.inlineData.data) return "data:" + (p.inlineData.mimeType || "image/png") + ";base64," + p.inlineData.data;
+      if (p.inline_data && p.inline_data.data) return "data:" + (p.inline_data.mime_type || "image/png") + ";base64," + p.inline_data.data;
+    }
+    const txt = cparts.map(p => p.text || "").join(" ");
+    throw new Error(txt ? "AI tidak mengembalikan gambar: " + txt.slice(0, 120) : "AI tidak mengembalikan gambar. Coba lagi.");
+  }
+
+  function initAiBgBox() {
+    const pickBtn = $("btnAiBgPick");
+    if (!pickBtn || pickBtn.dataset.bound) return;
+    pickBtn.dataset.bound = "1";
+    $("btnAiBgPick").addEventListener("click", () => $("aiBgFileInput").click());
+    $("btnAiBgRepo").addEventListener("click", async () => {
+      const url = "./background-" + currentView + ".jpg";
+      try {
+        showToast("Ngambil background repo " + currentView + "...");
+        const r = await fetch(url);
+        if (!r.ok) throw new Error("File tidak ketemu");
+        const blob = await r.blob();
+        const reader = new FileReader();
+        reader.onload = () => {
+          aiBgTargetData = reader.result;
+          const thumb = $("aiBgTargetThumb");
+          thumb.src = aiBgTargetData;
+          thumb.hidden = false;
+          $("aiBgTargetName").textContent = "Repo: background-" + currentView + ".jpg";
+          showToast("Background repo dipakai");
+        };
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        showToast("Background repo gagal dimuat: " + e.message, true);
+      }
+    });
+    $("aiBgFileInput").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      const d = await readImageFile(f);
+      if (!d) return showToast("Foto background tidak bisa dibaca", true);
+      aiBgTargetData = d;
+      const thumb = $("aiBgTargetThumb");
+      thumb.src = d;
+      thumb.hidden = false;
+      $("aiBgTargetName").textContent = f.name || "Background dipilih";
+      showToast("Background target dipilih");
+    });
+    $("btnAiBgRun").addEventListener("click", async () => {
+      const st = viewData[currentView];
+      if (!st || !st.img) return showToast("Import foto mobil dulu di sisi ini", true);
+      if (!aiBgTargetData) return showToast("Pilih dulu foto background-nya, contoh foto gedung", true);
+      const key = (typeof aiApiKey !== "undefined" && aiApiKey) ? aiApiKey.value.trim() : (localStorage.getItem("aiApiKey") || "");
+      if (!key) return showToast("Isi API Key Gemini di Setelan dulu", true);
+      if (aiProvider && aiProvider.value !== "gemini") return showToast("Ganti Background AI ini khusus Gemini dulu", true);
+      const promptText = buildAiBgPrompt();
+      const btn = $("btnAiBgRun");
+      const label = btn.querySelector("span");
+      const old = label ? label.textContent : "";
+      if (label) label.textContent = "AI lagi mikir...";
+      btn.disabled = true;
+      showToast("AI lagi motong mobil dan nempel ke background baru...");
+      try {
+        const out = await callGeminiImageEdit(st.img, aiBgTargetData, promptText, key);
+        aiBgResultData = out;
+        const imgEl = $("aiBgResultImg");
+        imgEl.src = out;
+        $("aiBgResultWrap").hidden = false;
+        showToast("Hasil AI jadi, cek dulu sebelum dipakai");
+      } catch (err) {
+        showToast("Gagal AI Background: " + err.message, true);
+      } finally {
+        if (label) label.textContent = old || "AI Ganti Background Sisi Ini";
+        btn.disabled = false;
+      }
+    });
+    $("btnAiBgApply").addEventListener("click", async () => {
+      if (!aiBgResultData) return;
+      const st = viewData[currentView];
+      st.img = aiBgResultData;
+      if (templateData && templateData[currentView]) templateData[currentView].img = aiBgResultData;
+      loadViewState();
+      if (templateData) await saveTemplate();
+      aiBgResultData = null;
+      $("aiBgResultWrap").hidden = true;
+      showToast("Background foto diganti pakai AI");
+    });
+    $("btnAiBgDiscard").addEventListener("click", () => {
+      aiBgResultData = null;
+      $("aiBgResultWrap").hidden = true;
+      $("aiBgResultImg").removeAttribute("src");
+      showToast("Hasil AI dibuang");
+    });
+  }
+  initAiBgBox();
+  const btnAiBgRunAll = $("btnAiBgRunAll");
+  if (btnAiBgRunAll) {
+    btnAiBgRunAll.addEventListener("click", async () => {
+      const key = (typeof aiApiKey !== "undefined" && aiApiKey) ? aiApiKey.value.trim() : (localStorage.getItem("aiApiKey") || "");
+      if (!key) return showToast("Isi API Key Gemini di Setelan dulu", true);
+      if (aiProvider && aiProvider.value !== "gemini") return showToast("Ganti Background AI ini khusus Gemini dulu", true);
+      const targets = VIEWS.filter(v => viewData[v] && viewData[v].img);
+      if (!targets.length) return showToast("Import foto mobil dulu", true);
+      btnAiBgRunAll.disabled = true;
+      let okCount = 0;
+      for (let i = 0; i < targets.length; i++) {
+        const v = targets[i];
+        showToast("AI background " + VIEW_LABEL[v] + " (" + (i + 1) + "/" + targets.length + ")...");
+        try {
+          const r = await fetch("./background-" + v + ".jpg");
+          if (!r.ok) throw new Error("background-" + v + ".jpg tidak ketemu");
+          const blob = await r.blob();
+          const bgData = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(blob); });
+          const out = await callGeminiImageEdit(viewData[v].img, bgData, buildAiBgPrompt(v), key);
+          viewData[v].img = out;
+          if (templateData && templateData[v]) templateData[v].img = out;
+          okCount++;
+        } catch (err) {
+          showToast("Gagal sisi " + VIEW_LABEL[v] + ": " + err.message, true);
+        }
+        await sleep(800);
+      }
+      if (templateData) await saveTemplate();
+      loadViewState();
+      btnAiBgRunAll.disabled = false;
+      showToast(okCount ? "AI Background semua sisi selesai, " + okCount + " sisi berhasil" : "AI Background semua sisi gagal", !okCount);
+    });
+  }
 
   /* ================= CANVAS RENDERER ================= */
   let fontPromise = null;
