@@ -435,7 +435,7 @@ button { cursor: pointer; }
 }
 .plate-grid-row {
   display: grid;
-  grid-template-columns: 1fr 48px 48px;
+  grid-template-columns: 1fr 48px 48px auto;
   gap: 6px;
   align-items: end;
   margin-bottom: 12px;
@@ -443,7 +443,17 @@ button { cursor: pointer; }
 .plate-grid-row .fld { margin: 0; }
 .plate-grid-row .inp { min-height: 52px; padding: 0; text-align: center; font-weight: 700; }
 .plate-grid-row .inp.plate-entry { padding: 0 12px; text-align: left; font-weight: normal; }
-
+.btn-5yr {
+  min-height: 52px;
+  padding: 0 10px;
+  border-radius: 11px;
+  background: rgba(var(--ac-rgb), 0.14);
+  color: var(--ac);
+  border: 1px solid rgba(var(--ac-rgb), 0.3);
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.15;
+}
 .tnkb-bar {
   display: flex;
   gap: 6px;
@@ -770,6 +780,17 @@ button { cursor: pointer; }
   width: 206px;
   word-spacing: 0;
 }
+.plate-text.just2 {
+  display: flex;
+  justify-content: flex-start;
+  width: 206px;
+  word-spacing: 0;
+}
+.plate-text.just2 .np:last-child {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
 .plate-text .np {
   display: inline-block;
   margin-right: -1px;
@@ -828,7 +849,6 @@ button { cursor: pointer; }
   align-items: center;
   justify-content: center;
 }
-
 .plate-preview-card {
   position: sticky;
   top: calc(68px + env(safe-area-inset-top));
@@ -990,8 +1010,8 @@ input[type=range]::-moz-range-thumb {
   place-items: center;
   flex-shrink: 0;
 }
-.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; overflow: hidden; contain: content; }
-.plate-mini { transform: scale(0.5); transform-origin: top left; filter: none !important; }
+.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; }
+.plate-mini { transform: scale(0.5); transform-origin: top left; }
 .row-num-wrap {
   width: 32px;
   flex-shrink: 0;
@@ -1368,7 +1388,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         </div>
       </div>
       <div id="manualTools">
-        <section class="box" id="kanvasBox">
+        <section class="box">
           <div class="box-head">
             <span class="step-tag">01</span>
             <div class="grow">
@@ -1488,7 +1508,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <input id="tahun" class="inp" type="text" inputmode="numeric" placeholder="03" maxlength="2" autocomplete="off">
           </div>
         </div>
-        <button type="button" class="btn btn-muted btn-xs btn-full" id="btnAuto5Yr" style="margin-bottom:12px">Masa Berlaku +5 Tahun</button>
         <div class="plate-grid-row" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:12px;">
           <div class="fld">
             <span class="fld-lbl">Plat</span>
@@ -1500,7 +1519,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <button type="button" class="color-swatch-btn" id="btnColorTeks" aria-label="Pilih warna teks plat" style="background-color: #000000;"></button>
             <input type="color" id="warnaTeks" value="#000000" hidden>
           </div>
-<input type="color" id="warnaShadow" value="#808080" hidden>
+
+            <input type="color" id="warnaShadow" value="#808080" hidden>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
           <label class="toggle-tile">
@@ -1515,7 +1535,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           </label>
           <label class="toggle-tile">
             <span>Efek Timbul (Shadow Teks)</span>
-            <input type="checkbox" id="shadowChk" checked>
+            <input type="checkbox" id="shadowChk">
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
@@ -2110,8 +2130,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return p ? p.n : "Kustom";
   }
   const SHADOW_BY_PLATE = {
-    "Putih": "#808080", "Hitam": "#000000", "Kuning": "#808080",
-    "Merah": "#000000", "Hijau": "#000000", "Biru": "#000000"
+    "Putih": "#808080", "Hitam": "#808080", "Kuning": "#808080",
+    "Merah": "#000000", "Hijau": "#808080", "Biru": "#000000"
   };
   function defaultShadowForPlate(hex, name) {
     const n = name || nameFor(hex);
@@ -2191,34 +2211,49 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   });
   function openSheet(id) {
     if (!$(id)) return;
+    /* FIX: sheet yang sudah terbuka jangan pushState lagi. Tanpa ini,
+       sheet dibuka 2x bikin entri history ganda — tombol back Android
+       jadi harus ditekan berkali-kali dan entri confirm yang sudah
+       tertutup tetap nyangkut di stack. */
+    if ($(id).classList.contains("open")) return;
     document.body.appendChild($(id));
     $(id).classList.add("open");
     document.body.classList.add("modal-open");
     history.pushState({ modal: id }, "");
   }
   function closeSheet(id, fromHistory = false) {
-    if (!$(id)) return;
-    $(id).classList.remove("open");
-    if (document.querySelectorAll(".sheet.open").length === 0) {
-      document.body.classList.remove("modal-open");
-    }
-    $(id).querySelectorAll(".sheet-panel").forEach(p => p.style.transform = "");
-    if (id === "previewModal") {
-      previewToken++;
-      const oldToken = previewToken;
-      setTimeout(() => {
-        if (previewToken === oldToken && !$(id).classList.contains("open")) $(id).querySelector("#previewContainer").innerHTML = "";
-      }, 300);
-    }
-    if (id === "confirmModal" && pendingConfirm) {
-      const f = pendingConfirm;
-      pendingConfirm = null;
-      f(false, fromHistory);
-      return;
-    }
-    if (!fromHistory && history.state && history.state.modal) {
-      ignoreNextPopState = true;
-      history.back();
+    const el = $(id);
+    if (!el) return;
+    /* FIX: re-entrancy guard. closeSheet dipanggil dari dalam done()
+       confirm, dan done() dipanggil dari dalam closeSheet — tanpa guard,
+       history.back() ke-skip (early return lama) atau kepanggil 2x
+       (nutup sheet di bawahnya juga). Guard ini bikin back() jalan tepat 1x. */
+    if (el.dataset.closing === "1") return;
+    el.dataset.closing = "1";
+    try {
+      el.classList.remove("open");
+      if (document.querySelectorAll(".sheet.open").length === 0) {
+        document.body.classList.remove("modal-open");
+      }
+      el.querySelectorAll(".sheet-panel").forEach(p => p.style.transform = "");
+      if (id === "previewModal") {
+        previewToken++;
+        const oldToken = previewToken;
+        setTimeout(() => {
+          if (previewToken === oldToken && !el.classList.contains("open")) el.querySelector("#previewContainer").innerHTML = "";
+        }, 300);
+      }
+      if (id === "confirmModal" && pendingConfirm) {
+        const f = pendingConfirm;
+        pendingConfirm = null;
+        f(false, fromHistory);
+      }
+      if (!fromHistory && history.state && history.state.modal) {
+        ignoreNextPopState = true;
+        history.back();
+      }
+    } finally {
+      delete el.dataset.closing;
     }
   }
   document.querySelectorAll("[data-sheet]").forEach(s => {
@@ -2365,7 +2400,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const t = String(nomor).trim().split(/\s+/).filter(Boolean);
     if (t.length === 0) return [];
     if (t.length === 1) return t;
-    if (t.length === 2) return [t[0], t[1]];
+    if (t.length === 2) return [t[0], t[1], ""];
     return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
   }
   function partW(str, size) {
@@ -2391,11 +2426,19 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   function setNomorDOM(el, nomor, justify) {
     const parts = nomorParts(nomor);
-    if (justify !== false && parts.length >= 2) {
+    if (justify !== false && parts.length === 2) {
+      /* 2 segmen (mis. "S 3 LVI" -> ["S", "3 LVI"]): segmen kiri nempel kiri,
+         segmen kanan DI TENGAH plat — bukan di kanan, bukan di-stretch. */
+      el.classList.remove("just");
+      el.classList.add("just2");
+      el.innerHTML = parts.map(x => `<span class="np">${esc(x)}</span>`).join("");
+    } else if (justify !== false && parts.length >= 3) {
+      el.classList.remove("just2");
       el.classList.add("just");
       el.innerHTML = parts.map(x => `<span class="np">${esc(x)}</span>`).join("");
     } else {
       el.classList.remove("just");
+      el.classList.remove("just2");
       el.textContent = nomor;
     }
   }
@@ -2520,7 +2563,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     tEl.style.fontSize = fit.n + "px";
     yEl.style.fontSize = fit.y + "px";
     tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
-    if (tEl.classList.contains("just")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
+    if (tEl.classList.contains("just") || tEl.classList.contains("just2")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
     yEl.style.transform = "translateY(" + (Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
@@ -2546,6 +2589,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       yEl.style.textShadow = `0.5px 0.5px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
     }
   }
+  function currentK(st) {
+    const w = previewImg.clientWidth || REF_W;
+    return (w / REF_W) * (st.scale / 100);
+  }
   function applyEmboss(tEl, yEl, p) {
     const shadowOn = $("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false);
     if (!shadowOn) { tEl.style.textShadow = "none"; yEl.style.textShadow = "none"; return; }
@@ -2567,10 +2614,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     tEl.style.textShadow = `0 -1px 0 ${hi}, 0 1px 0 ${shColor}, 1px 1px 1px rgba(0,0,0,0.18), -1px -1px 0 ${hiSoft}`;
     yEl.style.textShadow = `0 -0.5px 0 ${hi}, 0 0.5px 0 ${shColor}, 0 1px 1px rgba(0,0,0,0.15)`;
   }
-  function currentK(st) {
-    const w = previewImg.clientWidth || REF_W;
-    return (w / REF_W) * (st.scale / 100);
-  }
   function applyPlate() {
     const st = viewData[currentView];
     const p = getPlate();
@@ -2588,7 +2631,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let miniRaf = 0;
   function queueMini() {
     if (miniRaf) return;
-    miniRaf = requestAnimationFrame(() => { miniRaf = 0; bulkListEl.querySelectorAll(".plate-mini").forEach(el => el.removeAttribute("data-painted")); paintMiniPlates(bulkListEl); });
+    miniRaf = requestAnimationFrame(() => {
+      miniRaf = 0;
+      /* Slider berubah -> mini harus digambar ulang, jadi flag painted
+         dihapus dulu sebelum paintMiniPlates jalan. */
+      bulkListEl.querySelectorAll(".plate-mini").forEach(el => el.removeAttribute("data-painted"));
+      paintMiniPlates(bulkListEl);
+    });
   }
   function fitHero() {
     const hero = $("plateHero");
@@ -2748,7 +2797,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       }
     });
     if (templateData) scheduleTemplateSave();
-    if ($("shadowChk")) { $("shadowChk").checked = true; try { localStorage.setItem("platShadow", "1"); } catch (e) {} }
+    if ($("shadowChk")) { $("shadowChk").checked = false; try { localStorage.setItem("platShadow", "0"); } catch (e) {} }
     if ($("showLogoChk")) $("showLogoChk").checked = true;
     if ($("showDotChk")) $("showDotChk").checked = true;
     syncSliders(viewData[currentView]);
@@ -2854,7 +2903,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   window.addEventListener("resize", applyPlate);
   function readImageFile(file) {
     return new Promise((resolve) => {
-      if (!file || (file.type && !file.type.startsWith("image/"))) {
+      if (!file || !file.type || !file.type.startsWith("image/")) {
         resolve(null);
         return;
       }
@@ -2868,14 +2917,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           const canvas = document.createElement("canvas");
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext("2d");
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = "high";
-          ctx.filter = "none";
           ctx.clearRect(0, 0, w, h);
           if (file.type !== "image/png") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h); }
           ctx.drawImage(img, 0, 0, w, h);
           if (file.type === "image/png") resolve(canvas.toDataURL("image/png"));
-          else resolve(canvas.toDataURL("image/jpeg", 0.95));
+          else resolve(canvas.toDataURL("image/jpeg", 0.82));
         };
         img.onerror = () => resolve(null);
         img.src = ev.target.result;
@@ -2902,10 +2948,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const results = await Promise.all(fileList.map(f => readImageFile(f)));
     let successCount = 0;
     const emptyViews = VIEWS.filter(v => !viewData[v].img);
-    const targetViews = [...emptyViews, ...VIEWS.filter(v => viewData[v].img)];
+    const targetViews = emptyViews.length ? emptyViews : VIEWS;
     results.forEach((data, i) => {
       if (data) {
-        const view = targetViews[i];
+        const view = targetViews[i % targetViews.length];
         viewData[view] = freshState(viewData[view], data);
         successCount++;
       }
@@ -3022,7 +3068,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setPlateColor(pill.dataset.bg, pill.dataset.name, false, pill.dataset.sh);
     showToast("Preset TNKB " + pill.dataset.name + " diterapkan ✓");
   });
-
+  if($("btnAuto5Yr")) $("btnAuto5Yr").addEventListener("click", () => {
+    const now = new Date();
+    bulanEl.value = String(now.getMonth() + 1).padStart(2, "0");
+    tahunEl.value = String((now.getFullYear() + 5) % 100).padStart(2, "0");
+    applyPlate();
+    showToast("Masa berlaku +5 tahun diisi ✓");
+  });
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
@@ -3036,7 +3088,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   ];
   function openColorPicker(target) {
     activeColorTarget = target;
-    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : "Warna Teks";
+    $("colorPickerTitle").textContent = target === 'plat' ? "Warna Plat" : (target === 'teks' ? "Warna Teks" : "Warna Emboss Teks");
     const currentHex = target === 'plat' ? warnaEl.value : (target === 'teks' ? warnaTeksEl.value : warnaShadowEl.value);
     $("customColorPicker").value = currentHex;
     $("colorPickerPresets").innerHTML = extraPresets.map(p =>
@@ -3180,7 +3232,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     updateTemplateUI();
     if (editorOpen) loadViewState();
   });
-
   $("updateTemplateBtn").addEventListener("click", async () => {
     if (!VIEWS.some(v => viewData[v].img)) return showToast("Template butuh minimal 1 foto", true);
     const prev = templateData;
@@ -3214,7 +3265,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const textColor = isDark(it.warna) ? "#ffffff" : "#111111";
     return `<span style="background:${esc(it.warna)};color:${textColor};border:2px solid ${textColor};padding:2px 8px;border-radius:6px;font-family:var(--plate-font)">${esc(it.nomor)}</span>`;
   }
-  let miniObserver = null;
   function paintOneMini(el, st) {
     if (!el || el.dataset.painted === "1") return;
     const p = {
@@ -3233,19 +3283,24 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (_y) _y.style.textShadow = "0 0.5px 0 rgba(0,0,0,0.25)";
     el.dataset.painted = "1";
   }
+  /* FIX: observer disimpan PER CONTAINER (container._miniObserver),
+     bukan 1 variabel global. Kalau pakai 1 observer global, paintMiniPlates
+     dari vault me-disconnect observer bulk (dan sebaliknya) — mini yang
+     belum sempat ke-paint jadi tidak pernah ke-paint, tampil plat kosong. */
   function paintMiniPlates(container) {
     if (!container) return;
     const st = (templateData && VIEWS.map(v => templateData[v]).find(s => s && s.img)) || viewData[currentView];
     const els = Array.from(container.querySelectorAll('.plate-mini'));
     if (!els.length) return;
     if (typeof IntersectionObserver === "undefined") { els.forEach(el => paintOneMini(el, st)); return; }
-    if (miniObserver) miniObserver.disconnect();
-    miniObserver = new IntersectionObserver((entries) => {
+    if (container._miniObserver) container._miniObserver.disconnect();
+    const obs = new IntersectionObserver((entries) => {
       entries.forEach(en => {
-        if (en.isIntersecting) { paintOneMini(en.target, st); miniObserver.unobserve(en.target); }
+        if (en.isIntersecting) { paintOneMini(en.target, st); obs.unobserve(en.target); }
       });
     }, { rootMargin: "250px 0px", threshold: 0.01 });
-    els.forEach(el => { if (el.dataset.painted !== "1") miniObserver.observe(el); });
+    container._miniObserver = obs;
+    els.forEach(el => { if (el.dataset.painted !== "1") obs.observe(el); });
   }
   function renderBulk() {
     const nv = templateData ? VIEWS.filter(v => templateData[v] && templateData[v].img).length : 0;
@@ -3626,6 +3681,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!list.length) {
       return showToast(warnings.length ? "Semua baris bermasalah. Perbaiki dulu." : "Belum ada nopol untuk ditambahkan", true);
     }
+    if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
     if (!templateData) return showToast("Kunci template terlebih dahulu!", true);
     if (warnings.length > 0) {
       const ok = await askConfirm("Ada Baris Bermasalah", warnings.length + " baris tidak valid akan dilewati. Lanjut tambahkan " + list.length + " nopol valid?", "Lanjutkan");
@@ -3640,7 +3696,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       return true;
     });
     const skippedDup = list.length - filteredList.length;
-    if (bulkItems.length + filteredList.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
     if (!filteredList.length) return showToast(skippedDup ? "Semua nopol sudah ada di antrean" : "Belum ada nopol untuk ditambahkan", true);
     bulkItems = bulkItems.concat(filteredList);
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
@@ -4110,17 +4165,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const adv = chars.map((c, i) => ctx.measureText(c).width + (i < chars.length - 1 ? ls : 0) + (c === " " ? ws : 0));
     let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
     if (shadowColor) {
-      const hiC = String(shadowColor).indexOf("255,255,255") >= 0 ? "rgba(0,0,0,0.65)" : (String(shadowColor).indexOf("0.45") >= 0 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.9)");
-      ctx.save();
-      ctx.fillStyle = hiC;
-      ctx.strokeStyle = hiC;
-      let hx = x;
-      chars.forEach((c, i) => {
-        if (strokeW > 0) ctx.strokeText(c, hx - 1, -1);
-        ctx.fillText(c, hx - 1, -1);
-        hx += adv[i];
-      });
-      ctx.restore();
       ctx.save();
       ctx.fillStyle = shadowColor;
       ctx.strokeStyle = shadowColor;
@@ -4167,9 +4211,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
     const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
-    const txtLight = !isDark(txtC);
-    const isWhitePlate = (plate.warnaName === "Putih") || String(plate.warna || "").toLowerCase() === "#ffffff";
-    const shC = !shadowOn ? "" : (txtLight ? "rgba(255,255,255,0.38)" : (!isWhitePlate ? "rgba(0,0,0,0.45)" : (plate.warnaShadow || defaultShadowForPlate(bg))));
+    const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rot);
@@ -4177,8 +4219,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       ctx.transform(1, Math.tan((st.skewY || 0) * Math.PI / 180), Math.tan((st.skewX || 0) * Math.PI / 180), 1, 0, 0);
     }
     ctx.scale(k, k);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
     if (st.blur > 0 && "filter" in ctx) ctx.filter = "blur(" + (st.blur * k) + "px)";
     /* Latar plat = PNG sesuai warna (bingkai + tekstur sudah di PNG). */
     const asset = plateAssetFor(plate.warna, plate.warnaName, plate.warnaTeks);
@@ -4198,6 +4238,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       ctx.shadowOffsetY = 4 * k;
       ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
       ctx.restore();
+      ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
     } else {
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.6)";
@@ -4212,7 +4253,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       rr(ctx, -hw, -hh, PLATE_W, PLATE_H, r);
       ctx.fill();
     }
-    ctx.filter = "none";
     /* Klip ke bentuk plat agar noise/teks tidak keluar. PNG persegi panjang,
        jadi klip persegi panjang penuh sudah cukup. */
     ctx.save();
@@ -4262,6 +4302,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           ctx.globalAlpha = 0.95;
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
+          /* FIX: trim 1x lalu cache di logoImg._trimmed. Versi lama trim 2x
+             per render per plat — export 500 nopol x 4 sisi jadi ribuan
+             getImageData yang sama. */
           const _tl = logoImg._trimmed || (logoImg._trimmed = trimTransparent(logoImg, 0, 0) || logoImg);
           const ar = (_tl.width || logoImg.naturalWidth) / (_tl.height || logoImg.naturalHeight);
           let dw = 13, dh = 13 / ar;
@@ -4559,13 +4602,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     historyBatches = await loadHistoryBatches();
     await loadBulkData();
     try {
-      // Migrasi logo dibatalkan agar settingan user tidak tertimpa
-    } catch (e) {}
-    try {
-      if (!localStorage.getItem("platDefaultsV2")) {
-        localStorage.setItem("platDefaultsV2", "1");
-        localStorage.setItem("platShadow", "1");
-        if ($("shadowChk")) $("shadowChk").checked = true;
+      if (!localStorage.getItem("platDefaultsV3")) {
+        localStorage.setItem("platDefaultsV3", "1");
+        localStorage.setItem("platShadow", "0");
+        if ($("shadowChk")) $("shadowChk").checked = false;
         VIEWS.forEach(v => {
           if (viewData[v]) { viewData[v].autofit = true; viewData[v].showLogo = true; viewData[v].showDot = true; }
           if (templateData && templateData[v]) { templateData[v].autofit = true; templateData[v].showLogo = true; templateData[v].showDot = true; }
@@ -4592,7 +4632,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   initApp();
   if ("serviceWorker" in navigator && !window.AndroidBridge) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js?v=510").catch(() => {});
+      navigator.serviceWorker.register("./sw.js?v=511").catch(() => {});
     });
   } else if ("serviceWorker" in navigator && window.AndroidBridge) {
     navigator.serviceWorker.getRegistrations().then((regs) => { for (var r of regs) r.unregister(); }).catch(() => {});
