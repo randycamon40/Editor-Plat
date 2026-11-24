@@ -31,6 +31,10 @@
 <!-- Font lokal: jangan pakai Google Fonts lagi, biar tidak gagal di buka pertama di APK -->
 <link rel="preload" href="./PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="./wallpaper-depan.jpg" as="image">
+<link rel="preload" href="./wallpaper-kiri.jpg" as="image">
+<link rel="preload" href="./wallpaper-kanan.jpg" as="image">
+<link rel="preload" href="./wallpaper-belakang.jpg" as="image">
 <script src="./jszip.min.js"></script>
 <script src="./localforage.min.js"></script>
 <script>
@@ -626,6 +630,10 @@ button { cursor: pointer; }
   position: relative;
 }
 .stage.dragover { outline: 2px dashed var(--ac); outline-offset: -8px; }
+.stage[data-wallpaper="depan"] { background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("./wallpaper-depan.jpg"); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: var(--stage-bg); }
+.stage[data-wallpaper="kiri"] { background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("./wallpaper-kiri.jpg"); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: var(--stage-bg); }
+.stage[data-wallpaper="kanan"] { background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("./wallpaper-kanan.jpg"); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: var(--stage-bg); }
+.stage[data-wallpaper="belakang"] { background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("./wallpaper-belakang.jpg"); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: var(--stage-bg); }
 
 .dropzone {
   width: 100%;
@@ -2811,6 +2819,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
 
   function loadViewState() {
     const st = viewData[currentView];
+    stage.dataset.wallpaper = currentView;
     refreshViewTabs();
     if (st.img) {
       if (previewImg.getAttribute("src") !== st.img) previewImg.src = st.img;
