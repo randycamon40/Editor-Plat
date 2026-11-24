@@ -734,9 +734,11 @@ button { cursor: pointer; }
      yang membulat itu transparan — warna di baliknya bakal ngintip. */
   background-color: transparent;
   background-image: var(--plate-img, none);
-  /* PNG plat TRANSPARAN di luar plat. Yang dipakai di sini sudah hasil
-     auto-trim (padding transparan dibuang), jadi tinggal regangkan penuh. */
-  background-size: 100% 100%;
+  /* PNG plat TRANSPARAN di luar plat. Yang dipakai sudah hasil auto-trim.
+     Pakai contain (bukan 100% 100%) biar aspek PNG-nya utuh kayak file
+     mentahnya: rim putih rata, bingkai hitam rata, sudut bulat halus.
+     Stretch ke 230x75 bikin bingkai atas-bawah vs kiri-kanan tebalnya beda. */
+  background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   color: var(--plate-color, #111);
@@ -1937,8 +1939,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   /* Potong padding transparan: cari bbox piksel dengan alpha > 10.
      Bekerja untuk plat & logo, warna apapun, framing apapun. */
   /* insetXFrac / insetYFrac: potong ke dalam dari bbox transparan.
-     Untuk PLAT dipakai 0.012 / 0.032 — buang rim putih paling luar,
-     sisakan bingkai hitamnya di tepi. Untuk LOGO dipakai 0 / 0. */
+     Sekarang tidak dipakai (0 / 0) — PNG plat dipakai mentah apa adanya
+     biar mirip gambar 2: rim putih + bingkai hitam + sudut bulatnya utuh. */
   function trimTransparent(img, insetXFrac, insetYFrac) {
     try {
       const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
@@ -1980,7 +1982,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const img = await loadPlatePng(url);
         if (!img) continue;
         const isPlate = plateUrls.has(url);
-        const trimmed = trimTransparent(img, isPlate ? 0.012 : 0, isPlate ? 0.032 : 0);
+        /* Tanpa inset: pakai PNG mentah apa adanya (rim putih + bingkai hitam
+           + sudut bulatnya utuh, kayak gambar 2). Inset bikin sudut jadi kotak. */
+        const trimmed = trimTransparent(img, 0, 0);
         if (trimmed) trimmedUrlCache[url] = trimmed.toDataURL("image/png");
       } catch (e) {}
     }
@@ -4089,15 +4093,21 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const asset = plateAssetFor(plate.warna, plate.warnaName, plate.warnaTeks);
     const plateImg = await loadPlatePng(asset.plateUrl);
     if (plateImg) {
-      /* PNG transparan: buang padding transparan + rim putih luar, sisakan bingkai hitam. */
-      const _trimmed = trimTransparent(plateImg, 0.012, 0.032) || plateImg;
+      /* PNG transparan: buang padding transparan saja, tanpa inset.
+         Gambar dengan contain (jaga aspek PNG mentah, kayak gambar 2),
+         bukan di-stretch ke 230x75. */
+      const _trimmed = trimTransparent(plateImg, 0, 0) || plateImg;
+      const _tw = _trimmed.width || PLATE_W, _th = _trimmed.height || PLATE_H;
+      const _sc = Math.min(PLATE_W / _tw, PLATE_H / _th);
+      const _dw = _tw * _sc, _dh = _th * _sc;
+      const _dx = -hw + (PLATE_W - _dw) / 2, _dy = -hh + (PLATE_H - _dh) / 2;
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.6)";
       ctx.shadowBlur = 12 * k;
       ctx.shadowOffsetY = 4 * k;
-      ctx.drawImage(_trimmed, -hw, -hh, PLATE_W, PLATE_H);
+      ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
       ctx.restore();
-      ctx.drawImage(_trimmed, -hw, -hh, PLATE_W, PLATE_H);
+      ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
     } else {
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.6)";
