@@ -21,27 +21,6 @@
 :where(code, pre, kbd, samp) {
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
-</style><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
 </style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
@@ -1168,8 +1147,6 @@ input[type=range]::-moz-range-thumb {
 #presetColorRow .tnkb-pill.on { outline: 2px solid var(--ac); outline-offset: 1px; }
 #panel-preset .preset-top-lock { position: sticky; top: 64px; z-index: 5; margin-bottom: 12px; }
 #panel-preset .preset-bottom-scroll .preset-title-row { margin-top: 0; }
-
-Blok 2
 #panel-preset .preset-bottom-scroll { margin-bottom: 14px; }
 @media (max-width: 979px) {
 #panel-preset .preset-bottom-scroll { max-height: none; overflow-y: visible; overscroll-behavior: auto; padding-bottom: 8px; }
@@ -2487,7 +2464,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   const mctx = document.createElement("canvas").getContext("2d");
   function calcFit(str, size, ls, ws, family, on) {
     if (on === false) return size;
-    mctx.font = size + "px " + family;
+    mctx.font = (String(family).indexOf("PlatNomor") >= 0 ? "700 " : "") + size + "px " + family;
     let gw = 0, sp = 0;
     const chars = Array.from(str);
     for (let i = 0; i < chars.length; i++) {
@@ -2653,6 +2630,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   /* DOM plat: background = PNG plat, logo = PNG logo. Teks tetap FE-Schrift
      di atas PNG. Radius/border CSS dimatikan karena bingkai sudah di PNG. */
   function stylePlate(plEl, tEl, yEl, st, p) {
+    let _ps = null;
+    try { const _pn = (p.warnaName && presetStore.list[p.warnaName]) ? p.warnaName : nearestPlateName(p.warna); if (_pn && presetStore.list[_pn]) { const _l = presetStore.list[_pn]; _ps = _l.find(x => x.id === presetStore.active[_pn]) || _l[0]; } } catch (e) {}
+    if (_ps && _ps.values) st = Object.assign({}, st, _ps.values);
     const d = isDark(p.warna);
     const asset = plateAssetFor(p.warna, p.warnaName, p.warnaTeks);
     plEl.style.borderRadius = "0px";
@@ -2695,7 +2675,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
-    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false);
+    const shadowOn = (_ps && _ps.values && ("shadow" in _ps.values)) ? !!_ps.values.shadow : ($("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false));
     const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
     if (!shadowOn) {
       tEl.style.textShadow = "none";
@@ -2787,7 +2767,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const _restoreSlider = () => { if (Number(input.value) !== _sv) input.value = _sv; paintSlider(s.key); };
         input.addEventListener("pointerdown", e => { if (e.pointerType === "touch" && !_touchActive) { _sx = e.clientX; _sy = e.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { capture: true });
         input.addEventListener("touchstart", e => { if (!_touchActive) { const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { passive: true });
-        input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 10 && dx > dy * 1.5) _mode = "slide"; else if (dy > 10 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
+        input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 14 && dx > dy * 2.5) _mode = "slide"; else if (dy > 14 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
         const _endTouchSlider = () => { if (_touchActive && _mode !== "slide") _restoreSlider(); _mode = "idle"; _touchActive = false; };
         input.addEventListener("touchend", _endTouchSlider, { passive: true });
         input.addEventListener("touchcancel", _endTouchSlider, { passive: true });
@@ -3106,7 +3086,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function renderSwatches() {
     if ($("btnColorPlat")) $("btnColorPlat").style.backgroundColor = warnaEl.value;
     if ($("btnColorTeks")) $("btnColorTeks").style.backgroundColor = warnaTeksEl.value;
-    if ($("btnColorShadow")) $("btnColorShadow").style.backgroundColor = warnaShadowEl.value;
   }
   function setPlateColor(hex, name, autoText, shadowOverride) {
     warnaEl.value = hex;
@@ -4283,10 +4262,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return logoPngCache[url];
   }
   async function drawPlate(ctx, cx, cy, k, rot, st, plate) {
+    let _ps = null;
+    try { const _pn = (plate.warnaName && presetStore.list[plate.warnaName]) ? plate.warnaName : nearestPlateName(plate.warna); if (_pn && presetStore.list[_pn]) { const _l = presetStore.list[_pn]; _ps = _l.find(x => x.id === presetStore.active[_pn]) || _l[0]; } } catch (e) {}
+    if (_ps && _ps.values) st = Object.assign({}, st, _ps.values);
     const hw = PLATE_W / 2, hh = PLATE_H / 2;
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
-    const shadowOn = $("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false);
+    const shadowOn = (_ps && _ps.values && ("shadow" in _ps.values)) ? !!_ps.values.shadow : ($("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false));
     const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
     const fontN = fontNFor(plate);
     const fontY = fontYFor(plate);
@@ -4374,7 +4356,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0) + 0;
     const gapY = 2;
-    ctx.font = y + "px " + fontY;
+    ctx.font = (isBlackPlate(plate) ? "700 " : "") + y + "px " + fontY;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
     const bW = yB.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yB.length - 1);
     const tW = yT.reduce((a, c) => a + ctx.measureText(c).width, 0) + YEAR_LS * Math.max(0, yT.length - 1);
@@ -4714,20 +4696,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const _v = pr.values || {};
       if (!(("autofit" in _v) && ("showLogo" in _v) && ("showDot" in _v) && ("shadow" in _v))) presetStoreNeedsToggleMigration = true;
       if (/^Preset (\d+)$/.test(pr.name || "")) pr.name = "Preset #" + RegExp.$1;
-      pr.values = Object.assign(defaultPresetValues(), _v);
+      pr.values = Object.assign(defaultPresetValues(c.name), _v);
       if (!pr.name) pr.name = "Preset #1";
     });
     if (!presetStore.list[c.name].some(pr => pr.id === presetStore.active[c.name])) {
       presetStore.active[c.name] = presetStore.list[c.name][0].id;
     }
   });
-    try {
-    const _h = (presetStore.list["Hitam"] || []).find(pr => pr.id === presetStore.active["Hitam"]) || (presetStore.list["Hitam"] || [])[0];
-    if (_h && _h.values && _h.values.nopolSize === 50 && _h.values.tahunSize === 25 && _h.values.nopolY === 4 && _h.values.tahunY === -8.5) {
-      _h.values = defaultPresetValues("Hitam");
-      try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(presetStore)); } catch (e) {}
-    }
-  } catch (e) {}
+    /* Migrasi paksa Hitam dimatikan: jangan timpa settingan user yang sudah tersimpan. */
   let presetColor = "Putih";
   let presetReady = false;
   let presetSaveTimer = null;
@@ -4980,9 +4956,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   onPreset("showDotChk", "change", syncPresetFromToggles);
   onPreset("shadowChk", "change", syncPresetFromToggles);
 
-  onPreset("nomor", "input", () => renderPresetUI());
-  onPreset("bulan", "input", () => renderPresetUI());
-  onPreset("tahun", "input", () => renderPresetUI());
+  onPreset("nomor", "input", () => queuePresetPreview());
+  onPreset("bulan", "input", () => queuePresetPreview());
+  onPreset("tahun", "input", () => queuePresetPreview());
   async function initApp() {
     const storedStart = await lsGet("platBulkStartNum", 1);
     bulkStartNumber = parseInt(storedStart, 10);
@@ -5012,7 +4988,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
           else cur[k] = viewData[currentView][k];
         });
-        PRESET_COLORS.forEach(c => { presetStore.list[c.name].forEach(pr => { Object.assign(pr.values, cur); }); });
+        PRESET_COLORS.forEach(c => { presetStore.list[c.name].forEach(pr => { PRESET_TOGGLE_KEYS.forEach(k => { if (!(k in pr.values)) pr.values[k] = cur[k]; }); }); });
         savePresetStore();
         presetStoreNeedsToggleMigration = false;
       }
