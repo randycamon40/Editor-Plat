@@ -2484,7 +2484,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return [t[0], t.slice(1, -1).join(" "), t[t.length - 1]];
   }
   function partW(str, size, p) {
-    mctx.font = size + "px " + fontNFor(p);
+    mctx.font = (String(fontNFor(p)).indexOf("PlatNomor") >= 0 ? "700 " : "") + size + "px " + fontNFor(p);
     const ch = Array.from(str);
     return ch.reduce((a, c) => a + mctx.measureText(c).width, 0) + NOPOL_LS * Math.max(0, ch.length - 1);
   }
@@ -2492,7 +2492,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (on === false) return size;
     const parts = nomorParts(nomor);
     if (parts.length < 2) return calcFit(nomor, size, NOPOL_LS, NOPOL_WS, fontNFor(p), true);
-    mctx.font = size + "px " + fontNFor(p);
+    mctx.font = (String(fontNFor(p)).indexOf("PlatNomor") >= 0 ? "700 " : "") + size + "px " + fontNFor(p);
     let gw = 0, sp = 0;
     parts.forEach(pt => {
       const ch = Array.from(pt);
@@ -2668,10 +2668,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       logoEl.style.backgroundColor = "transparent";
       logoEl.style.filter = "none";
       logoEl.style.opacity = "1";
-      logoEl.style.left = "-2%";
-      logoEl.style.top = "-30%";
-      logoEl.style.width = "104%";
-      logoEl.style.height = "150%";
+      logoEl.style.left = (st.logoX !== undefined ? st.logoX : -2) + "%";
+      logoEl.style.top = (st.logoY !== undefined ? st.logoY : -30) + "%";
+      logoEl.style.width = (st.logoW !== undefined ? st.logoW : 104) + "%";
+      logoEl.style.height = (st.logoH !== undefined ? st.logoH : 150) + "%";
     }
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
@@ -2767,7 +2767,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const _restoreSlider = () => { if (Number(input.value) !== _sv) input.value = _sv; paintSlider(s.key); };
         input.addEventListener("pointerdown", e => { if (e.pointerType === "touch" && !_touchActive) { _sx = e.clientX; _sy = e.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { capture: true });
         input.addEventListener("touchstart", e => { if (!_touchActive) { const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { passive: true });
-        input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 14 && dx > dy * 2.5) _mode = "slide"; else if (dy > 14 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
+        input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 10 && dx > dy * 1.5) _mode = "slide"; else if (dy > 8 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
         const _endTouchSlider = () => { if (_touchActive && _mode !== "slide") _restoreSlider(); _mode = "idle"; _touchActive = false; };
         input.addEventListener("touchend", _endTouchSlider, { passive: true });
         input.addEventListener("touchcancel", _endTouchSlider, { passive: true });
@@ -3106,7 +3106,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const _def = presetColorDef(resolvedName);
       if (_def) {
         presetColor = _def.name;
-        applyPresetValues(getActivePreset(_def.name), { save: false });
+        applyPresetValues(getActivePreset(_def.name), { save: false, skipPreview: true });
         renderPresetUI();
       }
     }
@@ -4208,7 +4208,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ctx.save();
     ctx.translate(0, cy);
     ctx.scale(sx || 1, sy);
-    ctx.font = size + "px " + family;
+    ctx.font = (String(family).indexOf("PlatNomor") >= 0 ? "700 " : "") + size + "px " + family;
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
     ctx.fillStyle = color;
@@ -4322,7 +4322,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           ctx.globalAlpha = 1;
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(logoImgEarly, -hw + PLATE_W * -2 / 100, -hh + PLATE_H * -30 / 100, PLATE_W * 104 / 100, PLATE_H * 150 / 100);
+          ctx.drawImage(logoImgEarly, -hw + PLATE_W * (st.logoX !== undefined ? st.logoX : -2) / 100, -hh + PLATE_H * (st.logoY !== undefined ? st.logoY : -30) / 100, PLATE_W * (st.logoW !== undefined ? st.logoW : 104) / 100, PLATE_H * (st.logoH !== undefined ? st.logoH : 150) / 100);
           ctx.restore();
         }
       } catch (e) {}
@@ -4703,7 +4703,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       presetStore.active[c.name] = presetStore.list[c.name][0].id;
     }
   });
-    try { if (localStorage.getItem("platHitam40V2") !== "1") { var _hl = presetStore.list["Hitam"] || []; for (var _hi = 0; _hi < _hl.length; _hi++) { if (_hl[_hi].id === 1) { _hl[_hi].values = { nopolSize: 40, tahunSize: 20, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 2, tahunY: -2, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false }; break; } } try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(presetStore)); } catch (e) {} localStorage.setItem("platHitam40V2", "1"); } } catch (e) {}
+    /* Migrasi Hitam dihapus, default 40 sudah di defaultPresetValues, jangan timpa preset custom user. */
   let presetColor = "Putih";
   let presetReady = false;
   let presetSaveTimer = null;
@@ -4950,11 +4950,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   onPreset("btnCopyPresetAll", "click", copyPresetToAllColors);
   onPreset("btnApplyPresetToPlat", "click", () => { savePresetStore(); setTab("plat"); showToast("Preset diterapkan ke plat ✓"); });
   onPreset("goPresetBtn", "click", () => setTab("preset"));
-  onPreset("textSliders", "input", () => { syncPresetFromSliders(); });
-  onPreset("autofitChk", "change", syncPresetFromToggles);
-  onPreset("showLogoChk", "change", syncPresetFromToggles);
-  onPreset("showDotChk", "change", syncPresetFromToggles);
-  onPreset("shadowChk", "change", syncPresetFromToggles);
+  onPreset("textSliders", "input", () => { syncPresetFromSliders(); queueMini(); });
+  onPreset("autofitChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
+  onPreset("showLogoChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
+  onPreset("showDotChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
+  onPreset("shadowChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
 
   onPreset("nomor", "input", () => queuePresetPreview());
   onPreset("bulan", "input", () => queuePresetPreview());
@@ -4979,7 +4979,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
         else cur[k] = viewData[currentView][k];
       });
-      PRESET_COLORS.forEach(c => { if (c.name === presetColor) presetStore.list[c.name][0].values = Object.assign(defaultPresetValues(c.name), cur); });
+      PRESET_COLORS.forEach(c => { if (c.name === presetColor) presetStore.list[c.name][0].values = Object.assign(defaultPresetValues(c.name), c.name === "Hitam" ? {} : cur); });
       savePresetStore();
     } else {
       if (presetStoreNeedsToggleMigration) {
