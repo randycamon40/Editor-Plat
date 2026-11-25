@@ -4667,7 +4667,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "shadow"];
   const PRESET_ALL_KEYS = PRESET_TEXT_KEYS.concat(PRESET_TOGGLE_KEYS);
   function defaultPresetValues(color) {
-        if (color === "Hitam") return { nopolSize: 44, tahunSize: 20, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 2, tahunY: -2, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false };
+        if (color === "Hitam") return { nopolSize: 40, tahunSize: 20, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 2, tahunY: -2, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false };
     return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, autofit: true, showLogo: true, showDot: true, shadow: false };
   }
   function freshPresetStore() {
@@ -4703,7 +4703,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       presetStore.active[c.name] = presetStore.list[c.name][0].id;
     }
   });
-    /* Migrasi paksa Hitam dimatikan: jangan timpa settingan user yang sudah tersimpan. */
+    try { if (localStorage.getItem("platHitam40V2") !== "1") { var _hl = presetStore.list["Hitam"] || []; for (var _hi = 0; _hi < _hl.length; _hi++) { if (_hl[_hi].id === 1) { _hl[_hi].values = { nopolSize: 40, tahunSize: 20, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 2, tahunY: -2, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false }; break; } } try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(presetStore)); } catch (e) {} localStorage.setItem("platHitam40V2", "1"); } } catch (e) {}
   let presetColor = "Putih";
   let presetReady = false;
   let presetSaveTimer = null;
