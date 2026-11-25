@@ -2545,8 +2545,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       el.textContent = nomor;
     }
   }
-  const BLACK_N_SCALE = 0.80;
-  const BLACK_Y_SCALE = 0.80;
+  const BLACK_N_SCALE = 1;
+  const BLACK_Y_SCALE = 1;
   function fitSizes(st, p) {
     const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
     const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit, p);
@@ -2675,7 +2675,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     yEl.style.fontSize = fit.y + "px";
     tEl.style.transform = "translateY(" + (Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4) + "px) scaleX(" + ((Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100) + ") scaleY(" + ((Number.isFinite(Number(st.tinggi)) ? Number(st.tinggi) : 100) / 100) + ")";
     if (tEl.classList.contains("just") || tEl.classList.contains("just2")) tEl.style.width = (206 / ((st.lebarNopol || 85) / 100)) + "px"; else tEl.style.width = "";
-    yEl.style.transform = "translateY(" + ((Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + (isBlackPlate(p) ? 6 : 0)) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
+    yEl.style.transform = "translateY(" + ((Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5) + 0) + "px) scaleY(" + ((Number.isFinite(Number(st.tahunTinggi)) ? Number(st.tahunTinggi) : 80) / 100) + ")";
     const txtColor = p.warnaTeks || (d ? "#ffffff" : "#000000");
     tEl.style.color = txtColor;
     yEl.style.color = txtColor;
@@ -2783,22 +2783,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         target.appendChild(row);
         const input = row.querySelector("input"), out = row.querySelector("output");
         sliderEls[s.key] = { input, out, cfg: s };
-        let _sx = 0, _sy = 0, _sv = 0, _decided = false, _isScroll = false;
-        input.addEventListener("touchstart", e => {
-          const t = e.touches[0];
-          _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value);
-          _decided = false; _isScroll = false;
-        }, { passive: true });
-        input.addEventListener("touchmove", e => {
-          const t = e.touches[0];
-          const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy);
-          if (!_decided && (dx > 14 || dy > 14)) { _decided = true; _isScroll = dy > dx * 1.2; }
-          if (!_decided || _isScroll) { if (Number(input.value) !== _sv) input.value = _sv; }
-        }, { passive: true });
-        input.addEventListener("touchend", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) { templateData[currentView][s.key] = _sv; scheduleTemplateSave(); } } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
-        input.addEventListener("touchcancel", () => { if (_isScroll) { input.value = _sv; if (TEXT_KEYS.includes(s.key)) setTextSetting(s.key, _sv); else { viewData[currentView][s.key] = _sv; if (templateData && templateData[currentView]) { templateData[currentView][s.key] = _sv; scheduleTemplateSave(); } } paintSlider(s.key); applyPlate(); queueMini(); } _isScroll = false; _decided = false; }, { passive: true });
+        let _sx = 0, _sy = 0, _sv = 0, _mode = "idle", _touchActive = false;
+        const _restoreSlider = () => { if (Number(input.value) !== _sv) input.value = _sv; paintSlider(s.key); };
+        input.addEventListener("pointerdown", e => { if (e.pointerType === "touch" && !_touchActive) { _sx = e.clientX; _sy = e.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { capture: true });
+        input.addEventListener("touchstart", e => { if (!_touchActive) { const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { passive: true });
+        input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 10 && dx > dy * 1.5) _mode = "slide"; else if (dy > 10 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
+        const _endTouchSlider = () => { if (_touchActive && _mode !== "slide") _restoreSlider(); _mode = "idle"; _touchActive = false; };
+        input.addEventListener("touchend", _endTouchSlider, { passive: true });
+        input.addEventListener("touchcancel", _endTouchSlider, { passive: true });
+        input.addEventListener("pointerup", _endTouchSlider);
+        input.addEventListener("pointercancel", _endTouchSlider);
         input.addEventListener("input", () => {
-          if (_isScroll || !_decided) { input.value = _sv; paintSlider(s.key); return; }
+          if (_touchActive && _mode !== "slide") { input.value = _sv; paintSlider(s.key); return; }
           const v = parseFloat(input.value);
           if (TEXT_KEYS.includes(s.key)) {
             setTextSetting(s.key, v);
@@ -3013,7 +3009,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const results = await Promise.all(fileList.map(f => readImageFile(f)));
     let successCount = 0;
     const emptyViews = VIEWS.filter(v => !viewData[v].img);
-    const targetViews = emptyViews.length ? emptyViews : VIEWS;
+    const targetViews = emptyViews.concat(VIEWS.filter(v => !emptyViews.includes(v)));
     results.forEach((data, i) => {
       if (data) {
         const view = targetViews[i % targetViews.length];
@@ -3899,7 +3895,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function renderVaultDetailList(bIdx, batch) {
     $("historyPreviewGrid").innerHTML = (batch.plates || []).map((p, i) => `
       <div class="q-item">
-        <div class="row-num-wrap"><span class="row-num-span">${(Number(batch.startNumber) || 1) + i}</span></div>
+        <div class="row-num-wrap"><span class="row-num-span">${(Number(batch.startNumber ?? 1)) + i}</span></div>
         ${chipHtml(p, true)}
         <div class="q-actions">
           <button class="icon-act" data-vact="preview" data-b="${bIdx}" data-p="${i}" title="Preview" aria-label="Preview">${ico("eye")}</button>
@@ -4265,6 +4261,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   /* ===== PNG plat + logo: cache per file ===== */
   const platePngCache = {};
+  const trimmedPlateCache = {};
   function loadPlatePng(url) {
     if (platePngCache[url]) return platePngCache[url];
     platePngCache[url] = new Promise((res) => {
@@ -4309,7 +4306,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       /* Export juga potong kotak putih di luar bingkai, biar hasil JPG
          sama kayak preview DOM: tanpa kotak putih. */
       const _isTrimmed = String(asset.plateUrl || "").indexOf("data:") === 0;
-      const _trimmed = _isTrimmed ? plateImg : (trimPlatePng(plateImg) || trimTransparent(plateImg, 0, 0) || plateImg);
+      if (!trimmedPlateCache[asset.plateUrl]) trimmedPlateCache[asset.plateUrl] = _isTrimmed ? plateImg : (trimPlatePng(plateImg) || trimTransparent(plateImg, 0, 0) || plateImg);
+      const _trimmed = trimmedPlateCache[asset.plateUrl];
       const _tw = _trimmed.width || PLATE_W, _th = _trimmed.height || PLATE_H;
       const _sc = Math.min(PLATE_W / _tw, PLATE_H / _th);
       const _dw = _tw * _sc, _dh = _th * _sc;
@@ -4375,7 +4373,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } else {
       drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, undefined, shC, sxNopol);
     }
-    const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0) + (isBlackPlate(plate) ? 6 : 0);
+    const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0) + 0;
     const gapY = 2;
     ctx.font = y + "px " + fontY;
     const yB = Array.from(plate.bulan), yT = Array.from(plate.tahun);
@@ -4687,13 +4685,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   const PRESET_TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
   const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "shadow"];
   const PRESET_ALL_KEYS = PRESET_TEXT_KEYS.concat(PRESET_TOGGLE_KEYS);
-  function defaultPresetValues() {
+  function defaultPresetValues(color) {
+        if (color === "Hitam") return { nopolSize: 44, tahunSize: 20, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 2, tahunY: -2, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false };
     return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, autofit: true, showLogo: true, showDot: true, shadow: false };
   }
   function freshPresetStore() {
     const list = {}, active = {};
     PRESET_COLORS.forEach(c => {
-      list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues() }];
+      list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues(c.name) }];
       active[c.name] = 1;
     });
     return { active, list };
@@ -4710,7 +4709,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   } catch (e) {}
   PRESET_COLORS.forEach(c => {
     if (!Array.isArray(presetStore.list[c.name]) || !presetStore.list[c.name].length) {
-      presetStore.list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues() }];
+      presetStore.list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues(c.name) }];
     }
     presetStore.list[c.name].forEach(pr => {
       const _v = pr.values || {};
@@ -4723,6 +4722,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       presetStore.active[c.name] = presetStore.list[c.name][0].id;
     }
   });
+    try {
+    const _h = (presetStore.list["Hitam"] || []).find(pr => pr.id === presetStore.active["Hitam"]) || (presetStore.list["Hitam"] || [])[0];
+    if (_h && _h.values && _h.values.nopolSize === 50 && _h.values.tahunSize === 25 && _h.values.nopolY === 4 && _h.values.tahunY === -8.5) {
+      _h.values = defaultPresetValues("Hitam");
+      try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(presetStore)); } catch (e) {}
+    }
+  } catch (e) {}
   let presetColor = "Putih";
   let presetReady = false;
   let presetSaveTimer = null;
@@ -4738,7 +4744,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   function isPresetDefault(pr) {
     if (!pr) return false;
-    const d = defaultPresetValues();
+    const d = defaultPresetValues(presetColor);
     return PRESET_ALL_KEYS.every(k => pr.values[k] === d[k]);
   }
   function applyPresetValues(preset, opts) {
@@ -4865,7 +4871,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function resetActivePreset() {
     const pr = getActivePreset();
     if (!pr) return;
-    pr.values = defaultPresetValues();
+    pr.values = defaultPresetValues(presetColor);
     savePresetStore();
     applyPresetValues(pr, { save: false });
     renderPresetUI();
@@ -4997,7 +5003,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
         else cur[k] = viewData[currentView][k];
       });
-      PRESET_COLORS.forEach(c => { presetStore.list[c.name][0].values = Object.assign(defaultPresetValues(), cur); });
+      PRESET_COLORS.forEach(c => { if (c.name === presetColor) presetStore.list[c.name][0].values = Object.assign(defaultPresetValues(c.name), cur); });
       savePresetStore();
     } else {
       if (presetStoreNeedsToggleMigration) {
