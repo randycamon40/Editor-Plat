@@ -6,14 +6,14 @@
   font-style: normal;
   font-weight: 400 600;
   font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+  src: url("./fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
 }
 @font-face {
   font-family: "Optimistic Mono";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+  src: url("./fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
 }
 :where(html) {
   font-family: "Optimistic", system-ui, sans-serif;
@@ -329,6 +329,7 @@ button { cursor: pointer; }
   place-items: center;
   flex-shrink: 0;
 }
+.icon-tile svg{width:19px;height:19px;display:block;flex-shrink:0}
 .icon-tile {
   width: 34px;
   height: 34px;
@@ -1433,6 +1434,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         <section class="box">
           <div class="box-head">
             
+            <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-image"/></svg></span>
             <div class="grow">
               <h2>Kanvas Sudut Kendaraan</h2>
               <p>Pilih sisi mobil lalu import foto (maks. 4 foto sekaligus).</p>
@@ -1510,6 +1512,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="templateCard">
         <div class="box-head">
           
+          <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-pencil"/></svg></span>
           <div class="grow">
             <h2>Desain & Data Plat</h2>
             <p>Atur nomor, masa berlaku, dan warna standar TNKB.</p>
@@ -1566,7 +1569,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <span class="preset-plat-ico"><svg class="i"><use href="#i-sliders"/></svg></span>
           <span class="grow" style="text-align:left">
             <strong class="preset-plat-title">Kalibrasi Tipografi Plat</strong>
-            <span class="preset-plat-sub" id="platPresetSub">Aktif: Preset #1 \u2022 Plat Putih \u2014 ketuk untuk kalibrasi.</span>
+            <span class="preset-plat-sub" id="platPresetSub">Aktif: Default \u2022 Plat Putih \u2014 ketuk untuk kalibrasi.</span>
           </span>
           <svg class="i preset-plat-chev"><use href="#i-right"/></svg>
         </button>
@@ -1582,7 +1585,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     <section class="panel" id="panel-preset" data-panel="preset">
       <section class="box preset-top-lock">
         <div class="box-head">
-          <span class="icon-tile"><svg class="i"><use href="#i-sliders"/></svg></span>
+          <span class="icon-tile"><svg class="i"><use href="#i-plate"/></svg></span>
           <div class="grow">
             <h2>Preset Kalibrasi Tipografi</h2>
             <p>Tiap warna plat punya setting sendiri. Diubah di sini, langsung kepakai.</p>
@@ -1599,11 +1602,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         </div>
         <div class="preset-preview-card" id="presetPreviewCard">
           <div class="plate" id="presetPlate">
-            <span class="plate-text" id="presetPlateText">B 9096 ROQ</span>
-            <span class="plate-year" id="presetPlateYear">03•27</span>
+            <span class="plate-text" id="presetPlateText">B 9036 ROQ</span>
+            <span class="plate-year" id="presetPlateYear">03•28</span>
             <div class="plate-logo"></div>
           </div>
-          <div class="preset-preview-label" id="presetPreviewLabel">Plat Putih • Preset #1</div>
+          <div class="preset-preview-label" id="presetPreviewLabel">Plat Putih • Default</div>
         </div>
       </section>
       <section class="box preset-bottom-scroll">
@@ -1667,6 +1670,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="bulkListCard" hidden>
         <div class="box-head">
           
+          <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-layers"/></svg></span>
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
@@ -2673,8 +2677,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       logoEl.style.width = (st.logoW !== undefined ? st.logoW : 104) + "%";
       logoEl.style.height = (st.logoH !== undefined ? st.logoH : 150) + "%";
     }
-    tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px";
-    yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px";
+    tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px transparent";
+    yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px transparent";
     const shadowOn = (_ps && _ps.values && ("shadow" in _ps.values)) ? !!_ps.values.shadow : ($("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false));
     const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
     if (!shadowOn) {
@@ -2769,6 +2773,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         input.addEventListener("touchstart", e => { if (!_touchActive) { const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY; _sv = parseFloat(input.value); _mode = "undecided"; _touchActive = true; } }, { passive: true });
         input.addEventListener("touchmove", e => { if (!_touchActive) return; const t = e.touches[0]; const dx = Math.abs(t.clientX - _sx), dy = Math.abs(t.clientY - _sy); if (_mode === "undecided") { if (dx > 10 && dx > dy * 1.5) _mode = "slide"; else if (dy > 8 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); }, { passive: true });
         const _endTouchSlider = () => { if (_touchActive && _mode !== "slide") _restoreSlider(); _mode = "idle"; _touchActive = false; };
+        input.addEventListener("pointermove", e => { if (!_touchActive) return; const dx = Math.abs(e.clientX - _sx), dy = Math.abs(e.clientY - _sy); if (_mode === "undecided") { if (dx > 10 && dx > dy * 1.5) _mode = "slide"; else if (dy > 8 && dy >= dx) _mode = "scroll"; } if (_mode !== "slide") _restoreSlider(); });
         input.addEventListener("touchend", _endTouchSlider, { passive: true });
         input.addEventListener("touchcancel", _endTouchSlider, { passive: true });
         input.addEventListener("pointerup", _endTouchSlider);
@@ -3083,6 +3088,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   };
   platePreview.addEventListener("pointerup", endDrag);
   platePreview.addEventListener("pointercancel", endDrag);
+  function fixTitleIcons(){
+    var m={"Kanvas Sudut Kendaraan":"i-image","Desain & Data Plat":"i-pencil","Antrean Produksi Bulk":"i-layers"};
+    document.querySelectorAll(".box-head").forEach(function(h){
+      var t=h.querySelector("h2");if(!t||!m[t.textContent.trim()])return;
+      var tile=h.querySelector(".icon-tile");if(!tile)return;
+      tile.innerHTML='<s'+'vg class="i"><u'+'se href="#'+m[t.textContent.trim()]+'"/></s'+'vg>';
+    });
+  }
   function renderSwatches() {
     if ($("btnColorPlat")) $("btnColorPlat").style.backgroundColor = warnaEl.value;
     if ($("btnColorTeks")) $("btnColorTeks").style.backgroundColor = warnaTeksEl.value;
@@ -4673,7 +4686,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function freshPresetStore() {
     const list = {}, active = {};
     PRESET_COLORS.forEach(c => {
-      list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues(c.name) }];
+      list[c.name] = [{ id: 1, name: "Default", values: defaultPresetValues(c.name) }];
       active[c.name] = 1;
     });
     return { active, list };
@@ -4690,14 +4703,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   } catch (e) {}
   PRESET_COLORS.forEach(c => {
     if (!Array.isArray(presetStore.list[c.name]) || !presetStore.list[c.name].length) {
-      presetStore.list[c.name] = [{ id: 1, name: "Preset #1", values: defaultPresetValues(c.name) }];
+      presetStore.list[c.name] = [{ id: 1, name: "Default", values: defaultPresetValues(c.name) }];
     }
     presetStore.list[c.name].forEach(pr => {
       const _v = pr.values || {};
       if (!(("autofit" in _v) && ("showLogo" in _v) && ("showDot" in _v) && ("shadow" in _v))) presetStoreNeedsToggleMigration = true;
-      if (/^Preset (\d+)$/.test(pr.name || "")) pr.name = "Preset #" + RegExp.$1;
+      if (pr.id === 1 || pr.name === "Preset #1") pr.name = "Default"; else if (/^Preset (\d+)$/.test(pr.name || "")) pr.name = "Preset #" + RegExp.$1;
       pr.values = Object.assign(defaultPresetValues(c.name), _v);
-      if (!pr.name) pr.name = "Preset #1";
+      if (!pr.name) pr.name = pr.id === 1 ? "Default" : "Preset #" + pr.id;
     });
     if (!presetStore.list[c.name].some(pr => pr.id === presetStore.active[c.name])) {
       presetStore.active[c.name] = presetStore.list[c.name][0].id;
@@ -4743,14 +4756,14 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const plEl = $("presetPlate"), tEl = $("presetPlateText"), yEl = $("presetPlateYear"), labelEl = $("presetPreviewLabel");
     if (!plEl || !tEl || !yEl || !labelEl) return;
     const st = viewData[currentView] || {};
-    const nomor = "B 9096 ROQ";
+    const nomor = "B 9036 ROQ";
     const bulan = "03";
-    const tahun = "27";
+    const tahun = "28";
     const def = presetColorDef(presetColor) || presetColorDef("Putih");
     const p = { nomor: nomor, bulan: bulan, tahun: tahun, warna: def.bg, warnaTeks: def.txt, warnaShadow: def.sh, warnaName: presetColor, shadowOn: $("shadowChk") ? $("shadowChk").checked : true };
     stylePlate(plEl, tEl, yEl, st, p);
     const pr = getActivePreset();
-    labelEl.textContent = "Plat " + presetColor + " • " + (pr ? pr.name : "Preset #1");
+    labelEl.textContent = "Plat " + presetColor + " • " + (pr ? pr.name : "Default");
     const card = $("presetPreviewCard");
     if (card && card.clientWidth) {
       const f = Math.min(1.3, (card.clientWidth - 24) / PLATE_W);
@@ -4771,7 +4784,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (sub && pr) sub.textContent = "Aktif: " + pr.name + " • Plat " + presetColor + " — ketuk untuk kalibrasi.";
 
     const del = $("btnDeletePreset");
-    if (del) del.disabled = list.length <= 1;
+    const isDefaultPreset = getActivePreset() && getActivePreset().id === 1;
+    const ren = $("btnRenamePreset");
+    if (ren) ren.disabled = !!isDefaultPreset;
+    if (del) del.disabled = list.length <= 1 || !!isDefaultPreset;
     renderPresetPreview();
   }
   function syncPresetPanel() {
@@ -4834,6 +4850,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const list = presetStore.list[presetColor];
     if (list.length <= 1) return showToast("Preset terakhir tidak bisa dihapus", true);
     const pr = getActivePreset();
+    if (pr && pr.id === 1) return showToast("Preset Default tidak bisa dihapus", true);
     const ok = await askConfirm("Hapus Preset?", "Preset " + (pr ? pr.name : "") + " untuk plat " + presetColor + " akan dihapus.", "Hapus Preset");
     if (!ok) return;
     const idx = list.findIndex(x => x.id === presetStore.active[presetColor]);
@@ -4861,6 +4878,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       if (dst) dst.values = Object.assign({}, src.values);
     });
     savePresetStore();
+    applyPresetValues(getActivePreset(), { save: false });
     renderPresetUI();
     showToast("Preset disalin ke semua warna plat ✓");
   }
@@ -4899,6 +4917,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function showRenameInput() {
     const pr = getActivePreset();
     if (!pr) return;
+    if (pr.id === 1) return;
     const sel = $("presetSelect"), chev = document.querySelector(".preset-select-chev"), badge = $("presetDefaultBadge"), inp = $("presetRenameInput");
     if (!sel || !inp) return;
     presetRenameCommitted = false;
@@ -4972,6 +4991,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } catch (e) {}
     try { if (localStorage.getItem("platShadow") === "1") $("shadowChk").checked = true; if (localStorage.getItem("platShadow") === "0") $("shadowChk").checked = false; } catch (e) {}
     renderSwatches();
+    fixTitleIcons();
     loadViewState();
     if (presetStoreFresh) {
       const cur = {};
