@@ -2806,8 +2806,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             }
           }
           paintSlider(s.key);
-          applyPlate();
-          queueMini();
+          if (TEXT_KEYS.includes(s.key) && document.querySelector("#panel-preset.active")) { if (typeof queuePresetPreview === "function") queuePresetPreview(); } else { applyPlate(); queueMini(); }
         });
       });
       host.appendChild(wrap);
@@ -4732,6 +4731,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let presetColor = "Putih";
   let presetReady = false;
   let presetSaveTimer = null;
+  let presetPreviewRaf = 0;
+  function queuePresetPreview() { if (presetPreviewRaf) return; presetPreviewRaf = requestAnimationFrame(() => { presetPreviewRaf = 0; renderPresetPreview(); }); }
   let presetRenameCommitted = true;
   function presetColorDef(name) { return PRESET_COLORS.find(c => c.name === name) || null; }
   function getActivePreset(color) {
@@ -4759,9 +4760,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     syncSliders(viewData[currentView]);
     if (o.save !== false) savePresetStore();
-    applyPlate();
-    queueMini();
-    renderPresetPreview();
+    if (!o.skipPlate) { applyPlate(); queueMini(); }
+    if (!o.skipPreview) renderPresetPreview();
   }
   function renderPresetPreview() {
     const plEl = $("presetPlate"), tEl = $("presetPlateText"), yEl = $("presetPlateYear"), labelEl = $("presetPreviewLabel");
@@ -4802,7 +4802,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const cur = getPlate();
     const def = presetColorDef(cur.warnaName);
     if (def) presetColor = def.name;
-    applyPresetValues(getActivePreset(), { save: false });
+    applyPresetValues(getActivePreset(), { save: false, skipPlate: true, skipPreview: true });
     renderPresetUI();
   }
   function selectPresetColor(name) {
@@ -4902,7 +4902,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       presetSaveTimer = setTimeout(() => savePresetStore(), 400);
       const badge = $("presetDefaultBadge");
       if (badge) badge.hidden = !isPresetDefault(pr);
-      renderPresetPreview();
+      queuePresetPreview();
     }
   }
   function syncPresetFromToggles() {
@@ -4917,7 +4917,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       presetSaveTimer = setTimeout(() => savePresetStore(), 400);
       const badge = $("presetDefaultBadge");
       if (badge) badge.hidden = !isPresetDefault(pr);
-      renderPresetPreview();
+      queuePresetPreview();
     }
   }
   function showRenameInput() {
