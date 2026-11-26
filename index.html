@@ -432,17 +432,7 @@ button { cursor: pointer; }
 .plate-grid-row .fld { margin: 0; }
 .plate-grid-row .inp { min-height: 52px; padding: 0; text-align: center; font-weight: 700; }
 .plate-grid-row .inp.plate-entry { padding: 0 12px; text-align: left; font-weight: normal; }
-.btn-5yr {
-  min-height: 52px;
-  padding: 0 10px;
-  border-radius: 11px;
-  background: rgba(var(--ac-rgb), 0.14);
-  color: var(--ac);
-  border: 1px solid rgba(var(--ac-rgb), 0.3);
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 1.15;
-}
+
 .tnkb-bar {
   display: flex;
   gap: 6px;
@@ -853,15 +843,7 @@ button { cursor: pointer; }
   align-items: center;
   justify-content: center;
 }
-.plate-preview-card {
-  position: static;
-  top: calc(68px + env(safe-area-inset-top));
-  z-index: 20;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-}
-.plate-preview-card .plate-stage-hero {
-  margin-bottom: 0;
-}
+
 .plate-stage-hero .plate {
   transform: scale(var(--fit, 1));
   transform-origin: center;
@@ -1001,9 +983,10 @@ input[type=range]::-moz-range-thumb {
   font-size: 16px;
 }
 .q-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.q-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; } .tipe-badge{font-size:11px;font-weight:700;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:112px} .bulk-tipe-line{font-size:12px;color:var(--text-2);margin-top:2px}
+.q-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }  .bulk-tipe-line{font-size:12px;color:var(--text-2);margin-top:2px}
 .vault-card { flex-wrap: wrap; padding: 10px; }
 .vault-card .q-actions { width: 100%; justify-content: flex-end; margin-left: 0; margin-top: 4px; }
+.vault-card .q-actions [data-act="export_batch"] { margin-right: auto; width: auto; min-height: 36px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 700; }
 .vault-badge {
   width: 38px;
   height: 38px;
@@ -1157,10 +1140,7 @@ input[type=range]::-moz-range-thumb {
 }
 .dock-btn.on { color: var(--ac); }
 .dock-btn.on .nv-ic { background: rgba(var(--ac-rgb), 0.16); }
-.preset-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.preset-chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 12.5px; }
-.preset-chip.on { background: var(--ac); color: var(--ac-ink); border-color: transparent; }
-.preset-chip:active { transform: scale(0.97); }
+
 #presetColorRow .tnkb-pill.on { outline: 2px solid var(--ac); outline-offset: 1px; }
 #panel-preset .preset-top-lock { position: sticky; top: 64px; z-index: 5; margin-bottom: 12px; }
 #panel-preset .preset-bottom-scroll .preset-title-row { margin-top: 0; }
@@ -1702,7 +1682,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
-            <p id="bulkTipeLine" class="bulk-tipe-line">Tipe mobil: — (manual)</p>
+            <p id="bulkTipeLine" class="bulk-tipe-line">Tipe mobil: —</p>
           </div>
         </div>
         <div class="thumbs-strip" id="templateStrip" aria-label="Template mobil aktif"></div>
@@ -1855,8 +1835,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <h2>Tempel Banyak Nopol</h2>
       <button id="closePasteBtn" class="icon-act" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
-    <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, Avanza, 05, 31, kuning <- dari CSV pakai tipe (4 kolom)" spellcheck="false" autocapitalize="characters"></textarea>
-    <p class="sheet-text" style="margin:0 0 10px">Format paste: <b>Nopol, Bulan Tahun, Warna</b> (tanpa tipe). Kalau dari CSV pakai tipe: <b>Nopol, Tipe, Bulan Tahun, Warna</b>. Tanpa tipe = ikut tipe AI.</p>
+    <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, 05, 31, kuning <- dari CSV, tipe auto disembunyikan" spellcheck="false" autocapitalize="characters"></textarea>
+    <p id="pasteTipeLine" class="bulk-tipe-line" hidden style="margin:0 0 10px"></p>
     <div class="btn-pair" style="margin-bottom:10px">
       <button type="button" class="btn btn-muted btn-xs" id="btnImportCsvFile"><svg class="i"><use href="#i-upload"/></svg>File CSV / TXT</button>
       <a class="icon-act" href="./nopol-csv.html" onclick="location.replace(this.href);return false;" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
@@ -1903,7 +1883,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     </div>
     <div class="fld">
       <label for="editVTipe">Tipe Mobil</label>
-      <input id="editVTipe" class="inp" type="text" maxlength="60" placeholder="Contoh: Toyota Avanza (kosong = manual)" autocomplete="off">
+      <input id="editVTipe" class="inp" type="text" maxlength="60" placeholder="Contoh: Toyota Avanza (kosong = tanpa tipe)" autocomplete="off">
     </div>
     <div class="btn-pair gap-t">
       <button class="btn btn-muted" id="editVCancelBtn">Batal</button>
@@ -2211,7 +2191,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "showFrame", "emboss", "lebarNopol", "frameW", "frameH", "logoX", "logoY", "logoW", "logoH", "logoLock"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "showFrame", "emboss", "lebarNopol", "frameW", "frameH", "logoX", "logoY", "logoW", "logoH"];
   const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol", "frameW", "frameH"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
@@ -2482,7 +2462,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   /* Noise dimatikan untuk plat PNG: tekstur sudah ada di dalam PNG-nya.
      Generator tetap dipertahankan (dipakai canvas export bila noise > 0),
      tapi --noise-opacity di DOM selalu 0 agar PNG tidak ditimpa noise CSS. */
-  let noiseCanvas = null;
+  
   (function makeNoise() {
     try {
       const c = document.createElement("canvas");
@@ -2495,7 +2475,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         id.data[i + 3] = 255;
       }
       x.putImageData(id, 0, 0);
-      noiseCanvas = c;
+      
       document.documentElement.style.setProperty("--noise-img", "url(" + c.toDataURL("image/png") + ")");
     } catch (e) {}
   })();
@@ -2503,7 +2483,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, showFrame: false, emboss: false, lebarNopol: 85, frameW: 105, frameH: 125, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, showFrame: false, emboss: false, lebarNopol: 85, frameW: 105, frameH: 125, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150
     };
   }
   function freshState(old, img) {
@@ -2606,25 +2586,26 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let bulkQ = "";
   /* ===== TIPE MOBIL + NAMA VAULT (penanda saja, Vault terkunci) =====
      - activeTipeMobil = tipe dari AI (brand template) untuk item baru.
-     - Item baru: tipe dari kolom CSV (kalau ada) > activeTipeMobil > "" (manual).
-     - Bulk dikosongkan sampai habis -> activeTipeMobil dikosongkan,
-       item baru sesudahnya dianggap ketik manual sampai AI jalan lagi
+     - Item baru: tipe dari kolom CSV (kalau ada) > activeTipeMobil > "" (tanpa tipe).
+     - Bulk dikosongkan sampai habis -> activeTipeMobil balik ke AI,
+       item baru sesudahnya pakai tipe AI sampai AI jalan lagi
        atau template dikunci ulang.
      - VAULT TERKUNCI: tambah/hapus/edit di Bulk TIDAK mengubah Vault.
        Vault baru berubah kalau: (1) tombol Simpan Vault ditekan,
        (2) item Vault langsung diedit/dihapus dari dalam Vault.
      - Nama vault HANYA penanda/label: 1 tipe = nama tipenya,
-       >1 tipe = "Semua tipe mobil (N tipe)", tanpa tipe = "Manual".
+       >1 tipe = "Semua tipe mobil (N tipe)", tanpa tipe = "" (tanpa label).
        Rename manual (nameCustom) tidak ditimpa. */
   let activeTipeMobil = "";
   function itemTipe(it){ return String((it && (it.tipeMobil || it.tipe)) || "").trim(); }
   function titleCaseTipe(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-])([a-z])/g, function(m,p,c){ return p + c.toUpperCase(); }); }
   function distinctTipes(plates){ const out=[]; (plates||[]).forEach(function(p){ const v=itemTipe(p); if(v && out.indexOf(v)===-1) out.push(v); }); return out; }
-  function vaultNameForPlates(plates){ const ts=distinctTipes(plates); if(!ts.length) return "Manual"; if(ts.length===1) return ts[0]; return "Semua tipe mobil ("+ts.length+" tipe)"; }
-  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; el.textContent = activeTipeMobil ? "Tipe mobil: "+activeTipeMobil+" (AI)" : "Tipe mobil: — (manual)"; }
+  function vaultNameForPlates(plates){ const ts=distinctTipes(plates); if(!ts.length) return ""; if(ts.length===1) return ts[0]; return "Semua tipe mobil ("+ts.length+" tipe)"; }
+  function templateBrand(){ for(const v of VIEWS){ const b=(templateData&&templateData[v]&&templateData[v].brand)||(viewData[v]&&viewData[v].brand); if(b&&String(b).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(b); } return ""; }
+  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; const ts=distinctTipes(bulkItems); if(ts.length===1){ el.textContent="Tipe mobil: "+ts[0]; return; } if(ts.length>1){ el.textContent="Tipe mobil: Semua tipe mobil ("+ts.length+" tipe)"; return; } const tb=templateBrand(); el.textContent = tb ? "Tipe mobil: "+tb+" (AI)" : (activeTipeMobil ? "Tipe mobil: "+activeTipeMobil+" (AI)" : "Tipe mobil: —"); }
   function setActiveTipe(v){ const s=String(v||"").trim(); if(s && s.toLowerCase()!=="tidak diketahui") activeTipeMobil = titleCaseTipe(s); else if(!s) activeTipeMobil=""; refreshBulkTipeLine(); }
-  function clearActiveTipeOnEmpty(){ if(bulkItems.length) return; activeTipeMobil=""; refreshBulkTipeLine(); }
-  function restoreActiveTipeFromBulk(){ const ts=distinctTipes(bulkItems); activeTipeMobil = ts.length===1 ? ts[0] : ""; refreshBulkTipeLine(); }
+  function clearActiveTipeOnEmpty(){ if(bulkItems.length) return; activeTipeMobil=templateBrand()||""; refreshBulkTipeLine(); }
+  function restoreActiveTipeFromBulk(){ const ts=distinctTipes(bulkItems); activeTipeMobil = ts.length===1 ? ts[0] : (ts.length>1 ? "" : (templateBrand()||"")); refreshBulkTipeLine(); }
   const normQ = s => String(s).toUpperCase().replace(/\s+/g, "");
   const bulkMatch = it => !bulkQ || normQ(it.nomor).includes(bulkQ);
   async function loadHistoryBatches() {
@@ -2666,7 +2647,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return false;
   }
   function getDefaultBatchName() {
-    if (bulkItems && bulkItems.length) return vaultNameForPlates(bulkItems);
+    if (bulkItems && bulkItems.length) { const _nm=vaultNameForPlates(bulkItems); if(_nm) return _nm; const _tb=templateBrand(); return _tb||""; }
     const tpl = templateData || viewData;
     if (!tpl) return "";
     for (const v of VIEWS) {
@@ -2712,9 +2693,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     plEl.style.borderRadius = "0px";
     plEl.style.borderWidth = "0px";
     plEl.style.backgroundColor = "transparent";
-    plEl.style.setProperty("--plate-bg", "transparent");
+    
     plEl.style.setProperty("--plate-color", p.warnaTeks);
-    plEl.style.setProperty("--plate-border", p.warnaTeks);
+    
     plEl.style.setProperty("--plate-img", "url('" + asset.plateUrl + "')");
     plEl.style.setProperty("--noise-opacity", 0);
     plEl.style.filter = "drop-shadow(0 4px 8px rgba(0,0,0,0.45))" + (st.blur > 0 ? " blur(" + st.blur + "px)" : "");
@@ -3222,13 +3203,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     syncTnkbPills();
     showToast("Preset TNKB " + pill.dataset.name + " diterapkan ✓");
   });
-  if($("btnAuto5Yr")) $("btnAuto5Yr").addEventListener("click", () => {
-    const now = new Date();
-    bulanEl.value = String(now.getMonth() + 1).padStart(2, "0");
-    tahunEl.value = String((now.getFullYear() + 5) % 100).padStart(2, "0");
-    applyPlate();
-    showToast("Masa berlaku +5 tahun diisi ✓");
-  });
+  
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
   if (warnaShadowEl) warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
@@ -3252,7 +3227,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   $("btnColorPlat").addEventListener("click", () => openColorPicker('plat'));
   $("btnColorTeks").addEventListener("click", () => openColorPicker('teks'));
-  if($("btnColorShadow")) $("btnColorShadow").addEventListener("click", () => openColorPicker('shadow'));
+  
   $("colorPickerPresets").addEventListener("click", e => {
     const b = e.target.closest(".sw");
     if (!b) return;
@@ -3420,8 +3395,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           </div>
         </div>`;
     }
-    const textColor = isDark(it.warna) ? "#ffffff" : "#111111";
-    return `<span style="background:${esc(it.warna)};color:${textColor};border:2px solid ${textColor};padding:2px 8px;border-radius:6px;font-family:var(--plate-font)">${esc(it.nomor)}</span>`;
+    
   }
   function paintOneMini(el, st) {
     if (!el || el.dataset.painted === "1") return;
@@ -3476,10 +3450,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         <div class="row-num-wrap">
           ${i === bulkItems.findIndex(x => bulkMatch(x))
             ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">`
-            : `<span class="row-num-span" data-i="${i}">${bulkStartNumber + i}</span>`}
+            : `<span class="row-num-span" data-i="${bulkItems.filter(x=>bulkMatch(x)).indexOf(it)}">${bulkStartNumber + bulkItems.filter(x=>bulkMatch(x)).indexOf(it)}</span>`}
         </div>
         ${chipHtml(it, true)}
-        ${itemTipe(it) ? `<span class="tipe-badge" title="${esc(itemTipe(it))}">${esc(itemTipe(it))}</span>` : ""}
+
         <div class="q-actions">
           <button class="icon-act" data-act="preview" data-index="${i}" title="Preview" aria-label="Preview ${esc(it.nomor)}">${ico("eye")}</button>
           <button class="icon-act" data-act="edit" data-index="${i}" title="Edit" aria-label="Edit ${esc(it.nomor)}">${ico("pencil")}</button>
@@ -3607,8 +3581,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       warnaTeks: warnaTeksEl.value,
       warnaShadow: warnaShadowEl.value,
       warnaName: plateColorName || nameFor(warnaEl.value),
-      tipeMobil: activeTipeMobil || "",
-      tipeSource: activeTipeMobil ? "ai" : "manual"
+      tipeMobil: activeTipeMobil || templateBrand() || "",
+      tipeSource: (activeTipeMobil || templateBrand()) ? "ai" : "manual"
     };
   }
   function fillForm(it) {
@@ -3653,8 +3627,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (isDup) { showToast("Nopol " + it.nomor + " sudah ada di antrean", true); nomorEl.focus(); return; }
     if (editIndex >= 0) {
       const prev = bulkItems[editIndex];
-      const _oldTipe = itemTipe(prev);
-      if (_oldTipe) { it.tipeMobil = _oldTipe; it.tipeSource = prev.tipeSource || "manual"; }
+      it.tipeMobil = itemTipe(prev);
+      it.tipeSource = prev.tipeSource || "manual";
       bulkItems[editIndex] = it;
       if (!await saveBulkData()) { bulkItems[editIndex] = prev; return; }
       cancelEditUI();
@@ -3682,6 +3656,48 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     else m = k.match(/^#?([0-9a-f]{6})$/);
     if (m) return { hex: "#" + m[1], name: nameFor("#" + m[1]) };
     return null;
+  }
+  let pasteRawWithTipe = "";
+  let pasteHiddenTipes = {};
+  function isTipeLikeToken(t){
+    var k = String(t || "").trim().toLowerCase();
+    if(!k) return false;
+    if(/^(\d{1,2})[\s.\-\/](\d{2,4})$/.test(k)) return false;
+    if(/^(\d{4})[\s.\-\/](\d{1,2})$/.test(k)) return false;
+    if(/^\d{1,2}$/.test(k)) return false;
+    if(/^\d{4}$/.test(k)) return false;
+    var _bm = {januari:1,jan:1,februari:1,feb:1,pebruari:1,maret:1,mar:1,april:1,apr:1,mei:1,juni:1,jun:1,juli:1,jul:1,agustus:1,agu:1,ags:1,september:1,sep:1,sept:1,oktober:1,okt:1,november:1,nov:1,desember:1,des:1};
+    if(_bm[k]) return false;
+    if(parseColorToken(t)) return false;
+    return true;
+  }
+  function stripTipeForDisplay(text){
+    var lines = String(text || "").split(/\r?\n/);
+    var tipes = {};
+    var hasTipe = false;
+    var out = lines.map(function(line){
+      var parts = line.split(/[,;\t|]+/).map(function(s){ return s.replace(/^"|"$/g, "").trim(); });
+      if(parts.length < 4){ return line; }
+      var t1 = parts[1] || "";
+      if(!isTipeLikeToken(t1)){ return line; }
+      hasTipe = true;
+      tipes[String(parts[0]||"").toUpperCase().replace(/\s+/g,"")] = titleCaseTipe(t1);
+      var rest = parts.slice(0, 1).concat(parts.slice(2));
+      return rest.join(",");
+    });
+    return { display: out.join("\n"), tipes: tipes, hasTipe: hasTipe };
+  }
+  function reattachTipes(displayText, tipes){
+    var lines = String(displayText || "").split(/\r?\n/);
+    return lines.map(function(line, idx){
+      var _k = String((line.split(/[,;\t|]+/)[0]||"")).toUpperCase().replace(/\s+/g,""); var tp = (tipes || {})[_k] || "";
+      if(!tp) return line;
+      var parts = line.split(/[,;\t|]+/).map(function(s){ return s.replace(/^"|"$/g, "").trim(); });
+      if(!parts.length || !parts[0]) return line;
+      if(parts.length >= 2 && String(parts[1] || "").toLowerCase() === tp.toLowerCase()) return line;
+      var rest = parts.slice(0, 1).concat([tp]).concat(parts.slice(1));
+      return rest.join(",");
+    }).join("\n");
   }
   function parsePaste(text) {
     const base = currentFormItem();
@@ -3796,7 +3812,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return { items, warnings };
   }
   $("pasteBtn").addEventListener("click", () => {
+    pasteRawWithTipe = ""; pasteHiddenTipes = {};
     $("pasteArea").value = "";
+    const _pt = $("pasteTipeLine"); if (_pt) { _pt.hidden = true; _pt.textContent = ""; }
     $("pasteCount").textContent = "0 nopol terdeteksi";
     $("pasteCount").style.color = "";
     $("pasteWarnings").innerHTML = "";
@@ -3808,7 +3826,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   $("btnImportCsvFile").addEventListener("click", () => $("pasteFileInput").click());
   $("btnPasteClipboard").addEventListener("click", async () => {
     try {
-      const t = await navigator.clipboard.readText();
+      pasteHiddenTipes = {}; const t = await navigator.clipboard.readText();
       if (!t) return showToast("Clipboard kosong", true);
       $("pasteArea").value = t;
       $("pasteArea").dispatchEvent(new Event("input"));
@@ -3822,7 +3840,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const file = e.target.files[0];
     if (!file) return;
     try {
-      let text = await file.text();
+      pasteHiddenTipes = {}; let text = await file.text();
       if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
       if (text.includes("\u0000")) {
         showToast("Format file tidak didukung. Simpan CSV sebagai UTF-8", true);
@@ -3840,8 +3858,16 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   $("pasteArea").addEventListener("input", (e) => {
     const start = e.target.selectionStart, end = e.target.selectionEnd;
     e.target.value = e.target.value.toUpperCase();
-    e.target.setSelectionRange(start, end);
-    const { items, warnings } = parsePaste(e.target.value);
+    const _rawUpper = e.target.value;
+    if(!_rawUpper.trim()){ pasteRawWithTipe = ""; pasteHiddenTipes = {}; }
+    else {
+      const _strip = stripTipeForDisplay(_rawUpper);
+      if(_strip.hasTipe){ pasteHiddenTipes = Object.assign({}, pasteHiddenTipes, _strip.tipes); pasteRawWithTipe = reattachTipes(_rawUpper, pasteHiddenTipes); if(_strip.display !== _rawUpper){ e.target.value = _strip.display; } }
+      else { pasteRawWithTipe = reattachTipes(_rawUpper, pasteHiddenTipes); }
+    }
+    try { const _ns = Math.min(start, e.target.value.length); e.target.setSelectionRange(_ns, _ns); } catch (err) {}
+    const { items, warnings } = parsePaste(pasteRawWithTipe || e.target.value);
+    const _pt2 = $("pasteTipeLine"); if (_pt2) { const _ts = distinctTipes(items); if (!_ts.length) { _pt2.hidden = true; _pt2.textContent = ""; } else { _pt2.hidden = false; _pt2.textContent = _ts.length === 1 ? "Tipe mobil: " + _ts[0] : "Tipe mobil: Semua tipe mobil (" + _ts.length + " tipe)"; } }
     const countEl = $("pasteCount"), warnHost = $("pasteWarnings");
     if (warnings.length === 0) {
       countEl.textContent = items.length + " nopol terdeteksi";
@@ -3858,7 +3884,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
   });
   $("pasteAddBtn").addEventListener("click", async () => {
-    const { items: list, warnings } = parsePaste($("pasteArea").value);
+    const { items: list, warnings } = parsePaste(pasteRawWithTipe || $("pasteArea").value);
     if (!list.length) {
       return showToast(warnings.length ? "Semua baris bermasalah. Perbaiki dulu." : "Belum ada nopol untuk ditambahkan", true);
     }
@@ -3879,6 +3905,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const skippedDup = list.length - filteredList.length;
     if (!filteredList.length) return showToast(skippedDup ? "Semua nopol sudah ada di antrean" : "Belum ada nopol untuk ditambahkan", true);
     bulkItems = bulkItems.concat(filteredList);
+    { const _pts=distinctTipes(bulkItems); if(_pts.length===1) activeTipeMobil=_pts[0]; else if(_pts.length>1) activeTipeMobil=""; }
     if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
     updateTemplateUI();
     closeSheet("pasteModal");
@@ -3896,7 +3923,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const _pl = Array.isArray(batch.plates) ? batch.plates : (Array.isArray(batch.items) ? batch.items : (Array.isArray(batch) ? batch : []));
       const count = _pl.length;
       const _ts = distinctTipes(_pl);
-      const _tipeLabel = _ts.length ? (_ts.length === 1 ? _ts[0] : ("Semua tipe mobil (" + _ts.length + " tipe)")) : "Manual";
+      const _tipeLabel = _ts.length ? (_ts.length === 1 ? _ts[0] : ("Semua tipe mobil (" + _ts.length + " tipe)")) : "—";
       return `
         <div class="q-item vault-card">
           <span class="vault-badge">${ico("vault")}</span>
@@ -3907,7 +3934,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <div class="q-sub">${count} nopol • ${esc(batch.date || "-")} • ${esc(_tipeLabel)}</div>
           </div>
           <div class="q-actions">
-            <button class="icon-act" data-act="export_batch" data-idx="${idx}" title="Export ZIP" aria-label="Export ZIP">${ico("package")}</button>
+            <button class="icon-act" data-act="export_batch" data-idx="${idx}" title="Export ZIP" aria-label="Export ZIP">${ico("package")}<span>Export ZIP</span></button>
             <button class="icon-act" data-act="preview_batch" data-idx="${idx}" title="Preview" aria-label="Preview">${ico("eye")}</button>
             <button class="icon-act" data-act="load_batch" data-idx="${idx}" title="Muat ke Bulk" aria-label="Muat ke Bulk">${ico("redo")}</button>
             <button class="icon-act danger" data-act="del_batch" data-idx="${idx}" title="Hapus" aria-label="Hapus">${ico("x")}</button>
@@ -4712,7 +4739,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const usedFolders = new Set();
       for (let g of exportGroups) {
         if (!g.plates || !g.plates.length) continue;
-        const activeTpl = g.template || globalTpl;
+        const activeTpl = g.template || globalTpl; if(!g.template && exportGroups.length>1) continue;
         const views = VIEWS.filter(v => activeTpl[v] && activeTpl[v].img);
         let currentFolder = folderHasil;
         if (g.folderName) {
@@ -4758,6 +4785,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const prevIndex = activeVaultIndex;
         if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
           historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(exportGroups[0].plates));
+          if(!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(exportGroups[0].plates) || templateBrand() || "";
           historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
           historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
           historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
@@ -4796,7 +4824,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   $("btnExportZip").addEventListener("click", (e) => {
     if (!bulkItems.length) return showToast("Belum ada data bulk", true);
-    openExportModal([{ folderName: null, plates: JSON.parse(JSON.stringify(bulkItems)) }], e.currentTarget, true);
+    openExportModal([{ folderName: null, plates: JSON.parse(JSON.stringify(bulkItems)) }], e.currentTarget, false);
   });
   $("btnExportAllVault").addEventListener("click", (e) => {
     const groups = historyBatches.map((b, idx) => ({
@@ -4932,7 +4960,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const bulan = (bulanEl.value.trim() || "03");
     const tahun = (tahunEl.value.trim() || "28");
     const def = presetColorDef(presetColor) || presetColorDef("Putih");
-    const p = { nomor: nomor, bulan: bulan, tahun: tahun, warna: def.bg, warnaTeks: def.txt, warnaShadow: def.sh, warnaName: presetColor, shadowOn: $("shadowChk") ? $("shadowChk").checked : true };
+    const p = { nomor: nomor, bulan: bulan, tahun: tahun, warna: def.bg, warnaTeks: def.txt, warnaShadow: def.sh, warnaName: presetColor };
     stylePlate(plEl, tEl, yEl, st, p);
     const pr = getActivePreset();
     labelEl.textContent = "Plat " + presetColor + " • " + (pr ? pr.name : "Default");
@@ -5163,9 +5191,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (isNaN(activeVaultIndex)) activeVaultIndex = -1;
     historyBatches = await loadHistoryBatches();
     await loadBulkData();
-    try {
-      // Migrasi logo dibatalkan agar settingan user tidak tertimpa
-    } catch (e) {}
+    
 
     renderSwatches();
     fixTitleIcons();
@@ -5173,8 +5199,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (presetStoreFresh) {
       const cur = {};
       PRESET_ALL_KEYS.forEach(k => {
-        if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
-        else cur[k] = viewData[currentView][k];
+        cur[k] = viewData[currentView][k];
       });
       PRESET_COLORS.forEach(c => { presetStore.list[c.name][0].values = defaultPresetValues(c.name); });
       savePresetStore();
@@ -5182,8 +5207,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       if (presetStoreNeedsToggleMigration) {
         const cur = {};
         PRESET_TOGGLE_KEYS.forEach(k => {
-          if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
-          else cur[k] = viewData[currentView][k];
+          cur[k] = viewData[currentView][k];
         });
         PRESET_COLORS.forEach(c => { presetStore.list[c.name].forEach(pr => { PRESET_TOGGLE_KEYS.forEach(k => { if (!(k in pr.values)) pr.values[k] = cur[k]; }); }); });
         savePresetStore();
@@ -5251,7 +5275,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
       historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
-      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(bulkItems);
+      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(bulkItems) || templateBrand() || "";
       if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
       else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
     } else {
