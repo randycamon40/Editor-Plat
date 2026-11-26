@@ -40,6 +40,7 @@
 <link rel="preload" href="./plat_kuning.png" as="image">
 <link rel="preload" href="./plat_merah.png" as="image">
 <link rel="preload" href="./plat_hijau.png" as="image">
+<link rel="preload" href="./frame_plat.png" as="image">
 <script src="./jszip.min.js"></script>
 <script src="./localforage.min.js"></script>
 <script>
@@ -827,6 +828,17 @@ button { cursor: pointer; }
   background-position: center;
   background-repeat: no-repeat;
 }
+.plate-frame {
+  position: absolute;
+  inset: -3.5px -6px -6.5px -6px;
+  z-index: 4;
+  pointer-events: none;
+  background-image: url("./frame_plat.png");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: none;
+}
 .plate-stage-hero {
   padding: 20px 12px;
   margin-bottom: 14px;
@@ -1186,7 +1198,7 @@ input[type=range]::-moz-range-thumb {
 .preset-plat-title { display: block; font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text); line-height: 1.2; }
 .preset-plat-sub { display: block; font-size: 13px; color: var(--text-2); margin-top: 2px; line-height: 1.35; }
 .preset-plat-chev { color: var(--text-3); flex-shrink: 0; }
-.preset-preview-card { border-radius: 14px; padding: 20px 12px 14px; margin-bottom: 12px; background: repeating-linear-gradient(45deg, var(--surface-2) 0 10px, var(--surface) 10px 20px); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; overflow: hidden; }
+.preset-preview-card { border-radius: 14px; padding: 22px 12px 20px; margin-bottom: 12px; background: repeating-linear-gradient(45deg, var(--surface-2) 0 10px, var(--surface) 10px 20px); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; overflow: hidden; }
 #presetColors, .preset-colors, .preset-tabs, .tnkb-bar { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 8px !important; overflow: visible !important; padding: 0 !important; margin-bottom: 12px !important; }
 #presetColors button, .preset-colors button, .preset-color, .tnkb-bar .tnkb-pill { flex: 0 1 auto !important; white-space: nowrap !important; padding: 10px 14px !important; font-size: 13px !important; }
 .preset-preview-card .plate { transform: scale(var(--fit, 1)); transform-origin: center; }
@@ -1434,7 +1446,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         <section class="box">
           <div class="box-head">
             
-            <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-image"/></svg></span>
+            <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-image"/></svg></span>
             <div class="grow">
               <h2>Kanvas Sudut Kendaraan</h2>
               <p>Pilih sisi mobil lalu import foto (maks. 4 foto sekaligus).</p>
@@ -1512,7 +1524,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="templateCard">
         <div class="box-head">
           
-          <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-pencil"/></svg></span>
+          <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-pencil"/></svg></span>
           <div class="grow">
             <h2>Desain & Data Plat</h2>
             <p>Atur nomor, masa berlaku, dan warna standar TNKB.</p>
@@ -1562,8 +1574,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <span class="fld-lbl">Teks</span>
             <button type="button" class="color-swatch-btn" id="btnColorTeks" aria-label="Pilih warna teks plat" style="background-color: #000000;"></button>
             <input type="color" id="warnaTeks" value="#000000" hidden>
+            <input type="color" id="warnaShadow" value="#808080" hidden>
           </div>
-          <input type="color" id="warnaShadow" value="#808080" hidden>
+
         </div>
         <button type="button" class="preset-plat-card" id="goPresetBtn">
           <span class="preset-plat-ico"><svg class="i"><use href="#i-sliders"/></svg></span>
@@ -1637,9 +1650,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <input type="checkbox" id="showLogoChk">
             <i class="toggle-pill"></i>
           </label>
+
           <label class="toggle-tile">
-            <span>Efek Timbul (Shadow Teks)</span>
-            <input type="checkbox" id="shadowChk">
+            <span>Frame Plat</span>
+            <input type="checkbox" id="showFrameChk">
+            <i class="toggle-pill"></i>
+          </label>
+          <label class="toggle-tile">
+            <span>Efek Timbul (Emboss)</span>
+            <input type="checkbox" id="embossChk">
             <i class="toggle-pill"></i>
           </label>
           <label class="toggle-tile">
@@ -1670,7 +1689,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="bulkListCard" hidden>
         <div class="box-head">
           
-          <span class="icon-tile"[STRIPPED 12 bytes]'i'><use href="#i-layers"/></svg></span>
+          <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-layers"/></svg></span>
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
@@ -1997,6 +2016,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     "Merah":  "./plat_merah.png",
     "Hijau":  "./plat_hijau.png"
   };
+  const FRAME_PLAT_URL = "./frame_plat.png";
   const LOGO_ASSETS = {
     "Putih":  "./logo_samsat_putih.png",
     "Hitam":  "./logo_samsat_hitam.png",
@@ -2134,6 +2154,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (trimmed) trimmedUrlCache[url] = trimmed.toDataURL("image/png");
       } catch (e) {}
     }
+    try {
+      const fImg = await loadPlatePng(FRAME_PLAT_URL);
+      if (fImg) {
+        const fTrim = trimTransparent(fImg, 0, 0);
+        if (fTrim) trimmedUrlCache[FRAME_PLAT_URL] = fTrim.toDataURL("image/png");
+      }
+    } catch (e) {}
     try { applyPlate(); queueMini(); } catch (e) {}
   }
   const SLIDER_GROUPS = [
@@ -2163,7 +2190,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ]}
   ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "lebarNopol", "logoX", "logoY", "logoW", "logoH", "logoLock"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "showFrame", "lebarNopol", "logoX", "logoY", "logoW", "logoH", "logoLock"];
   const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
@@ -2455,7 +2482,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, lebarNopol: 85, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, showFrame: false, lebarNopol: 85, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
     };
   }
   function freshState(old, img) {
@@ -2626,9 +2653,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       tahun: tahunEl.value.trim() || "03",
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
-      warnaShadow: warnaShadowEl.value,
-      warnaName: plateColorName || nameFor(warnaEl.value),
-      shadowOn: $("shadowChk") ? $("shadowChk").checked : true
+
+      warnaName: plateColorName || nameFor(warnaEl.value)
     };
   }
   /* DOM plat: background = PNG plat, logo = PNG logo. Teks tetap FE-Schrift
@@ -2677,19 +2703,26 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       logoEl.style.width = (st.logoW !== undefined ? st.logoW : 104) + "%";
       logoEl.style.height = (st.logoH !== undefined ? st.logoH : 150) + "%";
     }
+    let frameEl = plEl.querySelector('.plate-frame');
+    if (!frameEl) { frameEl = document.createElement('div'); frameEl.className = 'plate-frame'; plEl.appendChild(frameEl); }
+    frameEl.style.backgroundImage = "url('" + (trimmedUrlCache[FRAME_PLAT_URL] || FRAME_PLAT_URL) + "')";
+    frameEl.style.backgroundSize = "100% 100%";
+    frameEl.style.left = "-6px";
+    frameEl.style.right = "-6px";
+    frameEl.style.top = "-3.5px";
+    frameEl.style.bottom = "-6.5px";
+    frameEl.style.display = st.showFrame === true ? 'block' : 'none';
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px transparent";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px transparent";
-    const shadowOn = (_ps && _ps.values && ("shadow" in _ps.values)) ? !!_ps.values.shadow : ($("shadowChk") ? $("shadowChk").checked : (p.shadowOn !== false));
-    const shColor = p.warnaShadow || defaultShadowForPlate(p.warna);
-    if (!shadowOn) {
+    const embossOn = (_ps && _ps.values && ("emboss" in _ps.values)) ? !!_ps.values.emboss : ($("embossChk") ? $("embossChk").checked : false);
+    if (embossOn) {
+      const hi = isDark(txtColor) ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.85)";
+      const lo = isDark(txtColor) ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.35)";
+      tEl.style.textShadow = "0px -1px 0px " + hi + ", 1px 1px 1px " + lo;
+      yEl.style.textShadow = "0px -0.5px 0px " + hi + ", 0.5px 0.5px 0.5px " + lo;
+    } else {
       tEl.style.textShadow = "none";
       yEl.style.textShadow = "none";
-    } else if (!isDark(txtColor)) {
-      tEl.style.textShadow = `1px 1px 1px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
-      yEl.style.textShadow = `0.5px 0.5px 0.5px ${shColor}, -0.5px -0.5px 0px ${shColor}`;
-    } else {
-      tEl.style.textShadow = `1px 1px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
-      yEl.style.textShadow = `0.5px 0.5px 0px ${shColor}, -0.5px -0.5px 0px rgba(255,255,255,0.2)`;
     }
   }
   function currentK(st) {
@@ -2819,6 +2852,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("autofitChk").checked = st.autofit !== false;
     $("showLogoChk").checked = st.showLogo === true;
     $("showDotChk").checked = st.showDot === true;
+    if ($("showFrameChk")) $("showFrameChk").checked = st.showFrame === true;
+
+    if ($("embossChk")) $("embossChk").checked = st.emboss === true;
   }
   function setTextSetting(key, val) {
     VIEWS.forEach(v => {
@@ -3145,8 +3181,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   });
   warnaEl.addEventListener("input", () => setPlateColor(warnaEl.value, nameFor(warnaEl.value), true));
   warnaTeksEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
-  warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
-  $("shadowChk").addEventListener("change", () => { try { localStorage.setItem("platShadow", $("shadowChk").checked ? "1" : "0"); } catch (e) {} applyPlate(); renderSwatches(); queueMini(); });
+  if (warnaShadowEl) warnaShadowEl.addEventListener("input", () => { applyPlate(); renderSwatches(); });
+
   let activeColorTarget = 'plat';
   const extraPresets = [
     { n: "Putih", v: "#ffffff" }, { n: "Hitam", v: "#111111" }, { n: "Kuning", v: "#f5c518" },
@@ -4217,7 +4253,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0, shadowColor, sx) {
+  function drawSpaced(ctx, str, cy, size, sy, strokeW, ls, ws, family, color, x0, shadowColor, sx, embossHi) {
     ctx.save();
     ctx.translate(0, cy);
     ctx.scale(sx || 1, sy);
@@ -4231,6 +4267,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const chars = Array.from(str);
     const adv = chars.map((c, i) => ctx.measureText(c).width + (i < chars.length - 1 ? ls : 0) + (c === " " ? ws : 0));
     let x = (x0 === undefined) ? -adv.reduce((a, b) => a + b, 0) / 2 : x0;
+    if (embossHi) {
+      ctx.save();
+      ctx.fillStyle = embossHi;
+      ctx.strokeStyle = embossHi;
+      let hx = x;
+      chars.forEach((c, i) => {
+        if (strokeW > 0) ctx.strokeText(c, hx - 1, -1);
+        ctx.fillText(c, hx - 1, -1);
+        hx += adv[i];
+      });
+      ctx.restore();
+    }
     if (shadowColor) {
       ctx.save();
       ctx.fillStyle = shadowColor;
@@ -4281,8 +4329,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const hw = PLATE_W / 2, hh = PLATE_H / 2;
     const bg = plate.warna, dark = isDark(bg);
     const txtC = plate.warnaTeks || (dark ? "#ffffff" : "#000000");
-    const shadowOn = (_ps && _ps.values && ("shadow" in _ps.values)) ? !!_ps.values.shadow : ($("shadowChk") ? $("shadowChk").checked : (plate.shadowOn !== false));
-    const shC = !shadowOn ? "" : (plate.warnaShadow || defaultShadowForPlate(bg));
+    const embossOn = (_ps && _ps.values && ("emboss" in _ps.values)) ? !!_ps.values.emboss : ($("embossChk") ? $("embossChk").checked : false);
+    const embossHi = !embossOn ? "" : (isDark(txtC) ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.85)");
+    const shC = !embossOn ? "" : "rgba(0,0,0,0.4)";
     const fontN = fontNFor(plate);
     const fontY = fontYFor(plate);
     ctx.save();
@@ -4312,7 +4361,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       ctx.shadowOffsetY = 4 * k;
       ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
       ctx.restore();
-      ctx.drawImage(_trimmed, _dx, _dy, _dw, _dh);
     } else {
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.6)";
@@ -4363,9 +4411,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       if (parts.length === 2) xs[1] = -w[1] / 2;
       if (parts.length === 3) xs[1] = ((-half + w[0]) + xs[2]) / 2 - w[1] / 2;
       parts.forEach((pt, i) =>
-        drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, xs[i] / sxNopol, shC, sxNopol));
+        drawSpaced(ctx, pt, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, xs[i] / sxNopol, shC, sxNopol, embossHi));
     } else {
-      drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, undefined, shC, sxNopol);
+      drawSpaced(ctx, plate.nomor, top + n / 2 + (st.nopolY || 0), n, syNopol, th * 0.5, NOPOL_LS, NOPOL_WS, fontN, txtC, undefined, shC, sxNopol, embossHi);
     }
     const yearCY = top + n + 2 + y / 2 + 3 + (st.tahunY || 0) + 0;
     const gapY = 2;
@@ -4377,13 +4425,37 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const dW = ctx.measureText("•").width;
     const totalY = bW + gapY + dW + gapY + tW;
     let yx = -totalY / 2;
-    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC);
+    drawSpaced(ctx, plate.bulan, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC, 1, embossHi);
     yx += bW + gapY;
-    if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, fontY, txtC, yx, shC);
+    if (showDot) drawSpaced(ctx, "•", yearCY, y, syTahun, th * 0.3, 0, 0, fontY, txtC, yx, shC, 1, embossHi);
     yx += dW + gapY;
-    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC);
+    drawSpaced(ctx, plate.tahun, yearCY, y, syTahun, th * 0.3, YEAR_LS, 0, fontY, txtC, yx, shC, 1, embossHi);
     /* Logo sudah digambar sebelum klip, di atas PNG plat, di bawah teks. */
     ctx.restore();
+    if (st.showFrame === true) {
+      try {
+        const _pImg = await loadPlatePng(asset.plateUrl);
+        let _fx = -hw, _fy = -hh, _fw = PLATE_W, _fh = PLATE_H;
+        if (_pImg) {
+          if (!trimmedPlateCache[asset.plateUrl]) trimmedPlateCache[asset.plateUrl] = trimPlatePng(_pImg) || trimTransparent(_pImg, 0, 0) || _pImg;
+          const _t = trimmedPlateCache[asset.plateUrl];
+          const _tw2 = _t.width || PLATE_W, _th2 = _t.height || PLATE_H;
+          const _sc2 = Math.min(PLATE_W / _tw2, PLATE_H / _th2);
+          _fw = _tw2 * _sc2; _fh = _th2 * _sc2;
+          _fx = -hw + (PLATE_W - _fw) / 2; _fy = -hh + (PLATE_H - _fh) / 2;
+        }
+        const _fRaw = await loadPlatePng(FRAME_PLAT_URL);
+        if (_fRaw) {
+          if (!trimmedPlateCache[FRAME_PLAT_URL]) trimmedPlateCache[FRAME_PLAT_URL] = trimTransparent(_fRaw, 0, 0) || _fRaw;
+          const _fTrim = trimmedPlateCache[FRAME_PLAT_URL];
+          const _fw2 = _fw * 1.05;
+          const _fh2 = _fh * 1.14;
+          const _fx2 = _fx - (_fw2 - _fw) / 2;
+          const _fy2 = _fy - (_fh2 - _fh) / 2 + 1.5;
+          ctx.drawImage(_fTrim, _fx2, _fy2, _fw2, _fh2);
+        }
+      } catch (e) {}
+    }
     ctx.restore();
   }
   async function renderPlateToCanvas(imgSrc, state, plate, canvas, imgCache) {
@@ -4677,11 +4749,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     { name: "Hijau", bg: "#2ecc71", txt: "#000000", sh: "#808080" }
   ];
   const PRESET_TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
-  const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "shadow"];
+  const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "showFrame", "emboss"];
   const PRESET_ALL_KEYS = PRESET_TEXT_KEYS.concat(PRESET_TOGGLE_KEYS);
   function defaultPresetValues(color) {
-        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, shadow: false };
-    return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, autofit: true, showLogo: true, showDot: true, shadow: false };
+        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+    return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
   }
   function freshPresetStore() {
     const list = {}, active = {};
@@ -4742,10 +4814,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!pr) return;
     const o = opts || {};
     PRESET_TEXT_KEYS.forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
-    ["autofit", "showLogo", "showDot"].forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
-    if (pr.values.shadow !== undefined) {
-      const sc = $("shadowChk");
-      if (sc) { sc.checked = !!pr.values.shadow; try { localStorage.setItem("platShadow", sc.checked ? "1" : "0"); } catch (e) {} }
+    ["autofit", "showLogo", "showDot", "showFrame"].forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
+
+    if (pr.values.emboss !== undefined) {
+      const ec = $("embossChk");
+      if (ec) { ec.checked = !!pr.values.emboss; try { localStorage.setItem("platEmboss", ec.checked ? "1" : "0"); } catch (e) {} }
     }
     syncSliders(viewData[currentView]);
     if (o.save !== false) savePresetStore();
@@ -4756,9 +4829,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const plEl = $("presetPlate"), tEl = $("presetPlateText"), yEl = $("presetPlateYear"), labelEl = $("presetPreviewLabel");
     if (!plEl || !tEl || !yEl || !labelEl) return;
     const st = viewData[currentView] || {};
-    const nomor = "B 9036 ROQ";
-    const bulan = "03";
-    const tahun = "28";
+    const nomor = (nomorEl.value.trim() || "B 9036 ROQ");
+    const bulan = (bulanEl.value.trim() || "03");
+    const tahun = (tahunEl.value.trim() || "28");
     const def = presetColorDef(presetColor) || presetColorDef("Putih");
     const p = { nomor: nomor, bulan: bulan, tahun: tahun, warna: def.bg, warnaTeks: def.txt, warnaShadow: def.sh, warnaName: presetColor, shadowOn: $("shadowChk") ? $("shadowChk").checked : true };
     stylePlate(plEl, tEl, yEl, st, p);
@@ -4767,7 +4840,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const card = $("presetPreviewCard");
     if (card && card.clientWidth) {
       const f = Math.min(1.3, (card.clientWidth - 24) / PLATE_W);
-      if (f > 0) { card.style.setProperty("--fit", f); card.style.minHeight = Math.round(PLATE_H * f + 52) + "px"; }
+      if (f > 0) { card.style.setProperty("--fit", f); card.style.minHeight = Math.round(PLATE_H * f + 70) + "px"; }
     }
   }
   function renderPresetUI() {
@@ -4820,7 +4893,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     cur.autofit = !!($("autofitChk") && $("autofitChk").checked);
     cur.showLogo = !!($("showLogoChk") && $("showLogoChk").checked);
     cur.showDot = !!($("showDotChk") && $("showDotChk").checked);
-    cur.shadow = !!($("shadowChk") && $("shadowChk").checked);
+    cur.showFrame = !!($("showFrameChk") && $("showFrameChk").checked);
+
+    cur.emboss = !!($("embossChk") && $("embossChk").checked);
     return cur;
   }
   function addPreset() {
@@ -4973,7 +5048,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   onPreset("autofitChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
   onPreset("showLogoChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
   onPreset("showDotChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
-  onPreset("shadowChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
+  onPreset("showFrameChk", "change", () => { setTextSetting("showFrame", $("showFrameChk").checked); syncPresetFromToggles(); applyPlate(); queueMini(); });
+
+  onPreset("embossChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
 
   onPreset("nomor", "input", () => queuePresetPreview());
   onPreset("bulan", "input", () => queuePresetPreview());
@@ -4989,7 +5066,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     try {
       // Migrasi logo dibatalkan agar settingan user tidak tertimpa
     } catch (e) {}
-    try { if (localStorage.getItem("platShadow") === "1") $("shadowChk").checked = true; if (localStorage.getItem("platShadow") === "0") $("shadowChk").checked = false; } catch (e) {}
+
     renderSwatches();
     fixTitleIcons();
     loadViewState();
@@ -4999,7 +5076,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (k === "shadow") cur[k] = !!($("shadowChk") && $("shadowChk").checked);
         else cur[k] = viewData[currentView][k];
       });
-      PRESET_COLORS.forEach(c => { if (c.name === presetColor) presetStore.list[c.name][0].values = Object.assign(defaultPresetValues(c.name), c.name === "Hitam" ? {} : cur); });
+      PRESET_COLORS.forEach(c => { presetStore.list[c.name][0].values = defaultPresetValues(c.name); });
       savePresetStore();
     } else {
       if (presetStoreNeedsToggleMigration) {
