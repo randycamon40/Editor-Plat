@@ -4778,7 +4778,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "showFrame", "emboss"];
   const PRESET_ALL_KEYS = PRESET_TEXT_KEYS.concat(PRESET_TOGGLE_KEYS);
   function defaultPresetValues(color) {
-        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, frameW: 105, frameH: 125, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, frameW: 106, frameH: 120, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Putih") return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 103, frameH: 112, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Kuning") return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 106, frameH: 115, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Merah") return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 106, frameH: 115, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Hijau") return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 106, frameH: 115, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
     return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 105, frameH: 125, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
   }
   function freshPresetStore() {
