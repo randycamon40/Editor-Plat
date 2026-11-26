@@ -1001,7 +1001,7 @@ input[type=range]::-moz-range-thumb {
   font-size: 16px;
 }
 .q-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.q-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.q-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; } .tipe-badge{font-size:11px;font-weight:700;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:112px} .bulk-tipe-line{font-size:12px;color:var(--text-2);margin-top:2px}
 .vault-card { flex-wrap: wrap; padding: 10px; }
 .vault-card .q-actions { width: 100%; justify-content: flex-end; margin-left: 0; margin-top: 4px; }
 .vault-badge {
@@ -1702,6 +1702,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
+            <p id="bulkTipeLine" class="bulk-tipe-line">Tipe mobil: — (manual)</p>
           </div>
         </div>
         <div class="thumbs-strip" id="templateStrip" aria-label="Template mobil aktif"></div>
@@ -1854,7 +1855,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <h2>Tempel Banyak Nopol</h2>
       <button id="closePasteBtn" class="icon-act" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
-    <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, 05, 31, kuning <- lengkap" spellcheck="false" autocapitalize="characters"></textarea>
+    <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, Avanza, 05, 31, kuning <- dari CSV pakai tipe (4 kolom)" spellcheck="false" autocapitalize="characters"></textarea>
+    <p class="sheet-text" style="margin:0 0 10px">Format paste: <b>Nopol, Bulan Tahun, Warna</b> (tanpa tipe). Kalau dari CSV pakai tipe: <b>Nopol, Tipe, Bulan Tahun, Warna</b>. Tanpa tipe = ikut tipe AI.</p>
     <div class="btn-pair" style="margin-bottom:10px">
       <button type="button" class="btn btn-muted btn-xs" id="btnImportCsvFile"><svg class="i"><use href="#i-upload"/></svg>File CSV / TXT</button>
       <a class="icon-act" href="./nopol-csv.html" onclick="location.replace(this.href);return false;" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
@@ -1898,6 +1900,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     <div class="fld">
       <label for="editVWarna">Warna Plat</label>
       <input type="color" id="editVWarna" style="width:100%;height:44px;padding:4px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;">
+    </div>
+    <div class="fld">
+      <label for="editVTipe">Tipe Mobil</label>
+      <input id="editVTipe" class="inp" type="text" maxlength="60" placeholder="Contoh: Toyota Avanza (kosong = manual)" autocomplete="off">
     </div>
     <div class="btn-pair gap-t">
       <button class="btn btn-muted" id="editVCancelBtn">Batal</button>
@@ -2598,6 +2604,27 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let editVaultPlateIdx = -1;
   let exporting = false;
   let bulkQ = "";
+  /* ===== TIPE MOBIL + NAMA VAULT (penanda saja, Vault terkunci) =====
+     - activeTipeMobil = tipe dari AI (brand template) untuk item baru.
+     - Item baru: tipe dari kolom CSV (kalau ada) > activeTipeMobil > "" (manual).
+     - Bulk dikosongkan sampai habis -> activeTipeMobil dikosongkan,
+       item baru sesudahnya dianggap ketik manual sampai AI jalan lagi
+       atau template dikunci ulang.
+     - VAULT TERKUNCI: tambah/hapus/edit di Bulk TIDAK mengubah Vault.
+       Vault baru berubah kalau: (1) tombol Simpan Vault ditekan,
+       (2) item Vault langsung diedit/dihapus dari dalam Vault.
+     - Nama vault HANYA penanda/label: 1 tipe = nama tipenya,
+       >1 tipe = "Semua tipe mobil (N tipe)", tanpa tipe = "Manual".
+       Rename manual (nameCustom) tidak ditimpa. */
+  let activeTipeMobil = "";
+  function itemTipe(it){ return String((it && (it.tipeMobil || it.tipe)) || "").trim(); }
+  function titleCaseTipe(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-])([a-z])/g, function(m,p,c){ return p + c.toUpperCase(); }); }
+  function distinctTipes(plates){ const out=[]; (plates||[]).forEach(function(p){ const v=itemTipe(p); if(v && out.indexOf(v)===-1) out.push(v); }); return out; }
+  function vaultNameForPlates(plates){ const ts=distinctTipes(plates); if(!ts.length) return "Manual"; if(ts.length===1) return ts[0]; return "Semua tipe mobil ("+ts.length+" tipe)"; }
+  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; el.textContent = activeTipeMobil ? "Tipe mobil: "+activeTipeMobil+" (AI)" : "Tipe mobil: — (manual)"; }
+  function setActiveTipe(v){ const s=String(v||"").trim(); if(s && s.toLowerCase()!=="tidak diketahui") activeTipeMobil = titleCaseTipe(s); else if(!s) activeTipeMobil=""; refreshBulkTipeLine(); }
+  function clearActiveTipeOnEmpty(){ if(bulkItems.length) return; activeTipeMobil=""; refreshBulkTipeLine(); }
+  function restoreActiveTipeFromBulk(){ const ts=distinctTipes(bulkItems); activeTipeMobil = ts.length===1 ? ts[0] : ""; refreshBulkTipeLine(); }
   const normQ = s => String(s).toUpperCase().replace(/\s+/g, "");
   const bulkMatch = it => !bulkQ || normQ(it.nomor).includes(bulkQ);
   async function loadHistoryBatches() {
@@ -2639,6 +2666,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return false;
   }
   function getDefaultBatchName() {
+    if (bulkItems && bulkItems.length) return vaultNameForPlates(bulkItems);
     const tpl = templateData || viewData;
     if (!tpl) return "";
     for (const v of VIEWS) {
@@ -3313,6 +3341,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     templateData = JSON.parse(JSON.stringify(viewData));
     templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = null; return; }
+    setActiveTipe((viewData && viewData[currentView] && viewData[currentView].brand) || "");
     let added = false;
     if (nomorEl.value.trim()) {
       bulkItems.push(currentFormItem());
@@ -3333,6 +3362,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!ok) return;
     templateData = null;
     bulkItems = [];
+    activeTipeMobil = "";
+    refreshBulkTipeLine();
     editIndex = -1;
     bulkStartNumber = 1;
     editorOpen = false;
@@ -3364,6 +3395,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     templateData = JSON.parse(JSON.stringify(viewData));
     templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = prev; return; }
+    setActiveTipe((viewData && viewData[currentView] && viewData[currentView].brand) || "");
     editorOpen = false;
     activeVaultIndex = -1;
     await lsSet("platActiveVaultIndex", -1);
@@ -3431,6 +3463,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   function renderBulk() {
     const nv = templateData ? VIEWS.filter(v => templateData[v] && templateData[v].img).length : 0;
     $("bulkCount").textContent = bulkItems.length + " nopol" + (nv ? " • " + nv + " sudut • " + (bulkItems.length * nv) + " output" : "");
+    refreshBulkTipeLine();
     const badge = $("navBadge");
     badge.textContent = bulkItems.length;
     badge.hidden = !bulkItems.length;
@@ -3446,6 +3479,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             : `<span class="row-num-span" data-i="${i}">${bulkStartNumber + i}</span>`}
         </div>
         ${chipHtml(it, true)}
+        ${itemTipe(it) ? `<span class="tipe-badge" title="${esc(itemTipe(it))}">${esc(itemTipe(it))}</span>` : ""}
         <div class="q-actions">
           <button class="icon-act" data-act="preview" data-index="${i}" title="Preview" aria-label="Preview ${esc(it.nomor)}">${ico("eye")}</button>
           <button class="icon-act" data-act="edit" data-index="${i}" title="Edit" aria-label="Edit ${esc(it.nomor)}">${ico("pencil")}</button>
@@ -3483,6 +3517,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const removed = bulkItems.splice(i, 1)[0];
       if (editIndex === i) cancelEditUI(); else if (editIndex > i) editIndex--;
       await saveBulkData();
+      if(!bulkItems.length) clearActiveTipeOnEmpty();
       renderBulk();
       showToast("Item dihapus", false, {
         label: "Urungkan",
@@ -3491,6 +3526,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           bulkItems.splice(at, 0, removed);
           if (editIndex >= at) editIndex++;
           await saveBulkData();
+          restoreActiveTipeFromBulk();
           renderBulk();
           showToast("Item dikembalikan ✓");
         }
@@ -3544,14 +3580,18 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!bulkItems.length) return showToast("Antrean sudah kosong", true);
     if (!await askConfirm("Kosongkan Antrean?", "Semua nopol di antrean akan dihapus. Template tetap terkunci.", "Kosongkan")) return;
     const backup = bulkItems;
+    const backupTipe = activeTipeMobil;
     bulkItems = [];
     cancelEditUI();
     await saveBulkData();
+    clearActiveTipeOnEmpty();
     renderBulk();
     showToast("Antrean dikosongkan", false, {
       label: "Urungkan",
       fn: async () => {
         bulkItems = backup.concat(bulkItems);
+        activeTipeMobil = backupTipe;
+        refreshBulkTipeLine();
         await saveBulkData();
         renderBulk();
         showToast("Antrean dikembalikan ✓");
@@ -3566,7 +3606,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
       warnaShadow: warnaShadowEl.value,
-      warnaName: plateColorName || nameFor(warnaEl.value)
+      warnaName: plateColorName || nameFor(warnaEl.value),
+      tipeMobil: activeTipeMobil || "",
+      tipeSource: activeTipeMobil ? "ai" : "manual"
     };
   }
   function fillForm(it) {
@@ -3611,6 +3653,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (isDup) { showToast("Nopol " + it.nomor + " sudah ada di antrean", true); nomorEl.focus(); return; }
     if (editIndex >= 0) {
       const prev = bulkItems[editIndex];
+      const _oldTipe = itemTipe(prev);
+      if (_oldTipe) { it.tipeMobil = _oldTipe; it.tipeSource = prev.tipeSource || "manual"; }
       bulkItems[editIndex] = it;
       if (!await saveBulkData()) { bulkItems[editIndex] = prev; return; }
       cancelEditUI();
@@ -3647,6 +3691,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const parts = line.split(/[,;\t|]+/).map(s => s.replace(/^"|"$/g, "").trim());
       let rawNomor = (parts[0] || "").toUpperCase().replace(/\s+/g, " ").slice(0, 15);
       if (rawNomor === "NOMOR" || rawNomor === "NOPOL") return;
+      const _h0 = String(parts[0] || "").toLowerCase();
+      if (_h0.indexOf("nomor") === 0 || _h0.indexOf("nopol") === 0 || _h0 === "plat") return;
       const msgs = [];
       if (!rawNomor) msgs.push("Nomor plat kosong");
       else if (!/[A-Z]/.test(rawNomor) || !/[0-9]/.test(rawNomor)) msgs.push("Nopol harus mengandung huruf & angka");
@@ -3661,9 +3707,19 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         "agu": "08", "ags": "08", "september": "09", "sep": "09", "sept": "09",
         "oktober": "10", "okt": "10", "november": "11", "nov": "11", "desember": "12", "des": "12"
       };
+      let explicitTipe = "";
+      let restParts = parts.slice(1);
+      if (parts.length >= 4) {
+        const t1 = String(parts[1] || "").trim();
+        const low1 = t1.toLowerCase();
+        const looksDate = /^(\d{1,2})[\s.\-\/](\d{2,4})$/.test(t1) || /^(\d{4})[\s.\-\/](\d{1,2})$/.test(t1) || !!BULAN_MAP[low1] || /^\d{1,2}$/.test(t1) || /^\d{4}$/.test(t1);
+        const looksColor = !!parseColorToken(t1);
+        if (!looksDate && !looksColor) { explicitTipe = titleCaseTipe(t1); restParts = parts.slice(2); }
+      }
       const it = Object.assign({}, base, { nomor: rawNomor });
+      if (explicitTipe) { it.tipeMobil = explicitTipe; it.tipeSource = "csv"; }
       let parsedMonth = null, parsedYear = null;
-      parts.slice(1).forEach(t => {
+      restParts.forEach(t => {
         const text = t.toLowerCase().trim();
         let foundM = false, foundY = false;
         const dateMatch = text.match(/^(\d{1,2})[\s.\-\/](\d{2,4})$/);
@@ -3839,6 +3895,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     listEl.innerHTML = historyBatches.map((batch, idx) => {
       const _pl = Array.isArray(batch.plates) ? batch.plates : (Array.isArray(batch.items) ? batch.items : (Array.isArray(batch) ? batch : []));
       const count = _pl.length;
+      const _ts = distinctTipes(_pl);
+      const _tipeLabel = _ts.length ? (_ts.length === 1 ? _ts[0] : ("Semua tipe mobil (" + _ts.length + " tipe)")) : "Manual";
       return `
         <div class="q-item vault-card">
           <span class="vault-badge">${ico("vault")}</span>
@@ -3846,7 +3904,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <div class="q-title"><span>${esc(batch.name || `Antrean #${historyBatches.length - idx}`)}</span>
               <button class="icon-act mini" data-act="rename_batch" data-idx="${idx}" title="Ubah nama" aria-label="Ubah nama">${ico("pencil")}</button>
             </div>
-            <div class="q-sub">${count} nopol • ${esc(batch.date || "-")}</div>
+            <div class="q-sub">${count} nopol • ${esc(batch.date || "-")} • ${esc(_tipeLabel)}</div>
           </div>
           <div class="q-actions">
             <button class="icon-act" data-act="export_batch" data-idx="${idx}" title="Export ZIP" aria-label="Export ZIP">${ico("package")}</button>
@@ -3881,6 +3939,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const prevView = JSON.parse(JSON.stringify(viewData));
       const prevStartNum = bulkStartNumber;
       bulkItems = Array.isArray(batch.plates) ? JSON.parse(JSON.stringify(batch.plates)) : [];
+      restoreActiveTipeFromBulk();
+      if (!activeTipeMobil && batch.template) { const _tb = VIEWS.map(function(v){ return batch.template[v] && batch.template[v].brand; }).find(function(b){ return b && String(b).toLowerCase() !== "tidak diketahui"; }); if (_tb) setActiveTipe(_tb); }
       editIndex = -1;
       cancelEditUI();
       if (batch.startNumber !== undefined) {
@@ -3971,6 +4031,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } else if (act === "del") {
       if (!await askConfirm("Hapus Nopol?", "Nopol " + plate.nomor + " akan dihapus dari antrean ini.", "Hapus")) return;
       batch.plates.splice(pIdx, 1);
+      if(!batch.nameCustom) batch.name = vaultNameForPlates(batch.plates);
       await saveHistoryBatches();
       if (batch.plates.length === 0) {
         closeSheet("historyPreviewModal");
@@ -3989,6 +4050,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       $("editVBulan").value = plate.bulan || "";
       $("editVTahun").value = plate.tahun || "";
       $("editVWarna").value = plate.warna || "#ffffff";
+      $("editVTipe").value = itemTipe(plate);
       openSheet("editVaultItemModal");
       setTimeout(() => $("editVNomor").focus(), 80);
     }
@@ -4015,6 +4077,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     p.warnaTeks = isDark(hex) ? "#ffffff" : "#000000";
     p.warnaShadow = defaultShadowForPlate(hex, nameFor(hex));
     p.warnaName = nameFor(hex);
+    const _vt = String($("editVTipe").value || "").trim();
+    p.tipeMobil = _vt ? titleCaseTipe(_vt) : "";
+    p.tipeSource = "manual";
+    if(!batch.nameCustom) batch.name = vaultNameForPlates(batch.plates);
     if (await saveHistoryBatches()) {
       closeSheet("editVaultItemModal");
       showToast("Nopol diperbarui ✓");
@@ -4170,6 +4236,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         $("carBrandText").textContent = r.brand;
         $("carBrandText").hidden = false;
       }
+      setActiveTipe(r.brand);
     }
     const v = [Number(r.ymin), Number(r.xmin), Number(r.ymax), Number(r.xmax)];
     const missing = v.some(n => !isFinite(n) || n < 0) || v[2] <= v[0] || v[3] <= v[1];
@@ -4758,6 +4825,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         setPlateColor(fd.warna || "#ffffff", fd.warnaName || nameFor(fd.warna), false, warnaShadowEl.value);
       }
     }
+    restoreActiveTipeFromBulk();
+    if (!activeTipeMobil && templateData) { const _tb = VIEWS.map(function(v){ return templateData[v] && templateData[v].brand; }).find(function(b){ return b && String(b).toLowerCase() !== "tidak diketahui"; }); if (_tb) setActiveTipe(_tb); }
   }
   /* ================= PRESET PER WARNA PLAT =================
      Kalibrasi tipografi + toggle disimpan per warna (Putih/Hitam/Kuning/
@@ -5127,6 +5196,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     renderPresetUI();
     updateTemplateUI();
     renderHistory();
+    refreshBulkTipeLine();
     preloadTrimmedAssets();
     fitHero();
     if (document.fonts && document.fonts.load) {
@@ -5161,6 +5231,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!newName) return showToast("Nama tidak boleh kosong", true);
     if (renameIndex >= 0) {
       historyBatches[renameIndex].name = newName;
+      historyBatches[renameIndex].nameCustom = true;
       await saveHistoryBatches();
       renderHistory();
       closeSheet("renameModal");
@@ -5180,6 +5251,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
       historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
+      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(bulkItems);
       if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
       else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
     } else {
