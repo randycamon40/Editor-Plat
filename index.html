@@ -830,7 +830,11 @@ button { cursor: pointer; }
 }
 .plate-frame {
   position: absolute;
-  inset: -3.5px -6px -6.5px -6px;
+  left: 50%;
+  top: 50%;
+  width: 105%;
+  height: 125%;
+  transform: translate(-50%, -50%);
   z-index: 4;
   pointer-events: none;
   background-image: url("./frame_plat.png");
@@ -1202,7 +1206,7 @@ input[type=range]::-moz-range-thumb {
 #presetColors, .preset-colors, .preset-tabs, .tnkb-bar { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 8px !important; overflow: visible !important; padding: 0 !important; margin-bottom: 12px !important; }
 #presetColors button, .preset-colors button, .preset-color, .tnkb-bar .tnkb-pill { flex: 0 1 auto !important; white-space: nowrap !important; padding: 10px 14px !important; font-size: 13px !important; }
 .preset-preview-card .plate { transform: scale(var(--fit, 1)); transform-origin: center; }
-.preset-preview-label { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+.preset-preview-label { font-size: 12.5px; font-weight: 700; color: var(--text-2); text-align: center; margin-top: 10px; }
 .preset-title-row { display: flex; align-items: center; gap: 6px; margin: 16px 0 12px; }
 .preset-select { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text); background: transparent; border: 0; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer; padding: 0; max-width: 58%; }
 .preset-select-chev { color: var(--text-3); flex-shrink: 0; width: 16px; height: 16px; }
@@ -1619,8 +1623,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <span class="plate-year" id="presetPlateYear">03•28</span>
             <div class="plate-logo"></div>
           </div>
-          <div class="preset-preview-label" id="presetPreviewLabel">Plat Putih • Default</div>
         </div>
+        <div class="preset-preview-label" id="presetPreviewLabel">Plat Putih • Default</div>
       </section>
       <section class="box preset-bottom-scroll">
         <div class="preset-title-row">
@@ -1639,6 +1643,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         </div>
         <div id="textSliders" style="margin-top:16px"></div>
         <p class="fit-hint">Ukuran di atas adalah batas maksimal. Nopol panjang otomatis menyesuaikan agar tetap proporsional di semua sudut.</p>
+        <div class="accordion-box" id="frameBox" style="margin-top:0">
+          <label class="toggle-tile" style="background:transparent;border:0;padding:0 0 8px">
+            <span>Frame Plat</span>
+            <input type="checkbox" id="showFrameChk">
+            <i class="toggle-pill"></i>
+          </label>
+          <div id="frameSliders"></div>
+          <p class="fit-hint" style="margin:4px 0 0">Lebar & tinggi frame dalam % dari ukuran plat. 105% x 125% = posisi awal.</p>
+        </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
           <label class="toggle-tile">
             <span>Auto-Fit ke Lebar Plat</span>
@@ -1651,11 +1664,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
             <i class="toggle-pill"></i>
           </label>
 
-          <label class="toggle-tile">
-            <span>Frame Plat</span>
-            <input type="checkbox" id="showFrameChk">
-            <i class="toggle-pill"></i>
-          </label>
+
           <label class="toggle-tile">
             <span>Efek Timbul (Emboss)</span>
             <input type="checkbox" id="embossChk">
@@ -2189,9 +2198,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       { key: "tahunY", label: "Posisi Bulan-Tahun Naik / Turun", min: -12, max: 12, step: 0.5, unit: "px" }
     ]}
   ];
+  const FRAME_GROUPS = [
+    { title: "", items: [
+      { key: "frameW", label: "Lebar Frame Plat", min: 100, max: 150, step: 1, unit: "%" },
+      { key: "frameH", label: "Tinggi Frame Plat", min: 100, max: 160, step: 1, unit: "%" }
+    ]}
+  ];
   const STYLE_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness"];
-  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "showFrame", "lebarNopol", "logoX", "logoY", "logoW", "logoH", "logoLock"];
-  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
+  const TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "autofit", "showLogo", "nopolY", "tahunY", "showDot", "showFrame", "emboss", "lebarNopol", "frameW", "frameH", "logoX", "logoY", "logoW", "logoH", "logoLock"];
+  const ALL_SLIDER_KEYS = ["scale", "rotate", "skewX", "skewY", "noise", "blur", "radius", "borderThickness", "nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol", "frameW", "frameH"];
   const FIT_PAD = 8;
   const FONT_N = "'FE-Schrift','Arial Black',Impact,sans-serif";
   const FONT_Y = "'FE-Schrift',Arial,Helvetica,sans-serif";
@@ -2482,7 +2497,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return {
       img: null, brand: "", left: "50%", top: "80%", scale: 100, rotate: 0, skewX: 0, skewY: 0,
       noise: 30, blur: 0, radius: 7, borderThickness: 3, nopolSize: 50, tahunSize: 25,
-      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, showFrame: false, lebarNopol: 85, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
+      tinggi: 100, tahunTinggi: 80, thickness: 0, autofit: true, showLogo: true, nopolY: 4, tahunY: -8.5, showDot: true, showFrame: false, emboss: false, lebarNopol: 85, frameW: 105, frameH: 125, hidden: false, logoX: -2, logoY: -30, logoW: 104, logoH: 150, logoLock: true
     };
   }
   function freshState(old, img) {
@@ -2653,6 +2668,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       tahun: tahunEl.value.trim() || "03",
       warna: warnaEl.value,
       warnaTeks: warnaTeksEl.value,
+      warnaShadow: warnaShadowEl.value,
 
       warnaName: plateColorName || nameFor(warnaEl.value)
     };
@@ -2707,10 +2723,15 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!frameEl) { frameEl = document.createElement('div'); frameEl.className = 'plate-frame'; plEl.appendChild(frameEl); }
     frameEl.style.backgroundImage = "url('" + (trimmedUrlCache[FRAME_PLAT_URL] || FRAME_PLAT_URL) + "')";
     frameEl.style.backgroundSize = "100% 100%";
-    frameEl.style.left = "-6px";
-    frameEl.style.right = "-6px";
-    frameEl.style.top = "-3.5px";
-    frameEl.style.bottom = "-6.5px";
+    const _fw = Number.isFinite(Number(st.frameW)) ? Number(st.frameW) : 105;
+    const _fh = Number.isFinite(Number(st.frameH)) ? Number(st.frameH) : 125;
+    frameEl.style.width = _fw + "%";
+    frameEl.style.height = _fh + "%";
+    frameEl.style.left = "50%";
+    frameEl.style.right = "auto";
+    frameEl.style.top = "50%";
+    frameEl.style.bottom = "auto";
+    frameEl.style.transform = "translate(-50%, -50%)";
     frameEl.style.display = st.showFrame === true ? 'block' : 'none';
     tEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.5) + "px " + txtColor : "0px transparent";
     yEl.style.webkitTextStroke = st.thickness > 0 ? (st.thickness * 0.3) + "px " + txtColor : "0px transparent";
@@ -2868,6 +2889,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   buildSliders($("sliderGroups"), SLIDER_GROUPS);
   buildSliders($("textSliders"), TEXT_GROUPS);
+  buildSliders($("frameSliders"), FRAME_GROUPS);
   $("autofitChk").addEventListener("change", () => {
     setTextSetting("autofit", $("autofitChk").checked);
     applyPlate();
@@ -4448,10 +4470,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (_fRaw) {
           if (!trimmedPlateCache[FRAME_PLAT_URL]) trimmedPlateCache[FRAME_PLAT_URL] = trimTransparent(_fRaw, 0, 0) || _fRaw;
           const _fTrim = trimmedPlateCache[FRAME_PLAT_URL];
-          const _fw2 = _fw * 1.05;
-          const _fh2 = _fh * 1.14;
+          const _frameW = Number.isFinite(Number(st.frameW)) ? Number(st.frameW) : 105;
+          const _frameH = Number.isFinite(Number(st.frameH)) ? Number(st.frameH) : 125;
+          const _fw2 = _fw * (_frameW / 100);
+          const _fh2 = _fh * (_frameH / 100);
           const _fx2 = _fx - (_fw2 - _fw) / 2;
-          const _fy2 = _fy - (_fh2 - _fh) / 2 + 1.5;
+          const _fy2 = _fy - (_fh2 - _fh) / 2;
           ctx.drawImage(_fTrim, _fx2, _fy2, _fw2, _fh2);
         }
       } catch (e) {}
@@ -4488,6 +4512,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.nopolY = Number.isFinite(Number(st.nopolY)) ? Number(st.nopolY) : 4;
     st.tahunY = Number.isFinite(Number(st.tahunY)) ? Number(st.tahunY) : -8.5;
     st.lebarNopol = Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85;
+    st.frameW = Number.isFinite(Number(st.frameW)) ? Number(st.frameW) : 105;
+    st.frameH = Number.isFinite(Number(st.frameH)) ? Number(st.frameH) : 125;
     const pX = (Number.isFinite(parseFloat(st.left)) ? parseFloat(st.left) : 50) / 100 * canvas.width;
     const pY = (Number.isFinite(parseFloat(st.top)) ? parseFloat(st.top) : 80) / 100 * canvas.height;
     const k = (canvas.width / REF_W) * (st.scale / 100);
@@ -4748,12 +4774,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     { name: "Merah", bg: "#e63946", txt: "#ffffff", sh: "#000000" },
     { name: "Hijau", bg: "#2ecc71", txt: "#000000", sh: "#808080" }
   ];
-  const PRESET_TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol"];
+  const PRESET_TEXT_KEYS = ["nopolSize", "tahunSize", "tinggi", "tahunTinggi", "thickness", "nopolY", "tahunY", "lebarNopol", "frameW", "frameH"];
   const PRESET_TOGGLE_KEYS = ["autofit", "showLogo", "showDot", "showFrame", "emboss"];
   const PRESET_ALL_KEYS = PRESET_TEXT_KEYS.concat(PRESET_TOGGLE_KEYS);
   function defaultPresetValues(color) {
-        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
-    return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+        if (color === "Hitam") return { nopolSize: 42, tahunSize: 21, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4.5, tahunY: -5, lebarNopol: 100, frameW: 105, frameH: 125, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
+    return { nopolSize: 50, tahunSize: 25, tinggi: 100, tahunTinggi: 80, thickness: 0, nopolY: 4, tahunY: -8.5, lebarNopol: 85, frameW: 105, frameH: 125, autofit: true, showLogo: true, showDot: true, showFrame: false, shadow: false, emboss: false };
   }
   function freshPresetStore() {
     const list = {}, active = {};
@@ -4814,7 +4840,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (!pr) return;
     const o = opts || {};
     PRESET_TEXT_KEYS.forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
-    ["autofit", "showLogo", "showDot", "showFrame"].forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
+    ["autofit", "showLogo", "showDot", "showFrame", "emboss"].forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
 
     if (pr.values.emboss !== undefined) {
       const ec = $("embossChk");
@@ -5045,12 +5071,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   onPreset("btnApplyPresetToPlat", "click", () => { savePresetStore(); setTab("plat"); showToast("Preset diterapkan ke plat ✓"); });
   onPreset("goPresetBtn", "click", () => setTab("preset"));
   onPreset("textSliders", "input", () => { syncPresetFromSliders(); queueMini(); });
+  onPreset("frameSliders", "input", () => { syncPresetFromSliders(); queueMini(); });
   onPreset("autofitChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
   onPreset("showLogoChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
   onPreset("showDotChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
   onPreset("showFrameChk", "change", () => { setTextSetting("showFrame", $("showFrameChk").checked); syncPresetFromToggles(); applyPlate(); queueMini(); });
 
-  onPreset("embossChk", "change", () => { syncPresetFromToggles(); applyPlate(); queueMini(); });
+  onPreset("embossChk", "change", () => { setTextSetting("emboss", $("embossChk").checked); syncPresetFromToggles(); applyPlate(); queueMini(); });
 
   onPreset("nomor", "input", () => queuePresetPreview());
   onPreset("bulan", "input", () => queuePresetPreview());
