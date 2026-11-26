@@ -283,7 +283,7 @@ td.p{font:700 13.5px var(--m);letter-spacing:1px;cursor:pointer}
       <div class="tools">
         <div class="sbox"><svg class="i"><use href="#se"/></svg><input type="search" id="search" placeholder="Cari plat, tipe, warna…"></div>
         <div class="g2">
-          <select id="filterTipe" aria-label="Filter tipe"><option value="">Semua Tipe Mobil</option></select>
+          <select id="filterTipe" aria-label="Filter tipe"><option value="">Semua tipe mobil</option></select>
           <select id="filterWarna" aria-label="Filter warna"><option value="">Semua Warna</option></select>
         </div>
         <select id="sortSel" aria-label="Urutan">
@@ -317,6 +317,8 @@ td.p{font:700 13.5px var(--m);letter-spacing:1px;cursor:pointer}
           <select id="delim"><option value=",">Koma ( , )</option><option value=";">Titik koma ( ; ) — Excel Indonesia</option></select>
         </div>
         <button class="btn sec sm mt" id="platBtn" style="width:100%"><svg class="i"><use href="#cp"/></svg>Salin daftar plat saja</button>
+        <button class="btn sec sm mt" id="bulkBtn" style="width:100%"><svg class="i"><use href="#cp"/></svg>Salin untuk Bulk Studio (3 kolom)</button>
+        <div class="hint mt">Format paste ke Bulk Studio: <b>Nopol, Bulan Tahun, Warna</b> — tanpa tipe. Centang “Sertakan tipe mobil” kalau mau kirim 4 kolom: Nopol, Tipe, Bulan Tahun, Warna.</div>
       </div></details>
     </div>
   </div>
@@ -660,7 +662,7 @@ function uniq(k){var o={};DATA.forEach(function(d){if(d[k])o[d[k]]=1;});return O
 
 /* ===== RENDER ===== */
 function refresh(){
-  fillFilter(elFT,uniq('tipe'),'Semua Tipe Mobil');
+  var _tt=uniq('tipe'); fillFilter(elFT,_tt,_tt.length?('Semua tipe mobil ('+_tt.length+' tipe)'):'Semua tipe mobil');
   fillFilter(elFW,uniq('warna'),'Semua Warna');
   render();
 }
@@ -791,6 +793,13 @@ function copyCsv(){
   if(!DATA.length){toast('Belum ada data untuk dicopy');return;}
   copyText(buildCsv().replace(/^\uFEFF/,''),'CSV tersalin ke clipboard');
 }
+function copyBulk(){
+  if(!DATA.length){toast('Belum ada data untuk dicopy');return;}
+  var src=$('oFil').checked?VIEWED:DATA,dl=elDelim.value||',';
+  var lines=src.map(function(d){return [d.plat,d.masa,d.warna].map(function(v){return csvField(v,dl);}).join(dl);});
+  if(!lines.length){toast('Tidak ada data untuk disalin');return;}
+  copyText(lines.join('\r\n'),lines.length+' baris tersalin untuk Bulk Studio');
+}
 function copyPlat(){
   if(!DATA.length){toast('Belum ada data untuk dicopy');return;}
   var src=$('oFil').checked?VIEWED:DATA,l=src.map(function(d){return d.plat;}).filter(Boolean);
@@ -801,7 +810,7 @@ function copyPlat(){
 /* ===== FILE ===== */
 function resetFilters(){
   STATUS='';MK=null;elSearch.value='';elSort.value='';
-  elFT.innerHTML='<option value="">Semua Tipe Mobil</option>';
+  var _n=uniq('tipe').length; elFT.innerHTML='<option value="">'+(_n?('Semua tipe mobil ('+_n+' tipe)'):'Semua tipe mobil')+'</option>';
   elFW.innerHTML='<option value="">Semua Warna</option>';
 }
 function handleFile(f){
@@ -876,7 +885,7 @@ document.addEventListener('click',function(e){
 $('exportBtn').addEventListener('click',exportCsv);
 $('xlsxBtn').addEventListener('click',exportXlsx);
 $('copyBtn').addEventListener('click',copyCsv);
-$('platBtn').addEventListener('click',copyPlat);
+$('platBtn').addEventListener('click',copyPlat); $('bulkBtn').addEventListener('click',copyBulk);
 $('btnShowStats').addEventListener('click',function(){ $('statsModal').style.display='flex'; });
 $('closeStatsBtn').addEventListener('click',function(){ $('statsModal').style.display='none'; });
 $('statsModal').addEventListener('click',function(e){ if(e.target===$('statsModal'))$('statsModal').style.display='none'; });
