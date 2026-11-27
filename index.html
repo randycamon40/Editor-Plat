@@ -24,7 +24,7 @@
 </style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-<meta name="theme-color" content="#f4f6f9">
+<meta name="theme-color" content="transparent">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Nopol Studio Pro — Editor & Bulk Generator</title>
@@ -48,7 +48,7 @@ try {
   var _m = localStorage.getItem("platTheme");
   if (_m === "light" || _m === "dark") document.documentElement.setAttribute("data-theme", _m);
   var _d = _m === "dark" || (_m !== "light" && window.matchMedia("(prefers-color-scheme:dark)").matches);
-  document.querySelector('meta[name="theme-color"]').setAttribute("content", _d ? "#0c0e14" : "#f4f6f9");
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", "transparent");
 } catch (e) {}
 </script>
 <style>
@@ -1119,7 +1119,7 @@ input[type=range]::-moz-range-thumb {
   grid-template-columns: repeat(6, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 5px 4px calc(10px + env(safe-area-inset-bottom));
+  padding: 5px 4px calc(10px + env(safe-area-inset-bottom, 20px));
 }
 .dock-btn {
   border: 0;
@@ -5415,8 +5415,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (themeMode === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", themeMode);
     try { localStorage.setItem("platTheme", themeMode); } catch (e) {}
     document.querySelectorAll("#themeSeg button").forEach(b => b.classList.toggle("on", b.dataset.mode === themeMode));
-    const c = isDarkNow() ? "#0c0e14" : "#f4f6f9";
-    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute("content", c));
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute("content", "transparent"));
   }
   document.querySelectorAll("#themeSeg button").forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.mode)));
   if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", () => { if (themeMode === "auto") applyTheme("auto"); });
