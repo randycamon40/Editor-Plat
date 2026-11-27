@@ -1508,6 +1508,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <button type="button" class="btn btn-muted btn-full" id="applyAllBtn"><svg class="i"><use href="#i-copy"/></svg>Salin Gaya ke Semua Sudut</button>
         </section>
         <button type="button" id="updateTemplateBtn" class="btn btn-accent btn-full" style="margin-bottom:14px" hidden><svg class="i"><use href="#i-lock"/></svg>Simpan Perubahan Template</button>
+        <button type="button" class="btn btn-accent btn-full" id="lockCanvasBtn" style="margin-bottom:14px" hidden><svg class="i"><use href="#i-lock"/></svg>Kunci Foto & Masuk Bulk</button>
       </div>
     </section>
     <section class="panel" id="panel-plat" data-panel="plat">
@@ -1577,7 +1578,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <svg class="i preset-plat-chev"><use href="#i-right"/></svg>
         </button>
         <div id="setupActions">
-          <button class="btn btn-accent btn-full" id="lockTemplateBtn"><svg class="i"><use href="#i-lock"/></svg>Kunci Template & Masuk Bulk</button>
+          <button class="btn btn-accent btn-full" id="lockTemplateBtn"><svg class="i"><use href="#i-lock"/></svg>Kunci Nopol Plat Nomor & Foto</button>
         </div>
         <div id="bulkActions" class="btn-pair" hidden>
           <button class="btn btn-muted" id="btnPreviewBulk"><svg class="i"><use href="#i-eye"/></svg>Preview</button>
@@ -2977,6 +2978,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     syncSliders(st);
     applyPlate();
+    $("lockCanvasBtn").hidden = !!templateData || !VIEWS.some(v => viewData[v].img);
   }
   document.querySelectorAll("#viewTabs button").forEach(b => {
     b.addEventListener("click", () => { currentView = b.dataset.view; loadViewState(); });
@@ -3294,6 +3296,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const hasItems = bulkItems.length > 0;
     setChip($("templateChip"), locked);
     $("setupActions").hidden = locked;
+    $("lockCanvasBtn").hidden = locked || !VIEWS.some(v => viewData[v].img);
     $("bulkActions").hidden = !locked;
     $("pasteBtn").hidden = !locked;
     $("bulkListCard").hidden = (!locked && !hasItems);
@@ -3331,6 +3334,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     setTab("bulk");
     showToast(added ? "Template dikunci & Nopol masuk Bulk!" : "Template dikunci ✓");
   });
+  $("lockCanvasBtn").addEventListener("click", () => $("lockTemplateBtn").click());
   $("unlockTemplateBtn").addEventListener("click", async () => {
     const ok = await askConfirm("Reset Template?", "Template dan seluruh antrean bulk saat ini akan dihapus.", "Reset Template");
     if (!ok) return;
