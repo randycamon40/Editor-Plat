@@ -123,6 +123,21 @@ select,input[type=search]{width:100%;min-height:48px;padding:0 14px;border-radiu
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%237c8799' stroke-width='2'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 select:focus,input:focus{outline:none;border-color:var(--pr);background:var(--sf)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.msel{position:relative}
+.msel-btn{width:100%;min-height:48px;padding:0 14px;border-radius:12px;border:2px solid transparent;background:var(--sf2);color:var(--tx);font-size:14.5px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left}
+.msel-btn.on{border-color:var(--pr);background:var(--sf)}
+.msel-btn span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msel-arrow{color:var(--mu2);font-size:12px;flex:0 0 auto}
+.msel-count{background:var(--pr);color:var(--pt);font-size:11px;font-weight:800;min-width:20px;height:20px;padding:0 6px;border-radius:99px;display:grid;place-items:center}
+.msel-panel{position:absolute;left:0;top:calc(100% + 6px);z-index:20;background:var(--sf);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:8px;max-height:300px;overflow-y:auto;width:calc(200% + 10px);min-width:280px;max-width:calc(100vw - 48px)}
+.msel-head{display:flex;justify-content:space-between;gap:6px;padding:2px 2px 8px}
+.msel-head button{border:0;background:none;color:var(--pr);font-size:12.5px;font-weight:700;cursor:pointer;padding:4px 6px}
+.msel-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;min-width:0}
+.msel-opt span{flex:1 1 auto;min-width:0;word-break:break-word;line-height:1.35}
+.msel-opt:active{background:var(--sf2)}
+.msel-opt input{accent-color:var(--pr);width:20px;height:20px;flex:0 0 auto}
+.msel-opt small{flex:0 0 auto;margin-left:auto;color:var(--mu);font-weight:700;background:var(--sf2);padding:2px 7px;border-radius:99px;min-width:34px;text-align:center}
+.msel-empty{padding:12px 8px;color:var(--mu);font-size:13px;text-align:center}
 .mt{margin-top:12px}
 details>summary{list-style:none;cursor:pointer;font-family:var(--fd);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:space-between;letter-spacing:.01em}
 details>summary::-webkit-details-marker{display:none}
@@ -283,7 +298,10 @@ td.p{font:700 13.5px var(--m);letter-spacing:1px;cursor:pointer}
       <div class="tools">
         <div class="sbox"><svg class="i"><use href="#se"/></svg><input type="search" id="search" placeholder="Cari plat, tipe, warna…"></div>
         <div class="g2">
-          <select id="filterTipe" aria-label="Filter tipe"><option value="">Semua tipe mobil</option></select>
+          <div class="msel" id="tipeMsel">
+            <button type="button" class="msel-btn" id="tipeMselBtn" aria-label="Filter tipe"><span id="tipeMselLabel">Semua tipe mobil</span><span style="display:flex;align-items:center;gap:6px"><span id="tipeMselCount" class="msel-count" hidden>0</span><span class="msel-arrow">▾</span></span></button>
+            <div class="msel-panel" id="tipeMselPanel" hidden></div>
+          </div>
           <select id="filterWarna" aria-label="Filter warna"><option value="">Semua Warna</option></select>
         </div>
         <select id="sortSel" aria-label="Urutan">
@@ -348,10 +366,10 @@ td.p{font:700 13.5px var(--m);letter-spacing:1px;cursor:pointer}
 var $=function(id){return document.getElementById(id);};
 var elFile=$('file'),elInfo=$('fileInfo'),elOpt=$('optCard'),elSheet=$('sheetSel'),elHead=$('headSel'),
 elPlat=$('mapPlat'),elMasa=$('mapMasa'),elWarna=$('mapWarna'),elTipe=$('mapTipe'),
-elFT=$('filterTipe'),elFW=$('filterWarna'),elSort=$('sortSel'),elRes=$('resCard'),elCount=$('count'),elFormat=$('formatMasa'),
+elFW=$('filterWarna'),elSort=$('sortSel'),elRes=$('resCard'),elCount=$('count'),elFormat=$('formatMasa'),
 elSearch=$('search'),elTbody=$('tbody'),elList=$('list'),elTw=$('tw'),elToast=$('toast'),elStats=$('stats'),elDock=$('dock'),
 elTl=$('tl'),elTlCard=$('tlCard'),elMore=$('more'),elDelim=$('delim');
-var WB=null,AOA=[],HEADROW=-1,HEADERS=[],DATA=[],VIEW='cards',STATUS='',MK=null,VIEWED=[],LIM=60,PAGE=60;
+var WB=null,AOA=[],HEADROW=-1,HEADERS=[],DATA=[],VIEW='cards',STATUS='',MK=null,VIEWED=[],LIM=60,PAGE=60,selTipe=[];
 
 /* ===== IndexedDB: persist data import antar sesi ===== */
 var _db=null;
@@ -631,10 +649,10 @@ function buildData(){
 
 /* ===== FILTER + SORT ===== */
 function getView(){
-  var q=elSearch.value.trim().toLowerCase(),ft=elFT.value,fw=elFW.value,nk=nowKey();
+  var q=elSearch.value.trim().toLowerCase(),fw=elFW.value,nk=nowKey();
   var l=DATA.filter(function(d){
     if(q&&d.low.indexOf(q)===-1)return false;
-    if(ft&&d.tipe!==ft)return false;
+    if(selTipe.length&&selTipe.indexOf(d.tipe)===-1)return false;
     if(fw&&d.warna!==fw)return false;
     if(STATUS&&!(STATUS==='dup'?d.dup:d.st===STATUS))return false;
     if(MK!==null){
@@ -658,11 +676,29 @@ function fillFilter(sel,vals,label){
   vals.forEach(function(t){h+='<option value="'+esc(t)+'">'+esc(t)+'</option>';});
   sel.innerHTML=h;sel.value=vals.indexOf(cur)>=0?cur:'';
 }
+function renderTipeMsel(){
+  var vals=uniq('tipe');
+  selTipe=selTipe.filter(function(t){return vals.indexOf(t)>=0;});
+  var label=$('tipeMselLabel'),cnt=$('tipeMselCount'),panel=$('tipeMselPanel'),btn=$('tipeMselBtn');
+  if(!label||!panel)return;
+  if(!selTipe.length){label.textContent=vals.length?('Semua tipe mobil ('+vals.length+' tipe)'):'Semua tipe mobil';cnt.hidden=true;}
+  else if(selTipe.length===1){label.textContent=selTipe[0];cnt.hidden=true;}
+  else{label.textContent=selTipe.length+' tipe dipilih';cnt.hidden=false;cnt.textContent=selTipe.length;}
+  if(btn)btn.classList.toggle('on',selTipe.length>0);
+  if(!vals.length){panel.innerHTML='<div class="msel-empty">Belum ada tipe</div>';return;}
+  var counts={};DATA.forEach(function(d){if(d.tipe)counts[d.tipe]=(counts[d.tipe]||0)+1;});
+  var h='<div class="msel-head"><button type="button" id="tipeAll">Pilih semua</button><button type="button" id="tipeClear">Hapus semua</button></div>';
+  vals.forEach(function(t){
+    var on=selTipe.indexOf(t)>=0;
+    h+='<label class="msel-opt"><input type="checkbox" value="'+esc(t)+'"'+(on?' checked':'')+'><span>'+esc(t)+'</span><small>'+(counts[t]||0)+'</small></label>';
+  });
+  panel.innerHTML=h;
+}
 function uniq(k){var o={};DATA.forEach(function(d){if(d[k])o[d[k]]=1;});return Object.keys(o).sort();}
 
 /* ===== RENDER ===== */
 function refresh(){
-  var _tt=uniq('tipe'); fillFilter(elFT,_tt,_tt.length?('Semua tipe mobil ('+_tt.length+' tipe)'):'Semua tipe mobil');
+  renderTipeMsel();
   fillFilter(elFW,uniq('warna'),'Semua Warna');
   render();
 }
@@ -723,7 +759,7 @@ function render(){
   renderTimeline();
   LIM=PAGE;
   VIEWED=getView();
-  var f=!!(elSearch.value||elFT.value||elFW.value||STATUS||MK!==null);
+  var f=!!(elSearch.value||selTipe.length||elFW.value||STATUS||MK!==null);
   elCount.textContent=VIEWED.length+' data'+(f?' / '+DATA.length:'')+(c.dup?' • '+c.dup+' duplikat':'');
   renderList();
 }
@@ -809,9 +845,9 @@ function copyPlat(){
 
 /* ===== FILE ===== */
 function resetFilters(){
-  STATUS='';MK=null;elSearch.value='';elSort.value='';
-  var _n=uniq('tipe').length; elFT.innerHTML='<option value="">'+(_n?('Semua tipe mobil ('+_n+' tipe)'):'Semua tipe mobil')+'</option>';
+  STATUS='';MK=null;elSearch.value='';elSort.value='';selTipe=[];
   elFW.innerHTML='<option value="">Semua Warna</option>';
+  renderTipeMsel();
 }
 function handleFile(f){
   if(!f)return;
@@ -863,7 +899,11 @@ elHead.addEventListener('change',function(){
 [elPlat,elMasa,elWarna,elTipe].forEach(function(s){s.addEventListener('change',function(){buildData();refresh();saveMeta().catch(function(){});});});
 var _dt;
 elSearch.addEventListener('input',function(){clearTimeout(_dt);_dt=setTimeout(render,150);});
-[elFT,elFW,elSort].forEach(function(s){s.addEventListener('change',render);});
+[elFW,elSort].forEach(function(s){s.addEventListener('change',render);});
+$('tipeMselBtn').addEventListener('click',function(e){e.stopPropagation();var p=$('tipeMselPanel');p.hidden=!p.hidden;});
+$('tipeMselPanel').addEventListener('change',function(e){var cb=e.target;if(!cb||cb.type!=='checkbox')return;var v=cb.value;if(cb.checked){if(selTipe.indexOf(v)===-1)selTipe.push(v);}else{selTipe=selTipe.filter(function(t){return t!==v;});}refresh();$('tipeMselPanel').hidden=false;});
+$('tipeMselPanel').addEventListener('click',function(e){var b=e.target.closest('#tipeAll,#tipeClear');if(!b)return;if(b.id==='tipeAll')selTipe=uniq('tipe').slice();else selTipe=[];refresh();$('tipeMselPanel').hidden=false;});
+document.addEventListener('click',function(e){if(!e.target.closest('#tipeMsel'))$('tipeMselPanel').hidden=true;});
 /* Filter status dihapus dari UI statistik, fungsionalitas dikunci ke info saja */
 elTl.addEventListener('click',function(e){
   var b=e.target.closest('.tb');if(!b)return;
