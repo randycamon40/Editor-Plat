@@ -997,7 +997,12 @@ input[type=range]::-moz-range-thumb {
   place-items: center;
   flex-shrink: 0;
 }
-.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; }
+.plate-mini-wrap { width: 115px; height: 38px; flex-shrink: 0; position: relative; cursor: pointer; }
+.q-side { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; margin-left: auto; flex-shrink: 0; }
+.q-side .q-actions { margin-left: 0; }
+.plate-mini-tipe-above { font-size: 11px; line-height: 1.2; color: var(--text-2); font-weight: 600; text-align: right; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plate-mini-col { width: 115px; flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
+
 .plate-mini { transform: scale(0.5); transform-origin: top left; }
 .row-num-wrap {
   width: 32px;
@@ -1430,7 +1435,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         <section class="box">
           <div class="box-head">
             
-            <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-image"/></svg></span>
+            <span class="icon-tile"><svg class="i"><use href="#i-image"/></svg></span>
             <div class="grow">
               <h2>Kanvas Sudut Kendaraan</h2>
               <p>Pilih sisi mobil lalu import foto (maks. 4 foto sekaligus).</p>
@@ -1488,6 +1493,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           <div class="btn-pair gap-ts" id="aiActionBtns" hidden>
             <button type="button" id="btnRunAi" class="btn btn-contrast"><svg class="i"><use href="#i-sparkles"/></svg><span>AI 1 Sisi</span></button>
             <button type="button" id="btnRunAiAll" class="btn btn-accent"><svg class="i"><use href="#i-sparkles"/></svg><span>AI Semua Sisi</span></button>
+            <button type="button" id="btnStopAi" class="btn btn-danger" hidden><svg class="i"><use href="#i-x"/></svg><span>Stop</span></button>
           </div>
         </section>
         <section class="box" id="plateControls" hidden>
@@ -1508,7 +1514,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="templateCard">
         <div class="box-head">
           
-          <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-pencil"/></svg></span>
+          <span class="icon-tile"><svg class="i"><use href="#i-pencil"/></svg></span>
           <div class="grow">
             <h2>Desain & Data Plat</h2>
             <p>Atur nomor, masa berlaku, dan warna standar TNKB.</p>
@@ -1678,7 +1684,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       <section class="box" id="bulkListCard" hidden>
         <div class="box-head">
           
-          <span class="icon-tile"[STRIPPED 12 bytes]"i"><use href="#i-layers"/></svg></span>
+          <span class="icon-tile"><svg class="i"><use href="#i-layers"/></svg></span>
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
@@ -1688,11 +1694,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         <div class="thumbs-strip" id="templateStrip" aria-label="Template mobil aktif"></div>
         <div class="btn-pair gap-t">
           <button class="btn btn-accent" id="btnExportZip"><svg class="i"><use href="#i-package"/></svg><span>Export ZIP</span></button>
-          <button class="btn btn-muted" id="btnSaveHistoryBulk"><svg class="i"><use href="#i-vault"/></svg>Simpan Vault</button>
+          <button class="btn btn-muted" id="btnExportCsv"><svg class="i"><use href="#i-csv"/></svg>Export CSV</button>
         </div>
         <div class="btn-pair gap-ts">
           <button type="button" class="btn btn-muted btn-xs" id="pasteBtn" hidden><svg class="i"><use href="#i-list-plus"/></svg>Tempel Banyak</button>
-          <button type="button" class="btn btn-muted btn-xs" id="btnExportCsv"><svg class="i"><use href="#i-csv"/></svg>Export CSV</button>
+          <button type="button" class="btn btn-muted btn-xs" id="btnSaveHistoryBulk"><svg class="i"><use href="#i-vault"/></svg>Simpan Vault</button>
         </div>
         <div class="search-box">
           <svg class="i"><use href="#i-search"/></svg>
@@ -2359,7 +2365,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (id === "confirmModal" && pendingConfirm) {
       const f = pendingConfirm;
       pendingConfirm = null;
-      f(false, fromHistory);
+      if (!fromHistory) f(false, fromHistory);
       return;
     }
     if (!fromHistory && history.state && history.state.modal) {
@@ -2424,7 +2430,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   });
   function askConfirm(title, text, okLabel) {
     return new Promise(res => {
-      if (pendingConfirm) { const _old = pendingConfirm; pendingConfirm = null; _old(false); }
+      if (pendingConfirm) { const _old = pendingConfirm; pendingConfirm = null; _old(false, true); }
       $("confirmTitle").textContent = title;
       $("confirmText").textContent = text;
       $("confirmOk").textContent = okLabel || "Ya, Lanjutkan";
@@ -2554,18 +2560,13 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       el.textContent = nomor;
     }
   }
-  const BLACK_N_SCALE = 1;
-  const BLACK_Y_SCALE = 1;
+
   function fitSizes(st, p) {
     const sxFit = (Number.isFinite(Number(st.lebarNopol)) ? Number(st.lebarNopol) : 85) / 100;
     const baseN = fitNomor(p.nomor, st.nopolSize, st.autofit, p);
     const nFit = st.autofit === false ? baseN : Math.min(st.nopolSize, Math.max(4, Math.round(baseN / Math.max(0.5, sxFit) * 10) / 10));
     const yFit = calcFit(p.bulan + "•" + p.tahun, st.tahunSize, YEAR_LS, 0, fontYFor(p), st.autofit);
-    const black = isBlackPlate(p);
-    return {
-      n: black ? Math.round(nFit * BLACK_N_SCALE * 10) / 10 : nFit,
-      y: black ? Math.round(yFit * BLACK_Y_SCALE * 10) / 10 : yFit
-    };
+    return { n: nFit, y: yFit };
   }
   let viewData = {};
   VIEWS.forEach(v => viewData[v] = defaultState());
@@ -2584,28 +2585,36 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   let editVaultPlateIdx = -1;
   let exporting = false;
   let bulkQ = "";
-  /* ===== TIPE MOBIL + NAMA VAULT (penanda saja, Vault terkunci) =====
-     - activeTipeMobil = tipe dari AI (brand template) untuk item baru.
-     - Item baru: tipe dari kolom CSV (kalau ada) > activeTipeMobil > "" (tanpa tipe).
-     - Bulk dikosongkan sampai habis -> activeTipeMobil balik ke AI,
-       item baru sesudahnya pakai tipe AI sampai AI jalan lagi
-       atau template dikunci ulang.
-     - VAULT TERKUNCI: tambah/hapus/edit di Bulk TIDAK mengubah Vault.
-       Vault baru berubah kalau: (1) tombol Simpan Vault ditekan,
-       (2) item Vault langsung diedit/dihapus dari dalam Vault.
-     - Nama vault HANYA penanda/label: 1 tipe = nama tipenya,
-       >1 tipe = "Semua tipe mobil (N tipe)", tanpa tipe = "" (tanpa label).
+  /* ===== TIPE MOBIL + NAMA VAULT (Vault terkunci) =====
+     - activeTipeMobil = tipe dari AI (generate AI / brand template).
+     - Header bulk + info tipe di bawah textarea modal bulk SELALU pakai tipe AI.
+     - Label di atas plat mini di Bulk dan preview Vault pakai tipe CSV per item saja,
+       kosong / ketik manual = "-".
+     - Nama vault baru = tipe AI. Fallback kalau AI kosong = tipe CSV terbanyak.
+       Vault lama dibiarkan, tidak auto-rename.
+     - Export: Hasil > tipe AI / nama vault > tiap tipe CSV (grup case/spasi-insensitive).
+       Kalau tipe CSV kosong / sama dengan folder atasnya, foldernya jadi "-".
        Rename manual (nameCustom) tidak ditimpa. */
   let activeTipeMobil = "";
   function itemTipe(it){ return String((it && (it.tipeMobil || it.tipe)) || "").trim(); }
   function titleCaseTipe(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-])([a-z])/g, function(m,p,c){ return p + c.toUpperCase(); }); }
   function distinctTipes(plates){ const out=[]; (plates||[]).forEach(function(p){ const v=itemTipe(p); if(v && out.indexOf(v)===-1) out.push(v); }); return out; }
-  function vaultNameForPlates(plates){ const ts=distinctTipes(plates); if(!ts.length) return ""; if(ts.length===1) return ts[0]; return "Semua tipe mobil ("+ts.length+" tipe)"; }
+  function mostFrequentTipe(plates){ let best=""; let bestN=0; const counts={}; (plates||[]).forEach(function(p){ const v=itemTipe(p); if(!v) return; counts[v]=(counts[v]||0)+1; if(counts[v]>bestN){ bestN=counts[v]; best=v; } }); return best; }
+
   function templateBrand(){ for(const v of VIEWS){ const b=(templateData&&templateData[v]&&templateData[v].brand)||(viewData[v]&&viewData[v].brand); if(b&&String(b).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(b); } return ""; }
-  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; const ts=distinctTipes(bulkItems); if(ts.length===1){ el.textContent="Tipe mobil: "+ts[0]; return; } if(ts.length>1){ el.textContent="Tipe mobil: Semua tipe mobil ("+ts.length+" tipe)"; return; } const tb=templateBrand(); el.textContent = tb ? "Tipe mobil: "+tb+" (AI)" : (activeTipeMobil ? "Tipe mobil: "+activeTipeMobil+" (AI)" : "Tipe mobil: —"); }
+  function normTipeKey(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g, " "); }
+  function getAITipe(){ const tb=templateBrand(); if(tb) return tb; if(activeTipeMobil && String(activeTipeMobil).trim() && String(activeTipeMobil).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(activeTipeMobil); return ""; }
+  function brandFromTemplate(tpl){ if(!tpl) return ""; for(const v of VIEWS){ const b=tpl[v] && tpl[v].brand; if(b && String(b).trim() && String(b).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(b); } return ""; }
+  function aiVaultNameForPlates(plates){ const ai=getAITipe(); if(ai) return ai; return vaultNameForPlates(plates); }
+  function vaultAITipe(batch){ if(!batch) return getAITipe(); const b=brandFromTemplate(batch.template); if(b) return b; if(batch.name && !/\(\d+\s*tipe\)/i.test(String(batch.name))) return String(batch.name).trim(); return getAITipe(); }
+  function csvTipeForItem(it){ if(!it) return ""; if(it.tipeSource==="csv") return itemTipe(it); if(it.tipeSource===undefined) return itemTipe(it); return ""; }
+  function displayTipeForItem(it){ return csvTipeForItem(it); }
+  function tipeAboveHtml(it){ const label=displayTipeForItem(it) || "-"; return `<div class="plate-mini-tipe-above" title="${esc(label)}">${esc(label)}</div>`; }
+  function wrapMiniWithTipe(it, aiTipe){ return `<div class="plate-mini-col">${chipHtml(it, true)}</div>`; }
+  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; const ai=getAITipe(); if(ai){ el.textContent="Tipe mobil: "+ai+" (AI)"; return; } const ts=distinctTipes(bulkItems); if(ts.length===1){ el.textContent="Tipe mobil: "+ts[0]; return; } if(ts.length>1){ el.textContent="Tipe mobil: "+mostFrequentTipe(bulkItems)+" ("+ts.length+" tipe)"; return; } el.textContent="Tipe mobil: —"; }
   function setActiveTipe(v){ const s=String(v||"").trim(); if(s && s.toLowerCase()!=="tidak diketahui") activeTipeMobil = titleCaseTipe(s); else if(!s) activeTipeMobil=""; refreshBulkTipeLine(); }
   function clearActiveTipeOnEmpty(){ if(bulkItems.length) return; activeTipeMobil=templateBrand()||""; refreshBulkTipeLine(); }
-  function restoreActiveTipeFromBulk(){ const ts=distinctTipes(bulkItems); activeTipeMobil = ts.length===1 ? ts[0] : (ts.length>1 ? "" : (templateBrand()||"")); refreshBulkTipeLine(); }
+  function restoreActiveTipeFromBulk(){ activeTipeMobil = templateBrand() || activeTipeMobil || ""; refreshBulkTipeLine(); }
   const normQ = s => String(s).toUpperCase().replace(/\s+/g, "");
   const bulkMatch = it => !bulkQ || normQ(it.nomor).includes(bulkQ);
   async function loadHistoryBatches() {
@@ -2647,7 +2656,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return false;
   }
   function getDefaultBatchName() {
-    if (bulkItems && bulkItems.length) { const _nm=vaultNameForPlates(bulkItems); if(_nm) return _nm; const _tb=templateBrand(); return _tb||""; }
+    if (bulkItems && bulkItems.length) { const _nm=aiVaultNameForPlates(bulkItems); if(_nm) return _nm; return ""; }
     const tpl = templateData || viewData;
     if (!tpl) return "";
     for (const v of VIEWS) {
@@ -2891,10 +2900,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       viewData[v][key] = val;
       if (templateData && templateData[v]) templateData[v][key] = val;
     });
-    if (templateData) {
-      clearTimeout(tplSaveTimer);
-      tplSaveTimer = setTimeout(() => { saveTemplate(); }, 400);
-    }
+    scheduleTemplateSave();
   }
   buildSliders($("sliderGroups"), SLIDER_GROUPS);
   buildSliders($("textSliders"), TEXT_GROUPS);
@@ -3142,7 +3148,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     st.left = nl + "%"; st.top = nt + "%";
     platePreview.style.left = st.left; platePreview.style.top = st.top;
   });
-  const endDrag = e => {
+  const endPlateDrag = e => {
     if (!isDragging) return;
     isDragging = false;
     try { platePreview.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -3153,16 +3159,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       scheduleTemplateSave();
     }
   };
-  platePreview.addEventListener("pointerup", endDrag);
-  platePreview.addEventListener("pointercancel", endDrag);
-  function fixTitleIcons(){
-    var m={"Kanvas Sudut Kendaraan":"i-image","Desain & Data Plat":"i-pencil","Antrean Produksi Bulk":"i-layers"};
-    document.querySelectorAll(".box-head").forEach(function(h){
-      var t=h.querySelector("h2");if(!t||!m[t.textContent.trim()])return;
-      var tile=h.querySelector(".icon-tile");if(!tile)return;
-      tile.innerHTML='<s'+'vg class="i"><u'+'se href="#'+m[t.textContent.trim()]+'"/></s'+'vg>';
-    });
-  }
+  platePreview.addEventListener("pointerup", endPlateDrag);
+  platePreview.addEventListener("pointercancel", endPlateDrag);
+
   function renderSwatches() {
     if ($("btnColorPlat")) $("btnColorPlat").style.backgroundColor = warnaEl.value;
     if ($("btnColorTeks")) $("btnColorTeks").style.backgroundColor = warnaTeksEl.value;
@@ -3377,25 +3376,22 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     updateTemplateUI();
     showToast("Template diperbarui ✓");
   });
-  function chipHtml(it, mini) {
-    if (mini) {
-      return `
-        <div class="plate-mini-wrap">
-          <div class="plate plate-mini"
-               data-nomor="${esc(it.nomor)}"
-               data-bulan="${esc(it.bulan || '')}"
-               data-tahun="${esc(it.tahun || '')}"
-               data-warna="${esc(it.warna)}"
-               data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}"
-               data-warnashadow="${esc(it.warnaShadow || defaultShadowForPlate(it.warna))}"
-               data-warnaname="${esc(it.warnaName || nameFor(it.warna))}">
-            <span class="plate-text"></span>
-            <span class="plate-year"></span>
-            <div class="plate-logo"></div>
-          </div>
-        </div>`;
-    }
-    
+  function chipHtml(it) {
+    return `
+      <div class="plate-mini-wrap">
+        <div class="plate plate-mini"
+             data-nomor="${esc(it.nomor)}"
+             data-bulan="${esc(it.bulan || '')}"
+             data-tahun="${esc(it.tahun || '')}"
+             data-warna="${esc(it.warna)}"
+             data-warnateks="${esc(it.warnaTeks || (isDark(it.warna) ? '#fff' : '#111'))}"
+             data-warnashadow="${esc(it.warnaShadow || defaultShadowForPlate(it.warna))}"
+             data-warnaname="${esc(it.warnaName || nameFor(it.warna))}">
+          <span class="plate-text"></span>
+          <span class="plate-year"></span>
+          <div class="plate-logo"></div>
+        </div>
+      </div>`;
   }
   function paintOneMini(el, st) {
     if (!el || el.dataset.painted === "1") return;
@@ -3410,9 +3406,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     };
     stylePlate(el, el.querySelector('.plate-text'), el.querySelector('.plate-year'), st, p);
     el.style.filter = "none";
-    const _t = el.querySelector('.plate-text'), _y = el.querySelector('.plate-year');
-    if (_t) { _t.style.opacity = "0.88"; }
-    if (_y) { _y.style.opacity = "0.88"; }
     el.dataset.painted = "1";
   }
   /* FIX: observer disimpan PER CONTAINER (container._miniObserver),
@@ -3445,20 +3438,22 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       bulkListEl.innerHTML = `<div class="empty-state">${ico("layers")}<b>Antrean Masih Kosong</b><span>Tambahkan nomor plat di tab Plat atau gunakan fitur Tempel Banyak.</span></div>`;
       return;
     }
+    const _visible = bulkItems.map((it, i) => ({ it, i })).filter(x => bulkMatch(x.it));
     bulkListEl.innerHTML = bulkItems.map((it, i) => !bulkMatch(it) ? "" : `
       <div class="q-item${i === editIndex ? " editing" : ""}">
         <div class="row-num-wrap">
-          ${i === bulkItems.findIndex(x => bulkMatch(x))
+          ${_visible[0] && _visible[0].i === i
             ? `<input type="number" id="bulkStartNum" class="row-num-input" value="${bulkStartNumber}" min="0" max="9999">`
-            : `<span class="row-num-span" data-i="${bulkItems.filter(x=>bulkMatch(x)).indexOf(it)}">${bulkStartNumber + bulkItems.filter(x=>bulkMatch(x)).indexOf(it)}</span>`}
+            : `<span class="row-num-span" data-i="${_visible.findIndex(x => x.i === i)}">${bulkStartNumber + _visible.findIndex(x => x.i === i)}</span>`}
         </div>
-        ${chipHtml(it, true)}
-
+        ${wrapMiniWithTipe(it, getAITipe())}
+        <div class="q-side">
+        ${tipeAboveHtml(it)}
         <div class="q-actions">
-          <button class="icon-act" data-act="preview" data-index="${i}" title="Preview" aria-label="Preview ${esc(it.nomor)}">${ico("eye")}</button>
           <button class="icon-act" data-act="edit" data-index="${i}" title="Edit" aria-label="Edit ${esc(it.nomor)}">${ico("pencil")}</button>
           <button class="icon-act" data-act="dup" data-index="${i}" title="Duplikat" aria-label="Duplikat ${esc(it.nomor)}">${ico("copy")}</button>
           <button class="icon-act danger" data-act="del" data-index="${i}" title="Hapus" aria-label="Hapus ${esc(it.nomor)}">${ico("x")}</button>
+        </div>
         </div>
       </div>`).join("");
     if (!bulkListEl.innerHTML.trim()) {
@@ -3479,6 +3474,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
   });
   bulkListEl.addEventListener("click", async e => {
+    const mini = e.target.closest(".plate-mini-wrap");
+    if (mini) { const row = mini.closest(".q-item"); const refBtn = row ? row.querySelector("button[data-act='edit']") : null; if (refBtn) { const idx = parseInt(refBtn.dataset.index, 10); const it2 = bulkItems[idx]; if (it2) openPreview(it2, it2.nomor); } return; }
     const btn = e.target.closest("button[data-act]");
     if (!btn) return;
     const i = parseInt(btn.dataset.index, 10);
@@ -3714,7 +3711,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       else if (!/[A-Z]/.test(rawNomor) || !/[0-9]/.test(rawNomor)) msgs.push("Nopol harus mengandung huruf & angka");
       else if (/[^A-Z0-9\s]/.test(rawNomor)) msgs.push("Karakter tidak valid di nopol");
       const cleanNopol = rawNomor.replace(/[^A-Z0-9]/g, "");
-      const m = cleanNopol.match(/^([A-Z]{1,2})([0-9]{1,4})([A-Z]{0,3})$/);
+      const m = cleanNopol.match(/^([A-Z]{1,3})([0-9]{1,4})([A-Z]{0,3})$/);
       if (m) rawNomor = m[1] + " " + m[2] + (m[3] ? " " + m[3] : "");
       const BULAN_MAP = {
         "januari": "01", "jan": "01", "februari": "02", "feb": "02", "pebruari": "02",
@@ -3733,7 +3730,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         if (!looksDate && !looksColor) { explicitTipe = titleCaseTipe(t1); restParts = parts.slice(2); }
       }
       const it = Object.assign({}, base, { nomor: rawNomor });
-      if (explicitTipe) { it.tipeMobil = explicitTipe; it.tipeSource = "csv"; }
+      it.tipeMobil = explicitTipe || "";
+      it.tipeSource = "csv";
       let parsedMonth = null, parsedYear = null;
       restParts.forEach(t => {
         const text = t.toLowerCase().trim();
@@ -3814,7 +3812,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   $("pasteBtn").addEventListener("click", () => {
     pasteRawWithTipe = ""; pasteHiddenTipes = {};
     $("pasteArea").value = "";
-    const _pt = $("pasteTipeLine"); if (_pt) { _pt.hidden = true; _pt.textContent = ""; }
+    const _pt = $("pasteTipeLine"); if (_pt) { const _ai0=getAITipe(); if(_ai0){ _pt.hidden=false; _pt.textContent="Tipe mobil: "+_ai0+" (AI)"; } else { _pt.hidden = true; _pt.textContent = ""; } }
     $("pasteCount").textContent = "0 nopol terdeteksi";
     $("pasteCount").style.color = "";
     $("pasteWarnings").innerHTML = "";
@@ -3867,7 +3865,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     try { const _ns = Math.min(start, e.target.value.length); e.target.setSelectionRange(_ns, _ns); } catch (err) {}
     const { items, warnings } = parsePaste(pasteRawWithTipe || e.target.value);
-    const _pt2 = $("pasteTipeLine"); if (_pt2) { const _ts = distinctTipes(items); if (!_ts.length) { _pt2.hidden = true; _pt2.textContent = ""; } else { _pt2.hidden = false; _pt2.textContent = _ts.length === 1 ? "Tipe mobil: " + _ts[0] : "Tipe mobil: Semua tipe mobil (" + _ts.length + " tipe)"; } }
+    const _pt2 = $("pasteTipeLine"); if (_pt2) { const _ai2=getAITipe(); if(_ai2){ _pt2.hidden=false; _pt2.textContent="Tipe mobil: "+_ai2+" (AI)"; } else { const _ts = distinctTipes(items); if (!_ts.length) { _pt2.hidden = true; _pt2.textContent = ""; } else { _pt2.hidden = false; _pt2.textContent = _ts.length === 1 ? "Tipe mobil: " + _ts[0] : "Tipe mobil: " + mostFrequentTipe(items) + " (" + _ts.length + " tipe)"; } } }
     const countEl = $("pasteCount"), warnHost = $("pasteWarnings");
     if (warnings.length === 0) {
       countEl.textContent = items.length + " nopol terdeteksi";
@@ -3904,9 +3902,10 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     });
     const skippedDup = list.length - filteredList.length;
     if (!filteredList.length) return showToast(skippedDup ? "Semua nopol sudah ada di antrean" : "Belum ada nopol untuk ditambahkan", true);
+    const _prevTipe = activeTipeMobil;
     bulkItems = bulkItems.concat(filteredList);
-    { const _pts=distinctTipes(bulkItems); if(_pts.length===1) activeTipeMobil=_pts[0]; else if(_pts.length>1) activeTipeMobil=""; }
-    if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); return; }
+    // Tipe AI dipertahankan, tidak ditimpa tipe CSV
+    if (!await saveBulkData()) { bulkItems = bulkItems.slice(0, before); activeTipeMobil = _prevTipe; refreshBulkTipeLine(); return; }
     updateTemplateUI();
     closeSheet("pasteModal");
     showToast(filteredList.length + " nopol ditambahkan" + (skippedDup ? " • " + skippedDup + " duplikat dilewati" : "") + " ✓");
@@ -3923,7 +3922,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const _pl = Array.isArray(batch.plates) ? batch.plates : (Array.isArray(batch.items) ? batch.items : (Array.isArray(batch) ? batch : []));
       const count = _pl.length;
       const _ts = distinctTipes(_pl);
-      const _tipeLabel = _ts.length ? (_ts.length === 1 ? _ts[0] : ("Semua tipe mobil (" + _ts.length + " tipe)")) : "—";
+      const _tipeLabel = _ts.length ? (_ts.length === 1 ? _ts[0] : (mostFrequentTipe(_pl) + " (" + _ts.length + " tipe)")) : "—";
       return `
         <div class="q-item vault-card">
           <span class="vault-badge">${ico("vault")}</span>
@@ -3966,8 +3965,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       const prevView = JSON.parse(JSON.stringify(viewData));
       const prevStartNum = bulkStartNumber;
       bulkItems = Array.isArray(batch.plates) ? JSON.parse(JSON.stringify(batch.plates)) : [];
-      restoreActiveTipeFromBulk();
-      if (!activeTipeMobil && batch.template) { const _tb = VIEWS.map(function(v){ return batch.template[v] && batch.template[v].brand; }).find(function(b){ return b && String(b).toLowerCase() !== "tidak diketahui"; }); if (_tb) setActiveTipe(_tb); }
+      { const _vb = brandFromTemplate(batch.template); if(_vb) setActiveTipe(_vb); else { activeTipeMobil = templateBrand() || activeTipeMobil || ""; refreshBulkTipeLine(); } }
       editIndex = -1;
       cancelEditUI();
       if (batch.startNumber !== undefined) {
@@ -4020,7 +4018,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       $("renameInput").value = batch.name || `Antrean #${historyBatches.length - idx}`;
       openSheet("renameModal");
     } else if (act === "export_batch") {
-      openExportModal([{ folderName: null, plates: batch.plates, template: batch.template }], btn, false);
+      openExportModal([{ folderName: batch.name || `Antrean #${historyBatches.length - idx}`, aiTipe: vaultAITipe(batch) || "", plates: batch.plates, template: batch.template }], btn, false);
     } else if (act === "preview_batch") {
       const title = batch.name || `Antrean #${historyBatches.length - idx}`;
       $("historyPreviewTitle").textContent = title + " (" + batch.date + ")";
@@ -4032,17 +4030,22 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     $("historyPreviewGrid").innerHTML = (batch.plates || []).map((p, i) => `
       <div class="q-item">
         <div class="row-num-wrap"><span class="row-num-span">${(Number(batch.startNumber ?? 1)) + i}</span></div>
-        ${chipHtml(p, true)}
+        ${wrapMiniWithTipe(p, vaultAITipe(batch))}
+        <div class="q-side">
+        ${tipeAboveHtml(p)}
         <div class="q-actions">
           <button class="icon-act" data-vact="preview" data-b="${bIdx}" data-p="${i}" title="Preview" aria-label="Preview">${ico("eye")}</button>
           <button class="icon-act" data-vact="edit" data-b="${bIdx}" data-p="${i}" title="Edit" aria-label="Edit">${ico("pencil")}</button>
           <button class="icon-act danger" data-vact="del" data-b="${bIdx}" data-p="${i}" title="Hapus" aria-label="Hapus">${ico("x")}</button>
+        </div>
         </div>
       </div>
     `).join("");
     paintMiniPlates($("historyPreviewGrid"));
   }
   $("historyPreviewGrid").addEventListener("click", async e => {
+    const mini = e.target.closest(".plate-mini-wrap");
+    if (mini) { const row = mini.closest(".q-item"); const refBtn = row ? row.querySelector("button[data-vact='edit']") : null; if (refBtn) { const b2 = parseInt(refBtn.dataset.b, 10); const p2 = parseInt(refBtn.dataset.p, 10); const batch2 = historyBatches[b2]; if (batch2 && batch2.plates && batch2.plates[p2]) { const tpl2 = batch2.template || templateData; if (!tpl2) return showToast("Template untuk antrean ini tidak ditemukan", true); openPreview(batch2.plates[p2], batch2.plates[p2].nomor, tpl2); } } return; }
     const btn = e.target.closest("button[data-vact]");
     if (!btn) return;
     const bIdx = parseInt(btn.dataset.b, 10);
@@ -4058,7 +4061,8 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     } else if (act === "del") {
       if (!await askConfirm("Hapus Nopol?", "Nopol " + plate.nomor + " akan dihapus dari antrean ini.", "Hapus")) return;
       batch.plates.splice(pIdx, 1);
-      if(!batch.nameCustom) batch.name = vaultNameForPlates(batch.plates);
+      // Nama vault lama dibiarkan, tidak auto-rename saat hapus item. Hanya isi jika kosong.
+      if(!batch.nameCustom && !batch.name) batch.name = aiVaultNameForPlates(batch.plates) || "";
       await saveHistoryBatches();
       if (batch.plates.length === 0) {
         closeSheet("historyPreviewModal");
@@ -4106,8 +4110,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     p.warnaName = nameFor(hex);
     const _vt = String($("editVTipe").value || "").trim();
     p.tipeMobil = _vt ? titleCaseTipe(_vt) : "";
-    p.tipeSource = "manual";
-    if(!batch.nameCustom) batch.name = vaultNameForPlates(batch.plates);
+    p.tipeSource = "csv";
+    // Nama vault dibiarkan, tidak auto-rename dari tipe CSV. Hanya isi jika kosong.
+    if(!batch.nameCustom && !batch.name) batch.name = aiVaultNameForPlates(batch.plates) || "";
     if (await saveHistoryBatches()) {
       closeSheet("editVaultItemModal");
       showToast("Nopol diperbarui ✓");
@@ -4163,16 +4168,28 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     aiStatus.className = "ai-badge" + (cls ? " " + cls : "");
     aiStatus.textContent = text;
   }
+  let aiAbortController = null;
+  let aiCancelRequested = false;
+  function stopAiProcess() {
+    aiCancelRequested = true;
+    if (aiAbortController) { try { aiAbortController.abort(); } catch (e) {} }
+  }
   async function fetchJson(url, opts) {
     let res;
-    try { res = await fetch(url, opts); }
-    catch (e) { throw new Error("Koneksi gagal. Periksa internet atau izin CORS."); }
+    const reqOpts = Object.assign({}, opts);
+    if (aiAbortController && !reqOpts.signal) reqOpts.signal = aiAbortController.signal;
+    try { res = await fetch(url, reqOpts); }
+    catch (e) {
+      if (e && e.name === "AbortError") throw new Error("Dibatalkan oleh pengguna");
+      throw new Error("Koneksi gagal. Periksa internet atau izin CORS.");
+    }
     let data = null;
     try { data = await res.json(); } catch (e) { data = {}; }
     return { res, data };
   }
   async function geminiCall(model, key, prompt, image, json) {
     for (let i = 0; i < 2; i++) {
+      if (aiCancelRequested) throw new Error("Dibatalkan oleh pengguna");
       const parts = [{ text: prompt }];
       if (image) parts.push({ inline_data: { mime_type: "image/jpeg", data: image.split(",")[1] } });
       const body = { contents: [{ parts }] };
@@ -4289,25 +4306,39 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     if (targetView === currentView) { syncSliders(st); applyPlate(); }
     return true;
   }
+  const btnStopAi = $("btnStopAi");
+  btnStopAi.addEventListener("click", () => {
+    stopAiProcess();
+    showToast("Menghentikan proses AI...");
+  });
   btnRunAi.addEventListener("click", async () => {
     const targetView = currentView;
     const st = viewData[targetView];
     if (!st.img) return showToast("Import gambar dulu", true);
+    if (st.hidden) return showToast("Plat di sisi ini disembunyikan, AI dilewati", true);
     const key = aiApiKey.value.trim();
     if (!key && aiProvider.value !== "ovh") return showToast("Isi API Key di menu Setelan dulu", true);
     const label = btnRunAi.querySelector("span");
     label.textContent = "Mendeteksi...";
+    aiCancelRequested = false;
+    aiAbortController = new AbortController();
     btnRunAi.disabled = btnRunAiAll.disabled = true;
+    btnStopAi.hidden = false;
     try {
       const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, st.img, false);
+      if (aiCancelRequested) return;
       const m = String(text).match(/\{[\s\S]*\}/);
       if (!m) throw new Error("Respons AI tidak valid");
       const ok = applyAiBox(JSON.parse(m[0]), targetView);
       if (templateData) await saveTemplate();
       showToast(ok ? "Posisi plat disesuaikan AI ✓" : "AI: Plat tidak ditemukan di sisi ini.");
     } catch (err) {
-      showToast("AI Error: " + err.message, true);
+      if (!aiCancelRequested) showToast("AI Error: " + err.message, true);
+      else showToast("Proses AI dihentikan");
     } finally {
+      aiAbortController = null;
+      aiCancelRequested = false;
+      btnStopAi.hidden = true;
       label.textContent = "AI 1 Sisi";
       btnRunAi.disabled = btnRunAiAll.disabled = false;
     }
@@ -4315,29 +4346,51 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   btnRunAiAll.addEventListener("click", async () => {
     const key = aiApiKey.value.trim();
     if (!key && aiProvider.value !== "ovh") return showToast("Isi API Key di menu Setelan dulu", true);
-    const availableViews = VIEWS.filter(v => viewData[v].img);
-    if (!availableViews.length) return showToast("Import gambar dulu", true);
+    const availableViews = VIEWS.filter(v => viewData[v].img && !viewData[v].hidden);
+    if (!availableViews.length) return showToast("Tidak ada sisi aktif (semua foto kosong atau plat disembunyikan)", true);
     const label = btnRunAiAll.querySelector("span");
     const oldText = label.textContent;
+    aiCancelRequested = false;
     btnRunAi.disabled = btnRunAiAll.disabled = true;
+    btnStopAi.hidden = false;
     let successCount = 0;
     try {
       for (let i = 0; i < availableViews.length; i++) {
+        if (aiCancelRequested) break;
         const v = availableViews[i];
         if (!viewData[v] || !viewData[v].img) continue;
         label.textContent = `Proses (${i + 1}/${availableViews.length})...`;
+        aiAbortController = new AbortController();
         try {
           const text = await askAI(aiProvider.value, aiModel.value, key, AI_PROMPT, viewData[v].img, false);
+          if (aiCancelRequested) break;
           const m = String(text).match(/\{[\s\S]*\}/);
           if (m) { try { if (applyAiBox(JSON.parse(m[0]), v)) successCount++; } catch (err) { console.warn("AI JSON invalid sisi " + v, err); } }
-        } catch (err) { console.warn("AI skip sisi " + v, err); }
-        await sleep(1000);
+        } catch (err) {
+          if (aiCancelRequested || (err && /dibatalkan/i.test(err.message))) break;
+          console.warn("AI skip sisi " + v, err);
+        } finally {
+          aiAbortController = null;
+        }
+        if (aiCancelRequested || i >= availableViews.length - 1) break;
+        for (let w = 0; w < 10; w++) {
+          if (aiCancelRequested) break;
+          await sleep(100);
+        }
       }
-      if (templateData) await saveTemplate();
-      showToast(`Selesai! ${successCount} sisi terdeteksi AI ✓`);
+      if (aiCancelRequested) {
+        showToast(`AI dihentikan (${successCount} sisi sempat terdeteksi)`);
+      } else {
+        if (templateData) await saveTemplate();
+        showToast(`Selesai! ${successCount} sisi terdeteksi AI ✓`);
+      }
     } catch (err) {
-      showToast("AI Error: " + err.message, true);
+      if (!aiCancelRequested) showToast("AI Error: " + err.message, true);
+      else showToast("Proses AI dihentikan");
     } finally {
+      aiAbortController = null;
+      aiCancelRequested = false;
+      btnStopAi.hidden = true;
       label.textContent = oldText;
       btnRunAi.disabled = btnRunAiAll.disabled = false;
       loadViewState();
@@ -4742,36 +4795,65 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const activeTpl = g.template || globalTpl; if(!g.template && exportGroups.length>1) continue;
         const views = VIEWS.filter(v => activeTpl[v] && activeTpl[v].img);
         let currentFolder = folderHasil;
+        let topFolderName = "";
         if (g.folderName) {
-          let safeFolderName = g.folderName.replace(/[\\/:*?"<>|]/g, "_");
+          let safeFolderName = String(g.folderName).replace(/[\\/:*?"<>|]/g, "_");
           let originalName = safeFolderName, counter = 1;
           while (usedFolders.has(safeFolderName.toLowerCase())) safeFolderName = originalName + " (" + (counter++) + ")";
           usedFolders.add(safeFolderName.toLowerCase());
+          topFolderName = safeFolderName;
           currentFolder = folderHasil.folder(safeFolderName);
         }
-        const used = new Set();
-        for (let i = 0; i < g.plates.length; i++) {
-          const plate = g.plates[i];
-          let safe = String(plate.nomor || "").replace(/[^a-zA-Z0-9]/g, "") || ("Plat_" + i);
-          if (used.has(safe.toLowerCase())) safe += "_" + (i + 1);
-          used.add(safe.toLowerCase());
-          const folderNopol = currentFolder.folder(safe);
-          for (const v of views) {
+        // Grup per tipe CSV saja: kosong / sama dengan folder atas -> folder "-"
+        const _groupsByTipe = new Map();
+        g.plates.forEach(function(_p, _pi){
+          const _csv = csvTipeForItem(_p);
+          let _disp = _csv || "-";
+          if (_csv && topFolderName && normTipeKey(_csv) === normTipeKey(topFolderName)) _disp = "-";
+          const _key = normTipeKey(_disp);
+          if(!_groupsByTipe.has(_key)) _groupsByTipe.set(_key, { display: _disp, plates: [] });
+          _groupsByTipe.get(_key).plates.push({ plate: _p, idx: _pi });
+        });
+        const _usedSub = new Set();
+        for (const [_tKey, _tGroup] of _groupsByTipe) {
+          let tipeFolder = currentFolder;
+          const _dispTipe = _tGroup.display || "-";
+          let _safeTipe = String(_dispTipe).replace(/[\\/:*?"<>|]/g, "_").trim() || "-";
+          let _origTipe = _safeTipe, _c2 = 1;
+          const _subKeyBase = (topFolderName || "") + "|" + _safeTipe.toLowerCase();
+          while (_usedSub.has(_subKeyBase + "|" + _safeTipe.toLowerCase())) _safeTipe = _origTipe + " (" + (_c2++) + ")";
+          _usedSub.add(_subKeyBase + "|" + _safeTipe.toLowerCase());
+          tipeFolder = currentFolder.folder(_safeTipe);
+          const used = new Set();
+          for (let _j = 0; _j < _tGroup.plates.length; _j++) {
+            const _entry = _tGroup.plates[_j];
+            const plate = _entry.plate;
+            const i = _entry.idx;
+            let safe = String(plate.nomor || "").replace(/[^a-zA-Z0-9]/g, "") || ("Plat_" + i);
+            if (used.has(safe.toLowerCase())) safe += "_" + (i + 1);
+            used.add(safe.toLowerCase());
+            const folderNopol = tipeFolder.folder(safe);
+            for (const v of views) {
             const state = activeTpl[v];
             const canvas = document.createElement("canvas");
-            await renderPlateToCanvas(state.img, state, plate, canvas, cache);
-            const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", exportQuality));
-            if (!blob) throw new Error("Render gagal: " + safe + "_" + v);
-            folderNopol.file(safe + "_" + v + ".jpg", blob);
-            canvas.width = canvas.height = 0;
+            try {
+              await renderPlateToCanvas(state.img, state, plate, canvas, cache);
+              const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", exportQuality));
+              if (!blob) throw new Error("Render gagal: " + safe + "_" + v);
+              folderNopol.file(safe + "_" + v + ".jpg", blob);
+            } finally {
+              canvas.width = canvas.height = 0;
+            }
             done++;
             setProg();
             await sleep(0);
+          }
           }
         }
       }
       $("expOverlayCount").textContent = "Menyusun Arsip ZIP...";
       const content = await zip.generateAsync({ type: "blob" });
+      if (!content) throw new Error("Arsip ZIP kosong");
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
@@ -4785,7 +4867,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
         const prevIndex = activeVaultIndex;
         if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
           historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(exportGroups[0].plates));
-          if(!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(exportGroups[0].plates) || templateBrand() || "";
+          if(!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(exportGroups[0].plates) || "";
           historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
           historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
           historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
@@ -4802,8 +4884,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
           activeVaultIndex = 0;
           await lsSet("platActiveVaultIndex", activeVaultIndex);
         }
-        if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
-        if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
         if (await saveHistoryBatches()) {
           await lsSet("platActiveVaultIndex", activeVaultIndex);
           renderHistory();
@@ -4824,11 +4904,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
   }
   $("btnExportZip").addEventListener("click", (e) => {
     if (!bulkItems.length) return showToast("Belum ada data bulk", true);
-    openExportModal([{ folderName: null, plates: JSON.parse(JSON.stringify(bulkItems)) }], e.currentTarget, false);
+    openExportModal([{ folderName: aiVaultNameForPlates(bulkItems) || null, aiTipe: getAITipe() || "", plates: JSON.parse(JSON.stringify(bulkItems)) }], e.currentTarget, false);
   });
   $("btnExportAllVault").addEventListener("click", (e) => {
     const groups = historyBatches.map((b, idx) => ({
       folderName: b.name || `Antrean #${historyBatches.length - idx}`,
+      aiTipe: vaultAITipe(b) || "",
       plates: b.plates,
       template: b.template
     })).filter(g => g.plates && g.plates.length > 0);
@@ -4891,13 +4972,11 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     return { active, list };
   }
   let presetStore = freshPresetStore();
-  let presetStoreFresh = true;
-  let presetStoreNeedsToggleMigration = false;
   try {
     const _raw = localStorage.getItem(PRESET_STORE_KEY);
     if (_raw) {
       const _parsed = JSON.parse(_raw);
-      if (_parsed && _parsed.list && _parsed.active) { presetStore = _parsed; presetStoreFresh = false; }
+      if (_parsed && _parsed.list && _parsed.active) presetStore = _parsed;
     }
   } catch (e) {}
   PRESET_COLORS.forEach(c => {
@@ -4906,7 +4985,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     }
     presetStore.list[c.name].forEach(pr => {
       const _v = pr.values || {};
-      if (!(("autofit" in _v) && ("showLogo" in _v) && ("showDot" in _v) && ("shadow" in _v))) presetStoreNeedsToggleMigration = true;
       if (pr.id === 1 || pr.name === "Preset #1") pr.name = "Default"; else if (/^Preset (\d+)$/.test(pr.name || "")) pr.name = "Preset #" + RegExp.$1;
       pr.values = Object.assign(defaultPresetValues(c.name), _v);
       if (!pr.name) pr.name = pr.id === 1 ? "Default" : "Preset #" + pr.id;
@@ -4943,10 +5021,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     PRESET_TEXT_KEYS.forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
     ["autofit", "showLogo", "showDot", "showFrame", "emboss"].forEach(k => { if (pr.values[k] !== undefined) setTextSetting(k, pr.values[k]); });
 
-    if (pr.values.emboss !== undefined) {
-      const ec = $("embossChk");
-      if (ec) { ec.checked = !!pr.values.emboss; try { localStorage.setItem("platEmboss", ec.checked ? "1" : "0"); } catch (e) {} }
-    }
+
     syncSliders(viewData[currentView]);
     if (o.save !== false) savePresetStore();
     if (!o.skipPlate) { applyPlate(); queueMini(); }
@@ -4974,11 +5049,12 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     const row = $("presetColorRow");
     if (row) row.querySelectorAll(".tnkb-pill").forEach(b => b.classList.toggle("on", b.dataset.presetColor === presetColor));
     const list = presetStore.list[presetColor] || [];
-    const activeId = presetStore.active[presetColor];
+    const curPr = getActivePreset();
+    const activeId = curPr ? curPr.id : presetStore.active[presetColor];
     const sel = $("presetSelect");
     if (sel) sel.innerHTML = list.map(pr => `<option value="${pr.id}"${pr.id === activeId ? " selected" : ""}>${esc(pr.name)}</option>`).join("");
     const badge = $("presetDefaultBadge");
-    if (badge) badge.hidden = !isPresetDefault(getActivePreset());
+    if (badge) badge.hidden = !isPresetDefault(curPr);
     const sub = $("platPresetSub");
     const pr = getActivePreset();
     if (sub && pr) sub.textContent = "Aktif: " + pr.name + " • Plat " + presetColor + " — ketuk untuk kalibrasi.";
@@ -5194,28 +5270,9 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
     
 
     renderSwatches();
-    fixTitleIcons();
     loadViewState();
-    if (presetStoreFresh) {
-      const cur = {};
-      PRESET_ALL_KEYS.forEach(k => {
-        cur[k] = viewData[currentView][k];
-      });
-      PRESET_COLORS.forEach(c => { presetStore.list[c.name][0].values = defaultPresetValues(c.name); });
-      savePresetStore();
-    } else {
-      if (presetStoreNeedsToggleMigration) {
-        const cur = {};
-        PRESET_TOGGLE_KEYS.forEach(k => {
-          cur[k] = viewData[currentView][k];
-        });
-        PRESET_COLORS.forEach(c => { presetStore.list[c.name].forEach(pr => { PRESET_TOGGLE_KEYS.forEach(k => { if (!(k in pr.values)) pr.values[k] = cur[k]; }); }); });
-        savePresetStore();
-        presetStoreNeedsToggleMigration = false;
-      }
-      const curDef = presetColorDef(plateColorName);
-      if (curDef) { presetColor = curDef.name; applyPresetValues(getActivePreset(curDef.name), { save: false }); }
-    }
+    const curDef = presetColorDef(plateColorName);
+    if (curDef) { presetColor = curDef.name; applyPresetValues(getActivePreset(curDef.name), { save: false }); }
     presetReady = true;
     renderPresetUI();
     updateTemplateUI();
@@ -5275,7 +5332,7 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
       historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
-      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = vaultNameForPlates(bulkItems) || templateBrand() || "";
+      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(bulkItems) || "";
       if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
       else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
     } else {
@@ -5289,9 +5346,6 @@ body.kb-open .sheet-panel { padding-bottom: calc(12px + env(safe-area-inset-bott
       };
       historyBatches.unshift(newBatch);
       activeVaultIndex = 0;
-      await lsSet("platActiveVaultIndex", activeVaultIndex);
-      if (historyBatches.length > 30) historyBatches = historyBatches.slice(0, 30);
-      if (activeVaultIndex >= historyBatches.length) activeVaultIndex = -1;
       await lsSet("platActiveVaultIndex", activeVaultIndex);
       if (await saveHistoryBatches()) { renderHistory(); showToast(bulkItems.length + " nopol disimpan ke Vault ✓"); }
       else { historyBatches.shift(); activeVaultIndex = -1; renderHistory(); }
