@@ -8,7 +8,7 @@
 //     pakai strategi network-first, jadi update langsung kelihatan.
 // ==========================================================================
 
-const CACHE_VERSION = 'plat-app-v5.2.0';
+const CACHE_VERSION = 'plat-app-v5.3.0';
 
 // Aset same-origin yang di-pre-cache saat install
 const PRECACHE = [
