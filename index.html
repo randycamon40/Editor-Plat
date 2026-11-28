@@ -1750,6 +1750,8 @@ document.addEventListener("keydown", e => {
     const first = VIEWS.find(function(v){ return viewData[v].img; });
     if(first) currentView = first;
     activeCarTplId = tpl.id;
+    bulkCarTplId = tpl.id;
+    try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){}
     await persistActiveCarTplId();
     if(!(await saveTemplate())){ templateData = prevTpl; VIEWS.forEach(function(v){ viewData[v] = Object.assign(defaultState(), (prevTpl && prevTpl[v]) || {}); }); showToast("Gagal pakai template", true); renderCarTplSelect(); return false; }
     try{ setActiveTipe(tpl.name || ""); }catch(e){}
@@ -3305,6 +3307,9 @@ document.addEventListener("keydown", e => {
       }
       if (batch.template) {
         templateData = JSON.parse(JSON.stringify(batch.template));
+        bulkCarTplId = (batch.carTplId && carTemplates.some(function(t){ return t.id === batch.carTplId; })) ? batch.carTplId : "";
+        try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){}
+        if (bulkCarTplId) { activeCarTplId = bulkCarTplId; try{ await persistActiveCarTplId(); }catch(e){} }
         VIEWS.forEach(v => { viewData[v] = Object.assign(defaultState(), templateData[v] || {}); });
         const first = VIEWS.find(v => viewData[v].img);
         if (first) currentView = first;
@@ -4211,6 +4216,7 @@ document.addEventListener("keydown", e => {
           date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
           plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
           template: (bulkTemplateData() || templateData) ? JSON.parse(JSON.stringify(bulkTemplateData() || templateData)) : null,
+          carTplId: bulkCarTplId || activeCarTplId || "",
           startNumber: bulkStartNumber
         };
         historyBatches.unshift(newBatch);
@@ -5148,6 +5154,7 @@ document.addEventListener("keydown", e => {
         const prevIndex = activeVaultIndex;
         historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
         historyBatches[activeVaultIndex].template = (bulkTemplateData() || templateData) ? JSON.parse(JSON.stringify(bulkTemplateData() || templateData)) : null;
+        historyBatches[activeVaultIndex].carTplId = bulkCarTplId || activeCarTplId || "";
         historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
         historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
         if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(bulkItems) || "";
@@ -5161,7 +5168,8 @@ document.addEventListener("keydown", e => {
       name: getDefaultBatchName() || undefined,
       date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
       plates: JSON.parse(JSON.stringify(bulkItems)),
-      template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+      template: (bulkTemplateData() || templateData) ? JSON.parse(JSON.stringify(bulkTemplateData() || templateData)) : null,
+      carTplId: bulkCarTplId || activeCarTplId || "",
       startNumber: bulkStartNumber
     };
     historyBatches.unshift(newBatch);
