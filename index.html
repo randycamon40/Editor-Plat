@@ -2339,15 +2339,17 @@ document.addEventListener("keydown", e => {
       showToast(n > 0 ? n + " foto berhasil diimport!" : "Gagal mengimport foto", n === 0);
       return;
     }
-    // 5-12 foto: JANGAN langsung timpa kanvas. Tanya dulu mau dibagi atau tidak.
+    // 5-12 foto: langsung Bagi & Atur Semua, tanpa popup pilihan.
     const capped = Array.from(files).slice(0, 12);
     if (files.length > 12) showToast("Maksimal 12 foto sekaligus. 12 foto pertama yang dipakai.", true);
     showToast("Memproses " + capped.length + " foto...", false);
     const resultsAll = await Promise.all(capped.map(function(f){ return readImageFile(f); }));
     pendingBatchPhotos = resultsAll.filter(Boolean);
     if (!pendingBatchPhotos.length) return showToast("Gagal mengimport foto", true);
-    $("batchImportText").textContent = pendingBatchPhotos.length + " foto terdeteksi (" + Math.ceil(pendingBatchPhotos.length / 4) + " mobil). Pilih cara import.";
-    openSheet("batchImportModal");
+    const _nAuto = await createDraftsFromPending();
+    if (!_nAuto) return;
+    const _carsAuto = carDrafts.slice(-_nAuto).map(function(d){ return { id: d.id, draftId: d.id, name: d.name, photos: (d.photos || []).slice() }; });
+    await enterMultiMode(_carsAuto, {skipConfirm:true});
   }
   fileInput.addEventListener("change", e => {
     if (e.target.files && e.target.files.length) processFiles(e.target.files);
@@ -2586,7 +2588,7 @@ document.addEventListener("keydown", e => {
     renderBulk();
   }
   $("lockTemplateBtn").addEventListener("click", async () => {
-    if (typeof multiMode !== "undefined" && multiMode) { await saveAllMultiTemplates(); return; }
+    if (typeof multiMode !== "undefined" && multiMode && !templateData) { await saveAllMultiTemplates(); return; }
     const hasImage = VIEWS.some(v => viewData[v].img);
     if (!hasImage) return showToast("Import minimal 1 foto kendaraan!", true);
     templateData = JSON.parse(JSON.stringify(viewData));
@@ -2626,6 +2628,7 @@ document.addEventListener("keydown", e => {
     }
     if (ok && _selCar && carTemplates.length > 1) {
       bulkItems = [];
+      activeVaultIndex = -1; await lsSet("platActiveVaultIndex", -1);
       await lsRemove(BULK_STORAGE_KEY);
       editIndex = -1;
       bulkStartNumber = 1;
@@ -2643,7 +2646,7 @@ document.addEventListener("keydown", e => {
     templateData = null;
     bulkItems = [];
     carTemplates = []; try{ await saveCarTemplates(); }catch(e){}
-    carDrafts = []; try{ await saveCarDrafts(); }catch(e){}
+    try { const _keepIds = new Set(multiCars.map(function(c){ return c.draftId || c.id; })); carDrafts = carDrafts.filter(function(d){ return !_keepIds.has(d.id); }); await saveCarDrafts(); } catch (e) {}
     activeDraftId = "";
     multiMode = false; multiCars = []; multiIndex = 0; try{ multiRender(); }catch(e){}
     activeCarTplId = "";
@@ -2840,10 +2843,10 @@ document.addEventListener("keydown", e => {
   });
   $("btnExportCsv").addEventListener("click", () => {
     if (!bulkItems.length) return showToast("Antrean kosong", true);
-    const lines = ["Nomor,Bulan,Tahun,Warna"];
+    const lines = ["Nomor,Bulan,Tahun,Warna,Tipe"];
     bulkItems.forEach(it => {
       const csvEsc = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-      lines.push([it.nomor, it.bulan || "", it.tahun || "", (it.warnaName && it.warnaName !== "Kustom" ? it.warnaName : (it.warna || ""))].map(csvEsc).join(","));
+      lines.push([it.nomor, it.bulan || "", it.tahun || "", (it.warnaName && it.warnaName !== "Kustom" ? it.warnaName : (it.warna || "")), itemTipe(it)].map(csvEsc).join(","));
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -4668,6 +4671,7 @@ document.addEventListener("keydown", e => {
       if(!ok2) return;
     }
     // Reset kerja ke mode setup, tapi JANGAN hapus library / draf / Vault.
+    multiMode = false; multiCars = []; multiIndex = 0; try{ multiRender(); }catch(e){}
     templateData = null;
     bulkItems = [];
     activeCarTplId = "";
@@ -4779,6 +4783,17 @@ document.addEventListener("keydown", e => {
     if(!multiMode || !multiCars[i]) return;
     multiSaveCurrent();
     multiIndex = i;
+    try {
+      const _mc = multiCars[i];
+      const _tpl = _mc && carTemplates.find(function(t){ return t.id === _mc.id; });
+      if (_tpl) {
+        activeCarTplId = _tpl.id;
+        bulkCarTplId = _tpl.id;
+        persistActiveCarTplId();
+        lsSet("platBulkCarTplId", bulkCarTplId);
+        setActiveTipe(brandFromTemplate(_tpl.data) || _tpl.name || "");
+      }
+    } catch (e) {}
     const c = multiCars[multiIndex];
     c.visited = true;
     VIEWS.forEach(function(v){ viewData[v] = Object.assign(defaultState(), (c.data && c.data[v]) || {}); });
@@ -4797,7 +4812,7 @@ document.addEventListener("keydown", e => {
         if(!ok2) return false;
       }
     }
-    carDrafts = []; try{ await saveCarDrafts(); }catch(e){}
+    // Draf jangan dihapus di sini, baru dihapus di saveAllMultiTemplates, biar exit tanpa simpan tidak hilang.
     templateData = null;
     bulkItems = [];
     activeCarTplId = "";
@@ -5123,8 +5138,11 @@ document.addEventListener("keydown", e => {
     if (!bulkItems.length) return showToast("Antrean masih kosong", true);
     if (!historyBatches) historyBatches = [];
     if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
+      const _targetName = historyBatches[activeVaultIndex].name || ("Antrean #" + (historyBatches.length - activeVaultIndex));
+      // Konfirmasi ganda dihapus, sisa 1 konfirmasi di bawah.
       const targetName = historyBatches[activeVaultIndex].name || ("Antrean #" + (historyBatches.length - activeVaultIndex));
       const update = await askConfirm("Update Vault?", 'Bulk ini dari vault "' + targetName + '". Ya = timpa vault itu. Batal = simpan sebagai vault BARU.', "Ya, Timpa Vault Ini");
+      if (update === undefined) return;
       if (update) {
         const prevBatches = JSON.parse(JSON.stringify(historyBatches));
         const prevIndex = activeVaultIndex;
