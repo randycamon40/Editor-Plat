@@ -31,8 +31,8 @@ try {
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;margin:0}
 input,textarea,select{-webkit-user-select:text;user-select:text}
 [hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font:500 14px/1.45 var(--font-sans);padding-bottom:calc(var(--nav-h) + 34px + env(safe-area-inset-bottom));overflow-x:hidden}
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+body{background:var(--bg);color:var(--text);font:500 14px/1.45 var(--font-sans);padding-bottom:calc(var(--nav-h) + 34px + env(safe-area-inset-bottom));overflow-x:hidden;overscroll-behavior:none}
 button{font:inherit;color:inherit;cursor:pointer}
 h1,h2,h3{font-family:var(--font-display);letter-spacing:-.01em}
 .i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
@@ -1336,6 +1336,10 @@ body{padding-bottom:30px;padding-left:100px}
       const f = pendingConfirm;
       pendingConfirm = null;
       f(false, fromHistory);
+      if (!fromHistory && history.state && history.state.modal) {
+        ignoreNextPopState = true;
+        history.back();
+      }
       return;
     }
     if (!fromHistory && history.state && history.state.modal) {
@@ -1384,7 +1388,14 @@ body{padding-bottom:30px;padding-left:100px}
       setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 350);
     });
   });
-  document.addEventListener("keydown", e => {
+  let _ptrStartY = 0;
+document.addEventListener("touchstart", e => { if (e.touches.length) _ptrStartY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener("touchmove", e => {
+  if (!e.touches.length) return;
+  const dy = e.touches[0].clientY - _ptrStartY;
+  if (dy > 0 && window.scrollY === 0 && !(e.target.closest && e.target.closest(".sheet-panel, textarea, .thumbs-strip, .multi-switcher"))) e.preventDefault();
+}, { passive: false });
+document.addEventListener("keydown", e => {
     if (e.key === "Escape") { const _open = document.querySelectorAll(".sheet.open"); if (_open.length) closeSheet(_open[_open.length - 1].id); }
   });
   document.addEventListener("focusin", (e) => {
@@ -1799,7 +1810,6 @@ body{padding-bottom:30px;padding-left:100px}
       renderCarTplSelect(); renderCarTplList(); multiRender(); updateTemplateUI();
     } else {
       renderCarTplSelect(); renderCarTplList(); multiRender();
-      syncCanvasTabsFromTemplates();
     }
     showToast("Template mobil dihapus \u2713"); return true;
   }
@@ -2340,10 +2350,8 @@ body{padding-bottom:30px;padding-left:100px}
     const resultsAll = await Promise.all(capped.map(function(f){ return readImageFile(f); }));
     pendingBatchPhotos = resultsAll.filter(Boolean);
     if (!pendingBatchPhotos.length) return showToast("Gagal mengimport foto", true);
-    const _groups = []; for(let _i=0; _i<pendingBatchPhotos.length; _i+=4) _groups.push(pendingBatchPhotos.slice(_i, _i+4));
-    const _cars = _groups.map(function(g, gi){ return { id: "multi_" + Date.now() + "_" + gi, draftId: "", name: "Mobil #" + (gi+1), photos: g.slice() }; });
-    pendingBatchPhotos = [];
-    await enterMultiMode(_cars, { skipConfirm: true });
+    $("batchImportText").textContent = pendingBatchPhotos.length + " foto terdeteksi (" + Math.ceil(pendingBatchPhotos.length / 4) + " mobil). Pilih cara import.";
+    openSheet("batchImportModal");
   }
   fileInput.addEventListener("change", e => {
     if (e.target.files && e.target.files.length) processFiles(e.target.files);
@@ -4729,8 +4737,6 @@ body{padding-bottom:30px;padding-left:100px}
   function multiSaveCurrent(){
     if(!multiMode || !multiCars[multiIndex]) return;
     var _hasImg = VIEWS.some(function(v){ return viewData[v] && viewData[v].img; });
-    var _oldHas = multiCars[multiIndex].data && VIEWS.some(function(v){ return multiCars[multiIndex].data[v] && multiCars[multiIndex].data[v].img; });
-    if(!_hasImg && _oldHas) return;
     multiCars[multiIndex].data = JSON.parse(JSON.stringify(viewData));
     // Sinkronkan photos[] dari data, supaya photos[0] selalu = foto depan terbaru
     multiCars[multiIndex].photos = VIEWS.map(function(v){
@@ -5037,7 +5043,7 @@ body{padding-bottom:30px;padding-left:100px}
     const switcher = $("multiSwitcher");
     if(switcher) switcher.addEventListener("click", async (e) => {
       const del = e.target.closest("[data-multi-del]");
-      if(del){ e.stopPropagation(); var _di=parseInt(del.dataset.multiDel,10); if(!isNaN(_di) && multiCars[_di]){ await deleteCarTemplateById(multiCars[_di].id); } return; }
+      if(del){ e.stopPropagation(); var _di=parseInt(del.dataset.multiDel,10); if(!isNaN(_di) && multiCars[_di]){ multiCars.splice(_di, 1); if(!multiCars.length){ multiMode = false; multiIndex = 0; multiRender(); updateTemplateUI(); return; } if(_di <= multiIndex) multiIndex = Math.max(0, multiIndex - 1); var _c = multiCars[multiIndex]; VIEWS.forEach(function(v){ viewData[v] = Object.assign(defaultState(), (_c.data && _c.data[v]) || {}); }); currentView = "depan"; try{ loadViewState(); }catch(e){} multiRender(); } return; }
       const btn = e.target.closest("button[data-multi-idx]");
       if(!btn) return;
       const idx = parseInt(btn.dataset.multiIdx, 10);
