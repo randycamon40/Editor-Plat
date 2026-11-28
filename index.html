@@ -248,7 +248,7 @@ body.kb-open .dock-nav{display:none!important}
 .sheet{display:none;position:fixed;inset:0;z-index:100;background:rgba(8,9,12,.6);align-items:flex-end;justify-content:center}
 .sheet.open{display:flex}
 body.modal-open{overflow:hidden}
-.sheet-panel{width:100%;max-width:640px;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border-radius:28px 28px 0 0;padding:0 18px calc(18px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+.sheet-panel{width:100%;max-width:640px;max-height:92vh;overflow-y:auto;overscroll-behavior:none;background:var(--surface);border-radius:28px 28px 0 0;padding:0 18px calc(18px + env(safe-area-inset-bottom));animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
 .sheet-panel.dragging{transition:none!important;animation:none!important}
 .sheet-panel.small{max-width:440px}
@@ -1335,10 +1335,6 @@ body{padding-bottom:30px;padding-left:100px}
     if (id === "confirmModal" && pendingConfirm) {
       const f = pendingConfirm;
       pendingConfirm = null;
-      if (!fromHistory && history.state && history.state.modal) {
-        ignoreNextPopState = true;
-        history.back();
-      }
       f(false, fromHistory);
       return;
     }
@@ -1393,7 +1389,7 @@ document.addEventListener("touchstart", e => { if (e.touches.length) _ptrStartY 
 document.addEventListener("touchmove", e => {
   if (!e.touches.length) return;
   const dy = e.touches[0].clientY - _ptrStartY;
-  if (dy > 0 && window.scrollY === 0 && !(e.target.closest && e.target.closest(".sheet-panel, textarea, .thumbs-strip, .multi-switcher"))) e.preventDefault();
+  const _sp = e.target.closest ? e.target.closest(".sheet-panel") : null; if (dy > 0 && window.scrollY === 0 && !(e.target.closest && e.target.closest("textarea, .thumbs-strip, .multi-switcher")) && (!_sp || _sp.scrollTop <= 0)) e.preventDefault();
 }, { passive: false });
 document.addEventListener("keydown", e => {
     if (e.key === "Escape") { const _open = document.querySelectorAll(".sheet.open"); if (_open.length) closeSheet(_open[_open.length - 1].id); }
@@ -1707,7 +1703,7 @@ document.addEventListener("keydown", e => {
     // 1) Kalau sedang aktif, update entry itu (jangan duplikat). Nama dipertahankan kecuali user isi nama baru.
     if(activeCarTplId){
       const ex = carTemplates.find(function(t){ return t.id === activeCarTplId; });
-      if(ex){
+      if(ex && (!wantedName || String(ex.name||"").trim().toLowerCase() === wantedName.toLowerCase())){
         ex.data = JSON.parse(JSON.stringify(templateData));
         if(wantedName) ex.name = wantedName;
         ex.updatedAt = now;
@@ -2623,6 +2619,8 @@ document.addEventListener("keydown", e => {
     const ok = await askConfirm("Kosongkan Bulk & Hapus Mobil Ini?", _selName ? ("Antrean Bulk akan dikosongkan dan template \"" + _selName + "\" akan dihapus. Template mobil lain tetap tersimpan.") : "Antrean Bulk akan dikosongkan. Tidak ada mobil yang dipilih.", "Kosongkan & Hapus");
     if (ok && !_selCar && carTemplates.length) {
       bulkItems = [];
+      activeVaultIndex = -1;
+      await lsSet("platActiveVaultIndex", -1);
       await lsRemove(BULK_STORAGE_KEY);
       editIndex = -1;
       cancelEditUI();
@@ -2744,7 +2742,7 @@ document.addEventListener("keydown", e => {
      belum sempat ke-paint jadi tidak pernah ke-paint, tampil plat kosong. */
   function paintMiniPlates(container) {
     if (!container) return;
-    const st = (templateData && VIEWS.map(v => templateData[v]).find(s => s && s.img)) || viewData[currentView];
+    const _btSt = bulkTemplateData() || templateData; const st = (_btSt && VIEWS.map(v => _btSt[v]).find(s => s && s.img)) || viewData[currentView];
     const els = Array.from(container.querySelectorAll('.plate-mini'));
     if (!els.length) return;
     if (typeof IntersectionObserver === "undefined") { els.forEach(el => paintOneMini(el, st)); return; }
@@ -2758,7 +2756,7 @@ document.addEventListener("keydown", e => {
     els.forEach(el => { if (el.dataset.painted !== "1") obs.observe(el); });
   }
   function renderBulkCore() {
-    const nv = templateData ? VIEWS.filter(v => templateData[v] && templateData[v].img).length : 0;
+    const _btNv = bulkTemplateData() || templateData; const nv = _btNv ? VIEWS.filter(v => _btNv[v] && _btNv[v].img).length : 0;
     $("bulkCount").textContent = bulkItems.length + " nopol" + (nv ? " • " + nv + " sudut • " + (bulkItems.length * nv) + " output" : "");
     refreshBulkTipeLine();
     const badge = $("navBadge");
@@ -4034,7 +4032,7 @@ document.addEventListener("keydown", e => {
     container.innerHTML = "";
     container.appendChild(frag);
   }
-  $("btnPreviewBulk").addEventListener("click", () => { if (templateData) openPreview(getPlate(), ""); });
+  $("btnPreviewBulk").addEventListener("click", () => { if (bulkTemplateData() || templateData) openPreview(getPlate(), ""); });
   $("closePreviewBtn").addEventListener("click", () => closeSheet("previewModal"));
   let exportQuality = 0.9;
   try {
@@ -4212,7 +4210,7 @@ document.addEventListener("keydown", e => {
           name: getDefaultBatchName() || undefined,
           date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
           plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
-          template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+          template: (bulkTemplateData() || templateData) ? JSON.parse(JSON.stringify(bulkTemplateData() || templateData)) : null,
           startNumber: bulkStartNumber
         };
         historyBatches.unshift(newBatch);
@@ -4792,9 +4790,7 @@ document.addEventListener("keydown", e => {
       const _tpl = _mc && carTemplates.find(function(t){ return t.id === _mc.id; });
       if (_tpl && (!_mc.draftId || _mc.draftId === _tpl.id)) {
         activeCarTplId = _tpl.id;
-        bulkCarTplId = _tpl.id;
         persistActiveCarTplId();
-        lsSet("platBulkCarTplId", bulkCarTplId);
         setActiveTipe(brandFromTemplate(_tpl.data) || _tpl.name || "");
       }
     } catch (e) {}
@@ -5151,7 +5147,7 @@ document.addEventListener("keydown", e => {
         const prevBatches = JSON.parse(JSON.stringify(historyBatches));
         const prevIndex = activeVaultIndex;
         historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
-        historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
+        historyBatches[activeVaultIndex].template = (bulkTemplateData() || templateData) ? JSON.parse(JSON.stringify(bulkTemplateData() || templateData)) : null;
         historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
         historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
         if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(bulkItems) || "";
