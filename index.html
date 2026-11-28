@@ -1336,10 +1336,6 @@ body{padding-bottom:30px;padding-left:100px}
       const f = pendingConfirm;
       pendingConfirm = null;
       f(false, fromHistory);
-      if (!fromHistory && history.state && history.state.modal) {
-        ignoreNextPopState = true;
-        history.back();
-      }
       return;
     }
     if (!fromHistory && history.state && history.state.modal) {
@@ -2879,7 +2875,10 @@ document.addEventListener("keydown", e => {
     if (!await askConfirm("Kosongkan Antrean?", "Semua nopol di antrean akan dihapus. Template tetap terkunci.", "Kosongkan")) return;
     const backup = bulkItems;
     const backupTipe = activeTipeMobil;
+    const backupVault = activeVaultIndex;
     bulkItems = [];
+    activeVaultIndex = -1;
+    await lsSet("platActiveVaultIndex", -1);
     cancelEditUI();
     await saveBulkData();
     clearActiveTipeOnEmpty();
@@ -2889,6 +2888,8 @@ document.addEventListener("keydown", e => {
       fn: async () => {
         bulkItems = backup.concat(bulkItems);
         activeTipeMobil = backupTipe;
+        activeVaultIndex = backupVault;
+        await lsSet("platActiveVaultIndex", activeVaultIndex);
         refreshBulkTipeLine();
         await saveBulkData();
         renderBulk();
@@ -3055,6 +3056,7 @@ document.addEventListener("keydown", e => {
         const looksDate = /^(\d{1,2})[\s.\-\/](\d{2,4})$/.test(t1) || /^(\d{4})[\s.\-\/](\d{1,2})$/.test(t1) || !!BULAN_MAP[low1] || /^\d{1,2}$/.test(t1) || /^\d{4}$/.test(t1);
         const looksColor = !!parseColorToken(t1);
         if (!looksDate && !looksColor) { explicitTipe = titleCaseTipe(t1); restParts = parts.slice(2); }
+        if (!explicitTipe && parts.length >= 4) { const _last = String(parts[parts.length - 1] || "").trim(); if (_last && isTipeLikeToken(_last) && !parseColorToken(_last)) { explicitTipe = titleCaseTipe(_last); restParts = restParts.slice(0, -1); } }
       }
       const it = Object.assign({}, base, { nomor: rawNomor });
       it.tipeMobil = explicitTipe || "";
@@ -3215,10 +3217,7 @@ document.addEventListener("keydown", e => {
     }
     if (bulkItems.length + list.length > 500) return showToast("Maksimal 500 nopol per antrean!", true);
     if (!templateData) return showToast("Kunci template terlebih dahulu!", true);
-    if (warnings.length > 0) {
-      const ok = await askConfirm("Ada Baris Bermasalah", warnings.length + " baris tidak valid akan dilewati. Lanjut tambahkan " + list.length + " nopol valid?", "Lanjutkan");
-      if (!ok) return;
-    }
+    // Baris bermasalah langsung dilewati, tanpa konfirmasi.
     const before = bulkItems.length;
     const seenPaste = new Set(bulkItems.map(b => ((b.nomor || "") + "|" + (b.bulan || "") + "|" + (b.tahun || "") + "|" + (b.warna || "")).toUpperCase().replace(/\s+/g, "")));
     const filteredList = list.filter(it => {
@@ -4201,25 +4200,17 @@ document.addEventListener("keydown", e => {
       if (saveToVault && exportGroups.length > 0) {
         const prevBatches = JSON.parse(JSON.stringify(historyBatches));
         const prevIndex = activeVaultIndex;
-        if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
-          historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(exportGroups[0].plates));
-          if(!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(exportGroups[0].plates) || "";
-          historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
-          historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-          historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
-        } else {
-          const newBatch = {
-            id: Date.now().toString(),
-            name: getDefaultBatchName() || undefined,
-            date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-            plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
-            template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
-            startNumber: bulkStartNumber
-          };
-          historyBatches.unshift(newBatch);
-          activeVaultIndex = 0;
-          await lsSet("platActiveVaultIndex", activeVaultIndex);
-        }
+        const newBatch = {
+          id: Date.now().toString(),
+          name: getDefaultBatchName() || undefined,
+          date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+          plates: JSON.parse(JSON.stringify(exportGroups[0].plates)),
+          template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+          startNumber: bulkStartNumber
+        };
+        historyBatches.unshift(newBatch);
+        activeVaultIndex = 0;
+        await lsSet("platActiveVaultIndex", activeVaultIndex);
         if (await saveHistoryBatches()) {
           await lsSet("platActiveVaultIndex", activeVaultIndex);
           renderHistory();
@@ -5041,7 +5032,7 @@ document.addEventListener("keydown", e => {
       const n = await createDraftsFromPending();
       if(!n) return;
       const cars = carDrafts.slice(-n).map(function(d){ return { id: d.id, draftId: d.id, name: d.name, photos: (d.photos || []).slice() }; });
-      await enterMultiMode(cars);
+      await enterMultiMode(cars, {skipConfirm:true});
     });
     const switcher = $("multiSwitcher");
     if(switcher) switcher.addEventListener("click", async (e) => {
@@ -5132,30 +5123,34 @@ document.addEventListener("keydown", e => {
     if (!bulkItems.length) return showToast("Antrean masih kosong", true);
     if (!historyBatches) historyBatches = [];
     if (activeVaultIndex >= 0 && historyBatches[activeVaultIndex]) {
-      const prevBatches = JSON.parse(JSON.stringify(historyBatches));
-      const prevIndex = activeVaultIndex;
-      historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
-      historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
-      historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-      historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
-      if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(bulkItems) || "";
-      if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
-      else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
-    } else {
-      const newBatch = {
-        id: Date.now().toString(),
-        name: getDefaultBatchName() || undefined,
-        date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-        plates: JSON.parse(JSON.stringify(bulkItems)),
-        template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
-        startNumber: bulkStartNumber
-      };
-      historyBatches.unshift(newBatch);
-      activeVaultIndex = 0;
-      await lsSet("platActiveVaultIndex", activeVaultIndex);
-      if (await saveHistoryBatches()) { renderHistory(); showToast(bulkItems.length + " nopol disimpan ke Vault ✓"); }
-      else { historyBatches.shift(); activeVaultIndex = -1; renderHistory(); }
+      const targetName = historyBatches[activeVaultIndex].name || ("Antrean #" + (historyBatches.length - activeVaultIndex));
+      const update = await askConfirm("Update Vault?", 'Bulk ini dari vault "' + targetName + '". Ya = timpa vault itu. Batal = simpan sebagai vault BARU.', "Ya, Timpa Vault Ini");
+      if (update) {
+        const prevBatches = JSON.parse(JSON.stringify(historyBatches));
+        const prevIndex = activeVaultIndex;
+        historyBatches[activeVaultIndex].plates = JSON.parse(JSON.stringify(bulkItems));
+        historyBatches[activeVaultIndex].template = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
+        historyBatches[activeVaultIndex].date = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+        historyBatches[activeVaultIndex].startNumber = bulkStartNumber;
+        if (!historyBatches[activeVaultIndex].nameCustom) historyBatches[activeVaultIndex].name = aiVaultNameForPlates(bulkItems) || "";
+        if (await saveHistoryBatches()) { renderHistory(); showToast("Vault diperbarui ✓"); }
+        else { historyBatches = prevBatches; activeVaultIndex = prevIndex; renderHistory(); }
+        return;
+      }
     }
+    const newBatch = {
+      id: Date.now().toString(),
+      name: getDefaultBatchName() || undefined,
+      date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+      plates: JSON.parse(JSON.stringify(bulkItems)),
+      template: templateData ? JSON.parse(JSON.stringify(templateData)) : null,
+      startNumber: bulkStartNumber
+    };
+    historyBatches.unshift(newBatch);
+    activeVaultIndex = 0;
+    await lsSet("platActiveVaultIndex", activeVaultIndex);
+    if (await saveHistoryBatches()) { renderHistory(); showToast(bulkItems.length + " nopol disimpan ke Vault ✓"); }
+    else { historyBatches.shift(); activeVaultIndex = -1; renderHistory(); }
   });
   $("btnForceUpdate").addEventListener("click", async () => {
     if (!await askConfirm("Force Update?", "Aplikasi akan memuat ulang dan mengambil versi terbaru.", "Update")) return;
