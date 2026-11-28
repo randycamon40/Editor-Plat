@@ -1716,7 +1716,7 @@ document.addEventListener("keydown", e => {
       }
     }
     // 2) Kalau nama sama persis (case-insensitive), update entry itu.
-    if(wantedName){
+    if(wantedName && !activeDraftId){
       const same = carTemplates.find(function(t){ return String(t.name||"").trim().toLowerCase() === wantedName.toLowerCase(); });
       if(same){
         same.data = JSON.parse(JSON.stringify(templateData));
@@ -2597,6 +2597,7 @@ document.addEventListener("keydown", e => {
     templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = null; return; }
     try{ await upsertCurrentAsCarTpl(); }catch(e){}
+    if(activeCarTplId){ bulkCarTplId = activeCarTplId; try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){} }
     // Kalau kanvas ini berasal dari draf, hapus drafnya setelah berhasil jadi template.
     if(activeDraftId){
       const _did = activeDraftId;
@@ -2686,6 +2687,7 @@ document.addEventListener("keydown", e => {
     templateData._formDefaults = currentFormItem();
     if (!await saveTemplate()) { templateData = prev; return; }
     try{ await upsertCurrentAsCarTpl(); }catch(e){}
+    if(activeCarTplId){ bulkCarTplId = activeCarTplId; try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){} }
     // Kalau kanvas ini berasal dari draf, hapus drafnya setelah berhasil jadi template.
     if(activeDraftId){
       const _did = activeDraftId;
@@ -3999,7 +4001,7 @@ document.addEventListener("keydown", e => {
     await drawPlate(ctx, pX, pY, k, (st.rotate * Math.PI) / 180, st, plate);
   }
   async function openPreview(plate, title, customTpl) {
-    const activeTpl = customTpl || templateData;
+    const activeTpl = customTpl || bulkTemplateData() || templateData;
     if (!activeTpl) return;
     const token = ++previewToken;
     $("previewTitle").textContent = title ? "Preview • " + title : "Preview Hasil";
@@ -4869,7 +4871,8 @@ document.addEventListener("keydown", e => {
       let _ai = "";
       try{ const _d = c.data || {}; for(const _v of VIEWS){ if(_d[_v] && _d[_v].brand){ _ai = String(_d[_v].brand).trim(); break; } } }catch(e){}
       const base = _ai || multiCleanName(c.name) || ("Mobil Baru " + (idx+1));
-      const ex = carTemplates.find(function(t){ return String(t.name||"").trim().toLowerCase() === base.toLowerCase(); });
+      let ex = carTemplates.find(function(t){ return String(t.name||"").trim().toLowerCase() === base.toLowerCase(); });
+      if(ex && savedIds.indexOf(ex.id) !== -1) ex = null;
       if(ex){
         ex.data = JSON.parse(JSON.stringify(c.data));
         ex.updatedAt = now;
