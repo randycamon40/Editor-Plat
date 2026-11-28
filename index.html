@@ -1335,6 +1335,10 @@ body{padding-bottom:30px;padding-left:100px}
     if (id === "confirmModal" && pendingConfirm) {
       const f = pendingConfirm;
       pendingConfirm = null;
+      if (!fromHistory && history.state && history.state.modal) {
+        ignoreNextPopState = true;
+        history.back();
+      }
       f(false, fromHistory);
       return;
     }
@@ -1770,7 +1774,7 @@ document.addEventListener("keydown", e => {
     var _prevIdx = multiIndex;
     var _ai = multiCars.findIndex(function(c){ return c.id === activeCarTplId; });
     multiIndex = _ai>=0 ? _ai : Math.min(Math.max(0,_prevIdx), multiCars.length-1);
-    multiMode = true;
+    multiMode = false;
     try{ multiRender(); }catch(e){}
   }
   async function deleteCarTemplateById(id, opts){
@@ -4786,7 +4790,7 @@ document.addEventListener("keydown", e => {
     try {
       const _mc = multiCars[i];
       const _tpl = _mc && carTemplates.find(function(t){ return t.id === _mc.id; });
-      if (_tpl) {
+      if (_tpl && (!_mc.draftId || _mc.draftId === _tpl.id)) {
         activeCarTplId = _tpl.id;
         bulkCarTplId = _tpl.id;
         persistActiveCarTplId();
