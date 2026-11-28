@@ -1725,7 +1725,7 @@ document.addEventListener("keydown", e => {
     }
     // 3) Baru: warning kalau sudah >=10, tapi tetap boleh lanjut.
     if(carTemplates.length >= CAR_TPL_LIMIT){
-      const ok = await askConfirm("Sudah " + carTemplates.length + " Template", "Sudah " + carTemplates.length + " template mobil tersimpan. Biar app tetap enteng, pertimbangkan hapus yang lama. Tetap simpan template baru?", "Tetap Simpan");
+      const ok = true;
       if(!ok) return null;
     }
     const entry = { id: "car_" + now + "_" + Math.random().toString(36).slice(2,7), name: carTplUniqueName(wantedName || ("Mobil Baru " + (carTemplates.length + 1))), data: JSON.parse(JSON.stringify(templateData)), createdAt: now, updatedAt: now };
@@ -1741,7 +1741,7 @@ document.addEventListener("keydown", e => {
     const tpl = carTemplates.find(function(t){ return t.id === id; });
     if(!tpl || !tpl.data) { showToast("Template mobil tidak ditemukan", true); return false; }
     if(!opts.silent && bulkItems && bulkItems.length){
-      const ok = await askConfirm("Ganti Template Mobil?", "Bulk masih ada " + bulkItems.length + " nopol. Ganti ke \"" + tpl.name + "\"? Nopol di Bulk akan ikut pakai foto & posisi plat dari mobil baru.", "Ya, Ganti");
+      const ok = true;
       if(!ok){ renderCarTplSelect(); return false; }
     }
     const prevTpl = templateData;
@@ -3285,7 +3285,7 @@ document.addEventListener("keydown", e => {
       renderHistory();
       showToast("Arsip Vault dihapus");
     } else if (act === "load_batch") {
-      if (!await askConfirm("Muat ke Bulk?", "Antrean bulk dan template saat ini akan diganti dengan data dari Vault. Lanjutkan?", "Muat")) return;
+      // Muat Vault langsung tanpa konfirmasi.
       const prevBulk = JSON.parse(JSON.stringify(bulkItems));
       const prevTpl = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
       const prevView = JSON.parse(JSON.stringify(viewData));
@@ -4661,10 +4661,10 @@ document.addEventListener("keydown", e => {
     if(!d || !d.photos || !d.photos.length) return showToast("Draf tidak ditemukan", true);
     // Kalau Bulk masih ada isinya, minta konfirmasi dulu — muat draf = ganti mobil kerja.
     if(bulkItems && bulkItems.length){
-      const ok = await askConfirm("Muat Draf?", "Bulk masih ada " + bulkItems.length + " nopol. Muat draf akan mengosongkan Bulk & Template Aktif (sudah tersimpan aman di library kalau pernah dikunci). Lanjut?", "Ya, Muat Draf");
+      const ok = true;
       if(!ok) return;
     } else if(templateData){
-      const ok2 = await askConfirm("Muat Draf?", "Template Aktif akan diganti dengan draf ini untuk dikalibrasi. Template lama tetap tersimpan di library kalau pernah dikunci.", "Ya, Muat Draf");
+      const ok2 = true;
       if(!ok2) return;
     }
     // Reset kerja ke mode setup, tapi JANGAN hapus library / draf / Vault.
@@ -4790,10 +4790,10 @@ document.addEventListener("keydown", e => {
     if(!cars || !cars.length) return showToast("Tidak ada mobil untuk diatur", true);
     if(!opts.skipConfirm){
       if(bulkItems && bulkItems.length){
-        const ok = await askConfirm("Muat Semua Mobil?", "Bulk masih ada " + bulkItems.length + " nopol. Muat semua akan mengosongkan Bulk & Template Aktif (yang sudah tersimpan di library tetap aman). Lanjut?", "Ya, Muat Semua");
+        const ok = true;
         if(!ok) return false;
       } else if(templateData){
-        const ok2 = await askConfirm("Muat Semua Mobil?", "Template Aktif akan diganti dengan mode Atur Semua. Template lama tetap tersimpan di library kalau pernah dikunci.", "Ya, Muat Semua");
+        const ok2 = true;
         if(!ok2) return false;
       }
     }
