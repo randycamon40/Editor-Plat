@@ -10,6 +10,7 @@
 <link rel="preload" href="./PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./FE.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./PlatNomor.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="./SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="./plat_putih.png" as="image">
 <script>
 try {
@@ -182,9 +183,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .preset-plat-title{display:block;font-size:13.5px}
 .preset-plat-sub{display:block;font-size:11.5px;color:var(--text-2);margin-top:1px}
 .preset-plat-chev{color:var(--text-3)}
-.preset-title-row{position:relative;display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.preset-select{flex:1;min-width:0}
-.preset-select-chev{display:none}
+.preset-title-row{position:relative;display:flex;align-items:center;gap:8px;margin-bottom:10px;border:0;background:transparent;box-shadow:none}
+.preset-select{flex:1;min-width:0;background:transparent;border:0;box-shadow:none;outline:0;appearance:none;-webkit-appearance:none;padding:0;min-height:36px;font:700 15px var(--font-sans);color:var(--text);cursor:pointer}
+.preset-select-chev{display:grid;place-items:center;width:28px;height:36px;color:var(--text-3);pointer-events:auto;cursor:pointer;flex-shrink:0}
+.preset-select:focus{border:0;outline:0;box-shadow:none;background:transparent}
 .preset-default-badge{font-size:10.5px;font-weight:800;color:var(--ok);background:var(--ok-bg);padding:4px 9px;border-radius:99px;white-space:nowrap}
 .preset-rename-input{flex:1}
 .preset-top-lock{position:sticky;top:calc(env(safe-area-inset-top) + 84px);z-index:5}
@@ -506,11 +508,11 @@ body{padding-bottom:30px;padding-left:100px}
         </div>
         <div class="fld">
           <div class="tnkb-bar" id="presetColorRow" aria-label="Pilih warna plat untuk dikalibrasi">
-            <button type="button" class="tnkb-pill" data-preset-color="Putih"><i style="background:#fff;color:#111"></i><span class="pc-lbl">Putih</span></button>
-            <button type="button" class="tnkb-pill" data-preset-color="Hitam"><i style="background:#111;color:#fff"></i><span class="pc-lbl">Hitam</span></button>
-            <button type="button" class="tnkb-pill" data-preset-color="Kuning"><i style="background:#f5c518;color:#111"></i><span class="pc-lbl">Kuning</span></button>
-            <button type="button" class="tnkb-pill" data-preset-color="Merah"><i style="background:#e63946;color:#fff"></i><span class="pc-lbl">Merah</span></button>
-            <button type="button" class="tnkb-pill" data-preset-color="Hijau"><i style="background:#2ecc71;color:#111"></i><span class="pc-lbl">Hijau</span></button>
+            <button type="button" class="tnkb-pill" data-preset-color="Putih" aria-label="Putih"><i style="background:#fff;color:#111"></i></button>
+            <button type="button" class="tnkb-pill" data-preset-color="Hitam" aria-label="Hitam"><i style="background:#111;color:#fff"></i></button>
+            <button type="button" class="tnkb-pill" data-preset-color="Kuning" aria-label="Kuning"><i style="background:#f5c518;color:#111"></i></button>
+            <button type="button" class="tnkb-pill" data-preset-color="Merah" aria-label="Merah"><i style="background:#e63946;color:#fff"></i></button>
+            <button type="button" class="tnkb-pill" data-preset-color="Hijau" aria-label="Hijau"><i style="background:#2ecc71;color:#111"></i></button>
           </div>
         </div>
         <div class="preset-preview-card" id="presetPreviewCard">
@@ -598,7 +600,6 @@ body{padding-bottom:30px;padding-left:100px}
           <div class="grow">
             <h2>Antrean Produksi Bulk</h2>
             <p id="bulkCount">0 nopol</p>
-            <p id="bulkTipeLine" class="bulk-tipe-line">Tipe mobil: —</p>
           </div>
         </div>
         <div class="fld" id="carTplPicker">
@@ -630,7 +631,7 @@ body{padding-bottom:30px;padding-left:100px}
           <button class="btn btn-muted btn-xs" id="clearBulkBtn"><svg class="i"><use href="#i-trash"/></svg>Kosongkan</button>
           <button class="btn btn-muted btn-xs" id="dedupeBulkBtn"><svg class="i"><use href="#i-copy"/></svg>Hapus Duplikat</button>
         </div>
-        <button id="unlockTemplateBtn" class="btn btn-danger btn-full gap-ts" hidden><svg class="i"><use href="#i-unlock"/></svg>Reset Template & Hapus Mobil</button>
+        <button id="unlockTemplateBtn" class="btn btn-danger btn-full gap-ts" hidden><svg class="i"><use href="#i-unlock"/></svg>Kosongkan Bulk & Hapus Mobil Ini</button>
       </section>
     </section>
     <section class="panel" id="panel-history" data-panel="history">
@@ -765,12 +766,12 @@ body{padding-bottom:30px;padding-left:100px}
       <button id="closePasteBtn" class="icon-act" aria-label="Tutup"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
     <textarea id="pasteArea" class="txt" placeholder="B 3784 ECG <- mengikuti template&#10;R 4 NDY, 05, 92 <- ubah bulan & tahun&#10;S 3 LVI, hitam <- ubah warna plat&#10;S 8233 HQ, 05, 31, kuning <- dari CSV, tipe auto disembunyikan" spellcheck="false" autocapitalize="characters"></textarea>
-    <p id="pasteTipeLine" class="bulk-tipe-line" hidden style="margin:0 0 10px"></p>
+    <!-- pasteTipeLine dihapus: tipe sudah di pilihan mobil Bulk -->
     <div class="btn-pair" style="margin-bottom:10px">
       <button type="button" class="btn btn-muted btn-xs" id="btnImportCsvFile"><svg class="i"><use href="#i-upload"/></svg>File CSV / TXT</button>
       <a class="icon-act" href="./nopol-csv.html" onclick="location.replace(this.href);return false;" title="Buka Nopol CSV" aria-label="Buka Nopol CSV"><svg class="i"><use href="#i-csv"/></svg></a>
       <button type="button" class="btn btn-muted btn-xs" id="btnPasteClipboard"><svg class="i"><use href="#i-copy"/></svg>Clipboard</button>
-      <input type="file" id="pasteFileInput" accept=".csv, .txt, text/csv, text/plain, */*" hidden>
+      <input type="file" id="pasteFileInput" accept=".csv, .txt, text/csv, text/plain" hidden>
     </div>
     <div class="count-line" id="pasteCount">0 nopol terdeteksi</div>
     <div id="pasteWarnings" class="paste-warnings"></div>
@@ -905,7 +906,7 @@ body{padding-bottom:30px;padding-left:100px}
       <h2>Pilih Mobil</h2>
       <button id="closeCarTplBtn" class="btn btn-muted btn-xs"><svg class="i"><use href="#i-x"/></svg>Tutup</button>
     </div>
-    <p class="sheet-text" style="margin-bottom:12px">Foto disimpan versi ringan (max 1000px) biar app tetap enteng. Nama otomatis dari AI Vision, bisa diubah manual.</p>
+    <!-- deskripsi template mobil dihapus -->
     <div class="fld">
       <label for="carTplNameInput" hidden>Nama template dari template aktif</label>
       <div class="car-tpl-row">
@@ -1334,7 +1335,7 @@ body{padding-bottom:30px;padding-left:100px}
     if (id === "confirmModal" && pendingConfirm) {
       const f = pendingConfirm;
       pendingConfirm = null;
-      if (!fromHistory) f(false, fromHistory);
+      f(false, fromHistory);
       return;
     }
     if (!fromHistory && history.state && history.state.modal) {
@@ -1578,7 +1579,37 @@ body{padding-bottom:30px;padding-left:100px}
   const CAR_TPL_LIMIT = 10;
   let carTemplates = [];
   let activeCarTplId = "";
+  let bulkCarTplId = "";
   let carTplBusy = false;
+  function bulkTpl(){
+    if(bulkCarTplId){
+      var _b = carTemplates.find(function(t){ return t.id === bulkCarTplId; });
+      if(_b && _b.data) return _b;
+    }
+    if(activeCarTplId){
+      var _a = carTemplates.find(function(t){ return t.id === activeCarTplId; });
+      if(_a && _a.data) return _a;
+    }
+    return null;
+  }
+  function bulkTemplateData(){
+    var _t = bulkTpl();
+    return _t ? _t.data : templateData;
+  }
+  async function applyBulkCarTpl(id){
+    var tpl = carTemplates.find(function(t){ return t.id === id; });
+    if(!tpl || !tpl.data) return false;
+    var _snapViewBulk = JSON.parse(JSON.stringify(viewData));
+    var _snapTplBulk = templateData ? JSON.parse(JSON.stringify(templateData)) : null;
+    var _snapViewNameBulk = currentView;
+    bulkCarTplId = tpl.id;
+    try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){}
+    try{ setActiveTipe(brandFromTemplate(tpl.data) || tpl.name || ""); }catch(e){}
+    updateTemplateUI();
+    try{ if(typeof _snapViewBulk !== "undefined"){ viewData = _snapViewBulk; templateData = _snapTplBulk; currentView = _snapViewNameBulk; loadViewState(); } }catch(e){}
+    showToast('Bulk pakai "' + tpl.name + '" ✓ Kanvas tidak berubah');
+    return true;
+  }
   function carTplViewsCount(tpl){
     if(!tpl || !tpl.data) return 0;
     return VIEWS.filter(function(v){ return tpl.data[v] && tpl.data[v].img; }).length;
@@ -1621,14 +1652,14 @@ body{padding-bottom:30px;padding-left:100px}
     } else {
       // Jangan auto-pilih template pertama. Kalau active kosong (habis Reset / hapus),
       // tampilkan placeholder supaya user pilih eksplisit — mencegah template salah nempel.
-      const hasActive = activeCarTplId && carTemplates.some(function(t){ return t.id === activeCarTplId; });
+      const hasActive = bulkCarTplId && carTemplates.some(function(t){ return t.id === bulkCarTplId; });
       sel.innerHTML = '<option value="">\u2014 Pilih Template Mobil \u2014</option>' + carTemplates.map(function(t){
         return '<option value="' + esc(t.id) + '">' + esc(t.name) + ' \u2022 ' + carTplViewsCount(t) + ' sudut</option>';
       }).join("");
-      sel.value = hasActive ? activeCarTplId : "";
+      sel.value = hasActive ? bulkCarTplId : "";
     }
     const _pk = $("bulkCarPickerBtn");
-    if(_pk){ const _a = carTemplates.find(function(x){ return x.id === activeCarTplId; }); _pk.textContent = _a ? ("Mobil: " + _a.name) : "Pilih Mobil"; }
+    if(_pk){ const _a = carTemplates.find(function(x){ return x.id === bulkCarTplId; }); _pk.textContent = _a ? ("Mobil: " + _a.name) : "Pilih Mobil"; }
     const nameInput = $("carTplNameInput");
     if(nameInput && document.activeElement !== nameInput){
       const cur = carTplNameForCurrent();
@@ -1648,7 +1679,7 @@ body{padding-bottom:30px;padding-left:100px}
     if(emptyHint) emptyHint.hidden = true;
     list.innerHTML = carTemplates.map(function(t){
       const thumb = carTplThumb(t);
-      const isActive = t.id === activeCarTplId;
+      const isActive = t.id === bulkCarTplId;
       return '<div class="car-tpl-item" data-car-id="' + esc(t.id) + '">' +
         (thumb ? '<img class="car-tpl-thumb" src="' + thumb + '" alt="">' : '<div class="car-tpl-thumb"></div>') +
         '<div class="car-tpl-meta"><b>Mobil #' + (carTemplates.indexOf(t)+1) + ' \u2022 ' + esc(t.name) + (isActive ? ' \u2022 Aktif' : '') + '</b><span>' + carTplViewsCount(t) + ' sudut \u2022 ' + esc(t.updatedAt ? new Date(t.updatedAt).toLocaleDateString("id-ID", {day:"numeric", month:"short", year:"numeric"}) : "") + '</span></div>' +
@@ -1743,20 +1774,33 @@ body{padding-bottom:30px;padding-left:100px}
       if(!ok) return false;
     }
     var wasActive=(activeCarTplId===id);
+    var wasBulk=(bulkCarTplId===id);
+    var delIdx=carTemplates.findIndex(function(x){ return x.id===id; });
     carTemplates=carTemplates.filter(function(x){ return x.id!==id; });
     if(!(await saveCarTemplates())) return false;
-    renderCarTplSelect(); renderCarTplList(); multiRender();
     if(!carTemplates.length){
+      bulkCarTplId=""; try{ await lsSet("platBulkCarTplId",""); }catch(e){}
       templateData=null; bulkItems=[]; activeCarTplId=""; await persistActiveCarTplId();
       multiMode=false; multiCars=[]; multiIndex=0;
       try{ await lsRemove(TEMPLATE_STORAGE_KEY); }catch(e){}
       try{ await lsRemove(BULK_STORAGE_KEY); }catch(e){}
       VIEWS.forEach(function(v){ viewData[v]=defaultState(); });
+      renderCarTplSelect(); renderCarTplList(); multiRender();
       updateTemplateUI(); multiRender(); renderBulk();
-    } else if(wasActive){
-      activeCarTplId=carTemplates[0].id; await persistActiveCarTplId();
-      await applyCarTpl(activeCarTplId,{silent:true}); syncCanvasTabsFromTemplates();
-    } else { syncCanvasTabsFromTemplates(); }
+    } else if(wasActive || wasBulk){
+      var nextIdx=Math.min(Math.max(0,delIdx),carTemplates.length-1);
+      var nextTpl=carTemplates[nextIdx];
+      bulkCarTplId=nextTpl.id; try{ await lsSet("platBulkCarTplId",bulkCarTplId); }catch(e){}
+      try{ setActiveTipe(brandFromTemplate(nextTpl.data)||nextTpl.name||""); }catch(e){}
+      if(wasActive){
+        activeCarTplId=nextTpl.id; await persistActiveCarTplId();
+        await applyCarTpl(activeCarTplId,{silent:true}); syncCanvasTabsFromTemplates();
+      } else { syncCanvasTabsFromTemplates(); }
+      renderCarTplSelect(); renderCarTplList(); multiRender(); updateTemplateUI();
+    } else {
+      renderCarTplSelect(); renderCarTplList(); multiRender();
+      syncCanvasTabsFromTemplates();
+    }
     showToast("Template mobil dihapus \u2713"); return true;
   }
   async function initCarTemplates(){
@@ -1765,6 +1809,8 @@ body{padding-bottom:30px;padding-left:100px}
       carTemplates = Array.isArray(stored) ? stored.filter(function(t){ return t && t.id && t.data; }) : [];
       const storedActive = await lsGet(CAR_TPL_ACTIVE_KEY, "");
       activeCarTplId = typeof storedActive === "string" ? storedActive : "";
+      const storedBulk = await lsGet("platBulkCarTplId", "");
+      bulkCarTplId = typeof storedBulk === "string" && carTemplates.some(function(t){ return t.id === storedBulk; }) ? storedBulk : activeCarTplId;
       // Migrasi: library kosong tapi sudah ada template aktif lama -> jadikan 1 template, jangan hapus yang lama.
       if(!carTemplates.length && templateData && VIEWS.some(function(v){ return templateData[v] && templateData[v].img; })){
         const nm = carTplNameForCurrent() || "Mobil Baru 1";
@@ -1797,7 +1843,7 @@ body{padding-bottom:30px;padding-left:100px}
 
   function templateBrand(){ for(const v of VIEWS){ const b=(templateData&&templateData[v]&&templateData[v].brand)||(viewData[v]&&viewData[v].brand); if(b&&String(b).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(b); } return ""; }
   function normTipeKey(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g, " "); }
-  function getAITipe(){ const tb=templateBrand(); if(tb) return tb; if(activeTipeMobil && String(activeTipeMobil).trim() && String(activeTipeMobil).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(activeTipeMobil); return ""; }
+  function getAITipe(){ const _bt = bulkTpl(); if(_bt && _bt.data){ const _bb = brandFromTemplate(_bt.data); if(_bb) return _bb; } const tb=templateBrand(); if(tb) return tb; if(activeTipeMobil && String(activeTipeMobil).trim() && String(activeTipeMobil).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(activeTipeMobil); return ""; }
   function brandFromTemplate(tpl){ if(!tpl) return ""; for(const v of VIEWS){ const b=tpl[v] && tpl[v].brand; if(b && String(b).trim() && String(b).trim().toLowerCase()!=="tidak diketahui") return titleCaseTipe(b); } return ""; }
   function aiVaultNameForPlates(plates){ const ai=getAITipe(); if(ai) return ai; return vaultNameForPlates(plates); }
   function vaultAITipe(batch){ if(!batch) return getAITipe(); const b=brandFromTemplate(batch.template); if(b) return b; if(batch.name && !/\(\d+\s*tipe\)/i.test(String(batch.name))) return String(batch.name).trim(); return getAITipe(); }
@@ -1805,7 +1851,7 @@ body{padding-bottom:30px;padding-left:100px}
   function displayTipeForItem(it){ return csvTipeForItem(it); }
   function tipeAboveHtml(it){ const label=displayTipeForItem(it) || "-"; return `<div class="plate-mini-tipe-above" title="${esc(label)}">${esc(label)}</div>`; }
   function wrapMiniWithTipe(it, aiTipe){ return `<div class="plate-mini-col">${chipHtml(it, true)}</div>`; }
-  function refreshBulkTipeLine(){ const el=$("bulkTipeLine"); if(!el) return; const ai=getAITipe(); if(ai){ el.textContent="Tipe mobil: "+ai+" (AI)"; return; } const ts=distinctTipes(bulkItems); if(ts.length===1){ el.textContent="Tipe mobil: "+ts[0]; return; } if(ts.length>1){ el.textContent="Tipe mobil: "+mostFrequentTipe(bulkItems)+" ("+ts.length+" tipe)"; return; } el.textContent="Tipe mobil: —"; }
+  function refreshBulkTipeLine(){ return; }
   function setActiveTipe(v){ const s=String(v||"").trim(); if(s && s.toLowerCase()!=="tidak diketahui") activeTipeMobil = titleCaseTipe(s); else if(!s) activeTipeMobil=""; refreshBulkTipeLine(); }
   function clearActiveTipeOnEmpty(){ if(bulkItems.length) return; activeTipeMobil=templateBrand()||""; refreshBulkTipeLine(); }
   function restoreActiveTipeFromBulk(){ activeTipeMobil = templateBrand() || activeTipeMobil || ""; refreshBulkTipeLine(); }
@@ -2217,7 +2263,7 @@ body{padding-bottom:30px;padding-left:100px}
   window.addEventListener("resize", applyPlate);
   function readImageFile(file) {
     return new Promise((resolve) => {
-      if (!file || !file.type || !file.type.startsWith("image/")) {
+      if (!file || (file.type && !file.type.startsWith("image/") && !/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name || ""))) {
         resolve(null);
         return;
       }
@@ -2506,9 +2552,10 @@ body{padding-bottom:30px;padding-left:100px}
   }
   function renderTemplateStrip() {
     const strip = $("templateStrip");
-    if (!templateData) { strip.innerHTML = ""; return; }
-    strip.innerHTML = VIEWS.filter(v => templateData[v] && templateData[v].img).map(v =>
-      `<figure><img src="${templateData[v].img}" alt="Template ${VIEW_LABEL[v]}"><figcaption>${VIEW_LABEL[v]}</figcaption></figure>`
+    var _bt = bulkTemplateData();
+    if (!_bt) { strip.innerHTML = ""; return; }
+    strip.innerHTML = VIEWS.filter(v => _bt[v] && _bt[v].img).map(v =>
+      `<figure><img src="${_bt[v].img}" alt="Template ${VIEW_LABEL[v]}"><figcaption>${VIEW_LABEL[v]}</figcaption></figure>`
     ).join("");
   }
   function updateTemplateUI() { try { updateTemplateUICore(); } finally { try { updateStepper(); } catch (e) {} } }
@@ -2560,7 +2607,33 @@ body{padding-bottom:30px;padding-left:100px}
   });
   $("lockCanvasBtn").addEventListener("click", () => $("lockTemplateBtn").click());
   $("unlockTemplateBtn").addEventListener("click", async () => {
-    const ok = await askConfirm("Reset Template?", "Semua template mobil, template aktif, dan antrean Bulk akan dihapus total. Tidak ada draf yang tersisa.", "Reset Template");
+    const _selCar = carTemplates.find(function(x){ return x.id === (bulkCarTplId || activeCarTplId); });
+    const _selName = _selCar ? _selCar.name : "";
+    const ok = await askConfirm("Kosongkan Bulk & Hapus Mobil Ini?", _selName ? ("Antrean Bulk akan dikosongkan dan template \"" + _selName + "\" akan dihapus. Template mobil lain tetap tersimpan.") : "Antrean Bulk akan dikosongkan. Tidak ada mobil yang dipilih.", "Kosongkan & Hapus");
+    if (ok && !_selCar && carTemplates.length) {
+      bulkItems = [];
+      await lsRemove(BULK_STORAGE_KEY);
+      editIndex = -1;
+      cancelEditUI();
+      renderBulk();
+      showToast("Bulk dikosongkan ✓");
+      return;
+    }
+    if (ok && _selCar && carTemplates.length > 1) {
+      bulkItems = [];
+      await lsRemove(BULK_STORAGE_KEY);
+      editIndex = -1;
+      bulkStartNumber = 1;
+      await lsSet("platBulkStartNum", 1);
+      cancelEditUI();
+      await deleteCarTemplateById(_selCar.id, { silent: true });
+      if(carTemplates.length && !carTemplates.some(function(x){ return x.id===bulkCarTplId; })){
+        bulkCarTplId=carTemplates[0].id; try{ await lsSet("platBulkCarTplId",bulkCarTplId); }catch(e){}
+      }
+      renderCarTplSelect(); renderBulk(); updateTemplateUI();
+      showToast("Bulk dikosongkan & \"" + _selName + "\" dihapus ✓");
+      return;
+    }
     if (!ok) return;
     templateData = null;
     bulkItems = [];
@@ -3056,7 +3129,7 @@ body{padding-bottom:30px;padding-left:100px}
   $("pasteBtn").addEventListener("click", () => {
     pasteRawWithTipe = ""; pasteHiddenTipes = {};
     $("pasteArea").value = "";
-    const _pt = $("pasteTipeLine"); if (_pt) { const _ai0=getAITipe(); if(_ai0){ _pt.hidden=false; _pt.textContent="Tipe mobil: "+_ai0+" (AI)"; } else { _pt.hidden = true; _pt.textContent = ""; } }
+    /* pasteTipeLine dihapus: tidak ada lagi teks Tipe mobil di modal tempel */
     $("pasteCount").textContent = "0 nopol terdeteksi";
     $("pasteCount").style.color = "";
     $("pasteWarnings").innerHTML = "";
@@ -3109,7 +3182,7 @@ body{padding-bottom:30px;padding-left:100px}
     }
     try { const _ns = Math.min(start, e.target.value.length); e.target.setSelectionRange(_ns, _ns); } catch (err) {}
     const { items, warnings } = parsePaste(pasteRawWithTipe || e.target.value);
-    const _pt2 = $("pasteTipeLine"); if (_pt2) { const _ai2=getAITipe(); if(_ai2){ _pt2.hidden=false; _pt2.textContent="Tipe mobil: "+_ai2+" (AI)"; } else { const _ts = distinctTipes(items); if (!_ts.length) { _pt2.hidden = true; _pt2.textContent = ""; } else { _pt2.hidden = false; _pt2.textContent = _ts.length === 1 ? "Tipe mobil: " + _ts[0] : "Tipe mobil: " + mostFrequentTipe(items) + " (" + _ts.length + " tipe)"; } } }
+    /* pasteTipeLine dihapus: tidak ada lagi teks Tipe mobil di modal tempel */
     const countEl = $("pasteCount"), warnHost = $("pasteWarnings");
     if (warnings.length === 0) {
       countEl.textContent = items.length + " nopol terdeteksi";
@@ -3959,8 +4032,9 @@ body{padding-bottom:30px;padding-left:100px}
     let total = 0;
     pendingExportData.exportGroups.forEach(g => {
       if (!g.plates || !g.plates.length) return;
-      const activeTpl = g.template || templateData;
+      const activeTpl = g.template || bulkTemplateData() || templateData;
       const views = VIEWS.filter(v => activeTpl && activeTpl[v] && activeTpl[v].img);
+      if (!g.template && pendingExportData.exportGroups.length > 1) return;
       total += g.plates.length * views.length;
     });
     $("expTotalImgs").textContent = total;
@@ -3974,7 +4048,7 @@ body{padding-bottom:30px;padding-left:100px}
     let allPlates = [];
     groups.forEach(g => { if (Array.isArray(g.plates)) allPlates = allPlates.concat(g.plates); });
     if (!allPlates.length) return showToast("Data kosong", true);
-    let globalTpl = templateData;
+    let globalTpl = bulkTemplateData() || templateData;
     if (!globalTpl || !Object.values(globalTpl).some(v => v && v.img)) {
       for (let g of groups) {
         if (g.template && Object.values(g.template).some(v => v && v.img)) { globalTpl = g.template; break; }
@@ -4010,7 +4084,7 @@ body{padding-bottom:30px;padding-left:100px}
     let allPlates = [];
     exportGroups.forEach(g => { if (Array.isArray(g.plates)) allPlates = allPlates.concat(g.plates); });
     if (!allPlates.length) return showToast("Data kosong", true);
-    let globalTpl = templateData;
+    let globalTpl = bulkTemplateData() || templateData;
     if (!globalTpl || !Object.values(globalTpl).some(v => v && v.img)) {
       for (let g of exportGroups) {
         if (g.template && Object.values(g.template).some(v => v && v.img)) { globalTpl = g.template; break; }
@@ -4022,6 +4096,7 @@ body{padding-bottom:30px;padding-left:100px}
     exportGroups.forEach(g => {
       if (!g.plates || !g.plates.length) return;
       const tpl = g.template || globalTpl;
+      if (!g.template && exportGroups.length > 1) return;
       total += g.plates.length * VIEWS.filter(v => tpl[v] && tpl[v].img).length;
     });
     if (total === 0) return showToast("Gagal: Gambar mobil kosong!", true);
@@ -4488,6 +4563,7 @@ body{padding-bottom:30px;padding-left:100px}
     selectPresetColor(b.dataset.presetColor);
   });
   onPreset("presetSelect", "change", e => selectPreset(parseInt(e.target.value, 10)));
+  document.querySelector(".preset-select-chev")?.addEventListener("click", () => { const _s = $("presetSelect"); if (!_s) return; _s.focus(); if (_s.showPicker) { try { _s.showPicker(); } catch (e) { _s.click(); } } else _s.click(); });
   onPreset("btnRenamePreset", "click", showRenameInput);
   onPreset("presetRenameInput", "change", commitRename);
   onPreset("presetRenameInput", "blur", commitRename);
@@ -4609,6 +4685,8 @@ body{padding-bottom:30px;padding-left:100px}
       if(!v) return;
       viewData[v] = freshState(viewData[v], photo);
     });
+    bulkCarTplId = "";
+    try{ await lsSet("platBulkCarTplId", ""); }catch(e){}
     activeDraftId = d.id;
     currentView = "depan";
     cancelEditUI();
@@ -4666,7 +4744,7 @@ body{padding-bottom:30px;padding-left:100px}
     bar.hidden = !multiMode;
     if(!multiMode){
       // Balikin tombol kunci tunggal yang disembunyikan pas mode multi.
-      try{ if($("lockTemplateBtn")){ $("lockTemplateBtn").hidden = false; $("lockTemplateBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template'; } }catch(e){}
+      try{ if($("lockTemplateBtn")){ $("lockTemplateBtn").hidden = !!templateData; $("lockTemplateBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template'; } }catch(e){}
       try{ if($("lockCanvasBtn")){ $("lockCanvasBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Foto & Masuk Bulk'; } }catch(e){}
       try{ if($("btnMultiSaveAll")) $("btnMultiSaveAll").hidden = false; }catch(e){}
       try{ if($("btnMultiPrev")) $("btnMultiPrev").hidden = false; }catch(e){}
@@ -4692,8 +4770,8 @@ body{padding-bottom:30px;padding-left:100px}
     $("btnMultiNext").disabled = multiIndex >= multiCars.length - 1;
     $("btnMultiSaveAll").textContent = "Simpan Semua Template (" + multiCars.length + ")";
     // Mode multi: tombol Kunci Template tetap tampil di kanvas, hanya kunci, tidak pindah ke Bulk.
-    try{ if($("lockTemplateBtn")){ $("lockTemplateBtn").hidden = false; $("lockTemplateBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template (Semua Mobil)'; } }catch(e){}
-    try{ if($("lockCanvasBtn")){ $("lockCanvasBtn").hidden = false; $("lockCanvasBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template (Semua Mobil)'; } }catch(e){}
+    try{ if($("lockTemplateBtn")){ $("lockTemplateBtn").hidden = !!templateData; $("lockTemplateBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template (Semua Mobil)'; } }catch(e){}
+    try{ if($("lockCanvasBtn")){ $("lockCanvasBtn").hidden = !!templateData; $("lockCanvasBtn").innerHTML = '<svg class="i"><use href="#i-lock"/></svg>Kunci Template (Semua Mobil)'; } }catch(e){}
     try{ if($("btnMultiSaveAll")) $("btnMultiSaveAll").hidden = true; }catch(e){}
     try{ if($("btnMultiPrev")) $("btnMultiPrev").hidden = true; }catch(e){}
     try{ if($("btnMultiNext")) $("btnMultiNext").hidden = true; }catch(e){}
@@ -4733,6 +4811,8 @@ body{padding-bottom:30px;padding-left:100px}
     try{ await lsSet("platBulkStartNum", 1); }catch(e){}
     VIEWS.forEach(function(v){ viewData[v] = defaultState(); });
     const now = Date.now();
+    bulkCarTplId = "";
+    try{ await lsSet("platBulkCarTplId", ""); }catch(e){}
     multiCars = cars.map(function(c, idx){
       const data = {};
       VIEWS.forEach(function(v, vi){
@@ -4806,7 +4886,7 @@ body{padding-bottom:30px;padding-left:100px}
     }
     // FIX: kunci ke mobil yang SEDANG dibuka, tab Mobil #1 dst TETAP tampil, kanvas TERKUNCI.
     const _curSavedId = savedIds[multiIndex] || savedIds[0] || "";
-    if(_curSavedId){ activeCarTplId = _curSavedId; await persistActiveCarTplId(); }
+    if(_curSavedId){ activeCarTplId = _curSavedId; await persistActiveCarTplId(); bulkCarTplId = _curSavedId; try{ await lsSet("platBulkCarTplId", bulkCarTplId); }catch(e){} }
     multiCars.forEach(function(c, _i){ const _e = carTemplates.find(function(x){ return x.id === savedIds[_i]; }); if(_e) c.name = _e.name; });
     const _savedTotal = savedIds.length;
     activeDraftId = "";
@@ -4831,10 +4911,10 @@ body{padding-bottom:30px;padding-left:100px}
     if(sel) sel.addEventListener("change", async () => {
       const id = sel.value;
       if(!id) { renderCarTplSelect(); return; }
-      if(id === activeCarTplId) return;
+      if(id === bulkCarTplId) return;
       if(carTplBusy) { renderCarTplSelect(); return; }
       carTplBusy = true;
-      try{ await applyCarTpl(id); }catch(e){ renderCarTplSelect(); }
+      try{ await applyBulkCarTpl(id); }catch(e){ renderCarTplSelect(); }
       carTplBusy = false;
     });
     const _pkBtn = $("bulkCarPickerBtn");
@@ -4859,7 +4939,7 @@ body{padding-bottom:30px;padding-left:100px}
       const btn = e.target.closest("button[data-car-act]");
       if(!btn){
         const _item = e.target.closest(".car-tpl-item[data-car-id]");
-        if(_item){ closeSheet("carTplModal"); await applyCarTpl(_item.dataset.carId); }
+        if(_item){ closeSheet("carTplModal"); await applyBulkCarTpl(_item.dataset.carId); }
         return;
       }
       const id = btn.dataset.id;
@@ -4868,7 +4948,7 @@ body{padding-bottom:30px;padding-left:100px}
       if(!tpl) return;
       if(act === "use"){
         closeSheet("carTplModal");
-        await applyCarTpl(id);
+        await applyBulkCarTpl(id);
         setTab("bulk");
       } else if(act === "rename"){
         const next = window.prompt("Ganti nama template mobil:", tpl.name || "");
